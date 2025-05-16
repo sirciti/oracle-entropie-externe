@@ -1,43 +1,60 @@
 import pyowm
 import json
+import time
 
 # Remplacez par votre clé API OpenWeatherMap
-API_KEY = "f9ecb24e337d6246cee5d264b813d029"  # Assurez-vous que votre clé correcte est ici
+API_KEY = "VOTRE_CLE_API"  # Assurez-vous que votre clé correcte est ici
 
 # Initialisation du gestionnaire d'API
 owm = pyowm.OWM(API_KEY)
 mgr = owm.weather_manager()
-
-# Définition de la localisation pour l'Île-de-France
 region_name = "Île-de-France, FR"
 
-try:
-    # Récupération des données météorologiques actuelles
-    observation = mgr.weather_at_place(region_name)
-    weather = observation.weather
+previous_weather_data = None
 
-    raw_data = {
-        "temperature": weather.temperature('celsius')['temp'],
-        "humidity": weather.humidity,
-        "pressure": weather.pressure['press'],
-        "wind_speed": weather.wind()['speed']
-    }
+def get_current_weather_data():
+    try:
+        observation = mgr.weather_at_place(region_name)
+        weather = observation.weather
+        return {
+            "temperature": weather.temperature('celsius')['temp'],
+            "humidity": weather.humidity,
+            "pressure": weather.pressure['press'],
+            "wind_speed": weather.wind()['speed']
+        }
+    except Exception as e:
+        print(f"Erreur lors de la récupération des données météorologiques : {e}")
+        return None
 
-    # Extraction de l'entropie (parties décimales)
-    entropy_data = {}
-    for key, value in raw_data.items():
-        if isinstance(value, float):
-            decimal_part = value - int(value)
-            entropy_data[key] = decimal_part
-        elif isinstance(value, int):
-            entropy_data[key] = value % 10 / 10.0
+def get_entropy_data():
+    global previous_weather_data
+    current_weather_data = get_current_weather_data()
+
+    if current_weather_data:
+        entropy_data = {}
+        if previous_weather_data:
+            temperature_change = current_weather_data['temperature'] - previous_weather_data['temperature']
+            wind_speed_change = current_weather_data['wind_speed'] - previous_weather_data['wind_speed']
+
+            entropy_data['temperature_change'] = temperature_change - int(temperature_change)
+            entropy_data['wind_speed_change'] = wind_speed_change - int(wind_speed_change)
+            entropy_data['current_humidity_decimal'] = current_weather_data['humidity'] % 10 / 10.0
+            entropy_data['current_pressure_decimal'] = current_weather_data['pressure'] % 10 / 10.0
         else:
-            entropy_data[key] = value
+            # Première requête, pas de changement à calculer
+            entropy_data['current_temperature_decimal'] = current_weather_data['temperature'] - int(current_weather_data['temperature'])
+            entropy_data['current_wind_speed_decimal'] = current_weather_data['wind_speed'] - int(current_weather_data['wind_speed'])
+            entropy_data['current_humidity_decimal'] = current_weather_data['humidity'] % 10 / 10.0
+            entropy_data['current_pressure_decimal'] = current_weather_data['pressure'] % 10 / 10.0
 
-    # Formatage en JSON
-    entropy_json = json.dumps(entropy_data)
-    print("\nDonnées d'entropie en JSON :")
-    print(entropy_json)
+        previous_weather_data = current_weather_data
+        return jsonify(entropy_data)
+    else:
+        return jsonify({"error": "Failed to retrieve weather data"}), 500
 
-except Exception as e:
-    print(f"Erreur lors de la récupération des données météorologiques : {e}")
+@app.route('/entropy', methods=['GET'])
+def entropy():
+    return get_entropy_data()
+
+if __name__ == '__main__':
+    app.run(debug=True)
