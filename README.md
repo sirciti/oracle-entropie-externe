@@ -1,0 +1,1 @@
+# oracle-entropie-externe
