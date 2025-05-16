@@ -20,21 +20,28 @@ def get_external_entropy_weather():
         print(f"Erreur lors de la récupération de l'entropie météo : {e}")
         return None
 
-def get_quantum_entropy():
-    """Récupère un nombre aléatoire quantique de l'API ANU (AWS)."""
+def get_quantum_entropy(max_retries=3, initial_delay=1):
+    """Récupère un nombre aléatoire quantique de l'API ANU (AWS) avec des tentatives."""
     ANU_QRNG_API_URL = "https://qrng.anu.edu.au/API/jsonI.php?length=1&type=uint8"
-    try:
-        response = requests.get(ANU_QRNG_API_URL)
-        response.raise_for_status()
-        data = response.json()
-        if data and data['data']:
-            return data['data'][0] / 255.0  # Normaliser entre 0 et 1 (uint8 -> 0-255)
-        else:
-            print("Erreur : Données QRNG non valides.")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"Erreur lors de la récupération de l'entropie quantique : {e}")
-        return None
+    retries = 0
+    delay = initial_delay
+    while retries < max_retries:
+        try:
+            response = requests.get(ANU_QRNG_API_URL)
+            response.raise_for_status()
+            data = response.json()
+            if data and data['data']:
+                return data['data'][0] / 255.0  # Normaliser entre 0 et 1 (uint8 -> 0-255)
+            else:
+                print("Erreur : Données QRNG non valides.")
+                return None
+        except requests.exceptions.RequestException as e:
+            print(f"Erreur lors de la récupération de l'entropie quantique (tentative {retries + 1}/{max_retries}) : {e}")
+            retries += 1
+            time.sleep(delay)
+            delay *= 2  # Délai exponentiel
+    print("Échec de la récupération de l'entropie quantique après plusieurs tentatives.")
+    return None
 
 def generate_random_number_with_entropy():
     """Génère un nombre aléatoire en utilisant l'entropie externe (météo et quantique)."""
