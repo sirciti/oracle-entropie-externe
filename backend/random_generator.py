@@ -1,6 +1,7 @@
 import random
 import requests
 import time
+import hashlib
 import json
 
 # URL de notre API d'entropie locale (météo)
@@ -44,22 +45,27 @@ def get_quantum_entropy(max_retries=3, initial_delay=1):
     return None
 
 def generate_random_number_with_entropy():
-    """Génère un nombre aléatoire en utilisant l'entropie externe (météo et quantique)."""
+    """Génère un nombre aléatoire en utilisant l'entropie externe (météo et quantique) via un hachage."""
     weather_entropy = get_external_entropy_weather()
-    quantum_entropy = get_quantum_entropy()
-    seed = time.time()
+    quantum_entropy_value = get_quantum_entropy()
+    seed_string = str(time.time())
 
     if weather_entropy:
-        seed += sum(weather_entropy.values())
+        seed_string += json.dumps(weather_entropy)
 
-    if quantum_entropy is not None:
-        seed += quantum_entropy
+    if quantum_entropy_value is not None:
+        seed_string += str(quantum_entropy_value)
 
+    # Création d'un haché SHA-256 de la chaîne d'entropie
+    hashed_entropy = hashlib.sha256(seed_string.encode()).hexdigest()
+
+    # Utilisation des premiers bits du haché comme graine pour le PRNG
+    seed = int(hashed_entropy[:16], 16)  # Prendre les 16 premiers caractères hexadécimaux
     random.seed(seed)
     return random.random()
 
 if __name__ == "__main__":
     for _ in range(5):
         random_number = generate_random_number_with_entropy()
-        print(f"Nombre aléatoire généré (avec QRNG) : {random_number}")
+        print(f"Nombre aléatoire généré (avec hachage) : {random_number}")
         time.sleep(1)
