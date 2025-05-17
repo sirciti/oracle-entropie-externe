@@ -1,14 +1,16 @@
+from flask import Flask, jsonify
 import pyowm
-import json
 import time
 
 # Remplacez par votre clé API OpenWeatherMap
-API_KEY = "VOTRE_CLE_API"  # Assurez-vous que votre clé correcte est ici
+API_KEY = "f9ecb24e337d6246cee5d264b813d029"  # <-- Mets ici ta clé valide
+
+app = Flask(__name__)
 
 # Initialisation du gestionnaire d'API
 owm = pyowm.OWM(API_KEY)
 mgr = owm.weather_manager()
-region_name = "Île-de-France, FR"
+region_name = "Île-de-France,FR"  # Pas d'espace après la virgule
 
 previous_weather_data = None
 
