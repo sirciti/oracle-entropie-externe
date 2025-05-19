@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 import numpy as np
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict, Any
 from .geometry import generate_icosahedron, subdivide_faces
 from .icosahedron_dynamics import update_vertices
 import json
@@ -17,7 +17,6 @@ DEFAULT_PARAMS = {
 }
 
 def parse_float_list(s: str) -> Optional[List[float]]:
-    """Tente d'analyser une chaîne en une liste de floats."""
     try:
         data = json.loads(s)
         if isinstance(data, list) and all(isinstance(x, (int, float)) for x in data):
@@ -28,9 +27,6 @@ def parse_float_list(s: str) -> Optional[List[float]]:
 
 @geometry_api.route('/icosahedron/initial', methods=['GET'])
 def get_initial_icosahedron():
-    """
-    Génère et renvoie les données de l'icosaèdre initial.
-    """
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
     rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
@@ -57,9 +53,6 @@ def get_initial_icosahedron():
 
 @geometry_api.route('/icosahedron/subdivide', methods=['GET'])
 def get_subdivided_icosahedron():
-    """
-    Subdivise l'icosaèdre et renvoie les nouvelles données.
-    """
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
     rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
@@ -87,12 +80,6 @@ def get_subdivided_icosahedron():
 
 @geometry_api.route('/icosahedron/animate', methods=['GET'])
 def animate_icosahedron():
-    """
-    Simule la dynamique temporelle sur l’icosaèdre.
-
-    Paramètres GET optionnels :
-        radius, position, rotation_axis, rotation_angle, dt, steps, sigma, epsilon, rho, zeta
-    """
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
     rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
@@ -129,3 +116,27 @@ def animate_icosahedron():
         return jsonify({'frames': frames})
     except Exception as e:
         return jsonify({'error': f'Erreur lors de l\'animation de l\'icosaèdre : {e}'}), 500
+
+# --------- Fonction utilitaire pour l'entropie finale ---------
+
+def get_icosahedron_animate(steps=10, radius=1.0, position=None, rotation_axis=None, rotation_angle=0.0,
+                            dt=0.01, sigma=10.0, epsilon=0.3, rho=28.0, zeta=2.1):
+    """
+    Fonction utilitaire pour générer les frames d'animation de l'icosaèdre (sans passer par Flask).
+    """
+    if position is None:
+        position = np.zeros(3)
+    if rotation_axis is None:
+        rotation_axis = np.array([0.0, 1.0, 0.0])
+    params = {'sigma': sigma, 'epsilon': epsilon, 'rho': rho, 'zeta': zeta}
+    vertices, faces = generate_icosahedron(radius, position, rotation_axis, rotation_angle)
+    phi = np.random.normal(scale=0.01, size=len(vertices))
+    frames = []
+    for _ in range(steps):
+        vertices, phi = update_vertices(vertices, faces, phi, dt, params)
+        frames.append({
+            'vertices': vertices.tolist(),
+            'faces': faces.tolist()
+        })
+    return frames
+
