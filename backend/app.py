@@ -8,6 +8,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 
+# --- Création de l'application Flask ---
 app = Flask(__name__)
 
 # -------------------- CONFIGURATION --------------------
@@ -133,7 +134,6 @@ def combine_weather_data(all_data):
         log_error("Aucune donnée météo à combiner.")
         return None
     combined_data = {}
-    # Initialise des listes pour stocker les valeurs de chaque paramètre. Gère les données manquantes.
     temperatures = [d.get("temperature") for d in all_data if isinstance(d.get("temperature"), (int, float))]
     humidities = [d.get("humidity") for d in all_data if isinstance(d.get("humidity"), (int, float))]
     pressures = [d.get("pressure") for d in all_data if isinstance(d.get("pressure"), (int, float))]
@@ -231,6 +231,14 @@ def generate_random_number_with_entropy(verbose=False):
         print("-----------------------------")
 
     return result, hashed_entropy
+
+# -------------------- INTEGRATION DES ROUTES GEOMETRIE --------------------
+
+from backend.geometry_api import geometry_api  # Import du Blueprint
+
+app.register_blueprint(geometry_api)  # Enregistrement du Blueprint
+
+# -------------------- ROUTES PRINCIPALES --------------------
 
 @app.route('/generate_random')
 def generate_random():
