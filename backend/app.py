@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, current_app
 from logging.handlers import RotatingFileHandler
 import requests
 import time
@@ -8,12 +8,11 @@ import json
 import os
 import logging
 import secrets
+import string
+from backend.geometry_api import get_icosahedron_animate
 from typing import List, Dict, Optional, Tuple, Any
 
-from backend.geometry_api import geometry_api, get_icosahedron_animate
-
 app = Flask(__name__)
-app.register_blueprint(geometry_api)
 
 # -------------------- CONFIGURATION --------------------
 
@@ -35,22 +34,34 @@ LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB
 LOG_BACKUP_COUNT = 5
-log_handler = RotatingFileHandler(LOG_FILENAME, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUP_COUNT)
+
+log_handler = RotatingFileHandler(LOG_FILENAME, maxBytes=LOG_MAX_BYTES,
+                                    backupCount=LOG_BACKUP_COUNT)
 log_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 logger = logging.getLogger("entropy_generator")
 logger.addHandler(log_handler)
 logger.setLevel(LOG_LEVEL)
 
+
 def log_error(message: str) -> None:
+    """Logs an error message."""
     logger.error(message)
+
+
 def log_warning(message: str) -> None:
+    """Logs a warning message."""
     logger.warning(message)
+
+
 def log_info(message: str) -> None:
+    """Logs an informational message."""
     logger.info(message)
+
 
 # -------------------- CONFIGURATION LOADING --------------------
 
 def load_config() -> Dict[str, Any]:
+    """Charge la configuration depuis config.json et/ou les variables d'environnement."""
     config = {}
     try:
         with open('config.json', 'r') as f:
@@ -63,6 +74,7 @@ def load_config() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Erreur inattendue lors du chargement de config.json : {e}")
 
+    # Surcharge avec les variables d'environnement (si définies)
     try:
         config['latitude'] = float(os.getenv('OPEN_METEO_LAT', config.get('latitude', DEFAULT_LAT)))
         config['longitude'] = float(os.getenv('OPEN_METEO_LON', config.get('longitude', DEFAULT_LON)))
@@ -71,7 +83,8 @@ def load_config() -> Dict[str, Any]:
         )
         logger.info("Configuration surchargée par les variables d'environnement (si présentes).")
     except ValueError:
-        logger.error("Erreur : Les variables d'environnement OPEN_METEO_LAT, OPEN_METEO_LON ou OPEN_METEO_COORDINATES ne sont pas valides.")
+        logger.error(
+            "Erreur : Les variables d'environnement OPEN_METEO_LAT, OPEN_METEO_LON ou OPEN_METEO_COORDINATES ne sont pas valides.")
     except json.JSONDecodeError as e:
         logger.error(f"Erreur de décodage JSON pour OPEN_METEO_COORDINATES : {e}")
     except Exception as e:
@@ -79,11 +92,13 @@ def load_config() -> Dict[str, Any]:
 
     return config
 
+
 config = load_config()
 
 # -------------------- API CALLS --------------------
 
 def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]:
+    """Récupère les données météo actuelles pour une paire de coordonnées."""
     try:
         url = (
             f"https://api.open-meteo.com/v1/forecast?"
@@ -98,7 +113,7 @@ def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]
         data = response.json()
         weather = data.get("current_weather", {})
         hourly = data.get("hourly", {})
-        idx = 0
+        idx = 0  # premier index horaire (heure courante)
         current_data = {
             "temperature": weather.get("temperature"),
             "humidity": hourly.get("relative_humidity_2m", [None])[idx],
@@ -111,12 +126,14 @@ def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]
         return current_data
     except requests.exceptions.RequestException as e:
         log_error(f"Erreur lors de la récupération des données météo pour {lat}, {lon} : {e}")
-        return None
+        return None  # Important: Return None on error
     except Exception as e:
         log_error(f"Erreur inattendue lors de la récupération des données météo pour {lat}, {lon} : {e}")
         return None
 
+
 def get_area_weather_data(coordinates: List[Tuple[float, float]]) -> List[Optional[Dict[str, Any]]]:
+    """Récupère les données météo pour une liste de coordonnées."""
     all_data = []
     for lat, lon in coordinates:
         data = get_current_weather_data(lat, lon)
@@ -124,7 +141,9 @@ def get_area_weather_data(coordinates: List[Tuple[float, float]]) -> List[Option
             all_data.append(data)
     return all_data
 
+
 def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[Dict[str, Any]]:
+    """Combine les données météo de plusieurs points."""
     if not all_data:
         log_error("Aucune donnée météo à combiner.")
         return None
@@ -135,7 +154,8 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
     wind_speeds = [d.get("wind_speed") for d in all_data if isinstance(d.get("wind_speed"), (int, float))]
     wind_gusts = [d.get("wind_gust") for d in all_data if isinstance(d.get("wind_gust"), (int, float))]
     clouds = [d.get("clouds") for d in all_data if isinstance(d.get("clouds"), (int, float))]
-    precipitations = [d.get("precipitation") for d in all_data if isinstance(d.get("precipitation"), (int, float))]
+    precipitations = [d.get("precipitation") for d in all_data if
+                      isinstance(d.get("precipitation"), (int, float))]
 
     try:
         if temperatures:
@@ -157,10 +177,13 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
         log_error(f"Erreur lors de la combinaison des données météo : {e}")
         return None
 
+
 def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optional[float]:
+    """Récupère un nombre aléatoire quantique normalisé [0,1] depuis l'API ANU QRNG."""
     retries = 0
     delay = initial_delay
     last_error = None
+    # Boucle sur les APIs QRNG (si plusieurs)
     while retries < max_retries:
         try:
             response = requests.get(ANU_QRNG_API_URL, timeout=5)
@@ -174,33 +197,49 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
                 return None
         except requests.exceptions.RequestException as e:
             last_error = e
-            log_warning(f"Erreur lors de la récupération de l'entropie quantique (tentative {retries + 1}/{max_retries}) : {e}")
+            log_warning(
+                f"Erreur lors de la récupération de l'entropie quantique (tentative {retries + 1}/{max_retries}) : {e}")
             retries += 1
             time.sleep(delay)
             delay *= 2
         except Exception as e:
             log_error(f"Erreur inattendue lors de la récupération de l'entropie quantique: {e}")
             return None
-    log_warning(f"Échec de la récupération de l'entropie quantique après plusieurs tentatives.")
+        log_warning(f"Échec de la récupération de l'entropie quantique from {api['name']}.")
     if last_error:
         log_warning(f"Dernière erreur QRNG : {last_error}")
+
+    # Si toutes les APIs QRNG ont échoué, on utilise le PRNG de secours
     log_warning("Tous les QRNGs ont échoué. Utilisation du PRNG de secours.")
     fallback_seed = os.urandom(16) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random()
 
+
 def generate_random_number_with_entropy(verbose: bool = False) -> Tuple[float, str]:
+    """
+    Génère un nombre aléatoire robuste basé sur :
+     - entropie météo (API locale /entropy),
+     - entropie quantique (ANU QRNG),
+     - horodatage précis
+     - bruit local (os.urandom)
+    """
+    global previous_weather_data  # Accéder à la variable globale
     all_weather = get_area_weather_data(config['coordinates'])
     combined_weather = combine_weather_data(all_weather)
     quantum_entropy_value = get_quantum_entropy()
-    timestamp = time.time_ns()
-    local_noise = os.urandom(16)
+    timestamp = time.time_ns()  # Horodatage très précis (nanosecondes)
+    local_noise = os.urandom(16)  # 16 octets de bruit système
+
+    # Construction de la graine
     seed_string = str(timestamp)
     if combined_weather:
         seed_string += json.dumps(combined_weather, sort_keys=True)
     if quantum_entropy_value is not None:
         seed_string += str(quantum_entropy_value)
     seed_string += os.urandom(16).hex()
+
+    # Hash robuste (SHA-256)
     hashed_entropy = hashlib.sha256(seed_string.encode()).hexdigest()
     seed = int(hashed_entropy[:16], 16)
     random.seed(seed)
@@ -208,23 +247,32 @@ def generate_random_number_with_entropy(verbose: bool = False) -> Tuple[float, s
     log_info(f"Nombre aléatoire généré: {random_number}, Hachage d'entropie: {hashed_entropy}")
     return random_number, hashed_entropy
 
+
 # -------------------- FONCTIONS D'ENTROPIE FINALE --------------------
 
 def get_final_entropy() -> Optional[bytes]:
+    """
+    Génère l'entropie finale à partir de toutes les sources disponibles.
+
+    Returns:
+        Octets représentant l'entropie générée.
+    """
     try:
         # 1. Récupérer les données météo (via fonction Python locale)
-        all_weather = get_area_weather_data(config['coordinates'])
-        weather_data = combine_weather_data(all_weather)
+        weather_data = entropy()
         if not weather_data:
             log_error("Erreur lors de la récupération des données météo.")
             return None
+
         # 2. Simuler l'icosaèdre dynamique (via fonction Python locale)
-        icosahedron_data = {"frames": get_icosahedron_animate(steps=10)}
+        icosahedron_data = get_icosahedron_animate(steps=10)
         if not icosahedron_data:
             log_error("Erreur lors de la simulation de l'icosaèdre.")
             return None
+
         # 3. Récupérer l'entropie quantique (API externe)
         quantum_entropy_value = get_quantum_entropy()
+
         # 4. Combiner toutes les sources d'entropie
         seed_string = str(time.time_ns())
         seed_string += json.dumps(weather_data, sort_keys=True)
@@ -232,33 +280,61 @@ def get_final_entropy() -> Optional[bytes]:
         if quantum_entropy_value is not None:
             seed_string += str(quantum_entropy_value)
         seed_string += os.urandom(16).hex()
-        hashed_entropy = hashlib.blake2b(seed_string.encode(), 
-        digest_size=32).digest()
+
+        # 5. Hacher la graine (BLAKE2b)
+        hasher = hashlib.blake2b(key=seed_string.encode(), digestsize=32)
+        hashed_entropy = hasher.digest()
+
         log_info("Entropie finale générée avec succès.")
         return hashed_entropy
+
+    except requests.exceptions.RequestException as e:
+        log_error(f"Erreur de requête : {e}")
+        return None
     except Exception as e:
         log_error(f"Erreur lors de la génération de l'entropie finale : {e}")
         return None
 
+
 def generate_secure_token(entropy_seed: bytes, length: int = 32) -> str:
-    hasher = hashlib.blake2b(key=entropy_seed, digest_size=32)
+    """Génère un jeton cryptographiquement sûr à partir d'une graine d'entropie."""
+    # Hash l'entropie combinée (BLAKE2b)
+    hasher = hashlib.blake2b(key=entropy_seed, digestsize=32)
     seed = hasher.digest()
+
+    # Génère un jeton hexadécimal sécurisé
     token = secrets.token_hex(length)
+
     return token
+
+
+# -------------------- INTEGRATION DES ROUTES GEOMETRIE --------------------
+
+from backend.geometry_api import geometry_api  # Import du Blueprint
+
+app.register_blueprint(geometry_api)  # Enregistrement du Blueprint
+
 
 # -------------------- ROUTES PRINCIPALES --------------------
 
 @app.route('/generate_random')
 def generate_random():
+    """API endpoint to generate a random number with combined entropy."""
     try:
-        random_number, entropy_seed = generate_random_number_with_entropy()
-        return jsonify({"random_number": random_number, "entropy_seed": entropy_seed})
+        entropy_seed = get_final_entropy()
+        if not entropy_seed:
+            return jsonify({"error": "Failed to generate final entropy"}), 500
+
+        token = generate_secure_token(entropy_seed)
+        return jsonify({"random_number": token, "entropy_seed": token})
     except Exception as e:
         log_error(f"Erreur lors de la génération du nombre aléatoire : {e}")
         return jsonify({"error": "Failed to generate random number"}), 500
 
+
 @app.route('/entropy', methods=['GET'])
 def entropy():
+    """API endpoint to get the combined weather data (for debugging or optional use)."""
     try:
         all_weather = get_area_weather_data(config['coordinates'])
         combined_weather = combine_weather_data(all_weather)
@@ -270,16 +346,20 @@ def entropy():
         log_error(f"Erreur lors de la récupération de l'entropie météo : {e}")
         return jsonify({"error": "Failed to retrieve weather data"}), 500
 
+
 @app.route('/final_entropy', methods=['GET'])
 def final_entropy():
+    """API endpoint to get the final combined entropy."""
     final_entropy = get_final_entropy()
     if final_entropy:
         return jsonify({"final_entropy": final_entropy.hex()})
     else:
         return jsonify({"error": "Failed to generate final entropy"}), 500
 
+
 @app.route('/generate_token', methods=['GET'])
 def generate_token():
+    """API endpoint to generate a secure token."""
     entropy_seed = get_final_entropy()
     if entropy_seed:
         token = generate_secure_token(entropy_seed)
@@ -287,13 +367,18 @@ def generate_token():
     else:
         return jsonify({"error": "Failed to generate secure token"}), 500
 
+
 @app.route('/')
 def serve_index():
+    """Serves the main page (frontend)."""
     return send_from_directory('../frontend', 'index.html')
+
 
 @app.route('/<path:filename>')
 def serve_static(filename):
+    """Serves static files (CSS, JS, etc.) from the frontend."""
     return send_from_directory('../frontend', filename)
+
 
 if __name__ == '__main__':
     try:

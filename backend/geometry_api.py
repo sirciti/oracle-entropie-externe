@@ -1,22 +1,24 @@
 from flask import Blueprint, jsonify, request
 import numpy as np
 from typing import Tuple, Optional, List, Dict, Any
-from .geometry import generate_icosahedron, subdivide_faces
+from .geometry import generate_icosahedron, subdivide_faces  # Correction ici
 from .icosahedron_dynamics import update_vertices
 import json
 
 geometry_api = Blueprint('geometry_api', __name__)
 
+# Paramètres par défaut pour la dynamique
 DEFAULT_PARAMS = {
     'sigma': 10.0,
     'epsilon': 0.3,
     'rho': 28.0,
     'zeta': 2.1,
     'dt': 0.01,
-    'steps': 10
+    'steps': 10  # nombre d’étapes temporelles à simuler
 }
 
 def parse_float_list(s: str) -> Optional[List[float]]:
+    """Tente d'analyser une chaîne en une liste de floats."""
     try:
         data = json.loads(s)
         if isinstance(data, list) and all(isinstance(x, (int, float)) for x in data):
@@ -27,6 +29,19 @@ def parse_float_list(s: str) -> Optional[List[float]]:
 
 @geometry_api.route('/icosahedron/initial', methods=['GET'])
 def get_initial_icosahedron():
+    """
+    Génère et renvoie les données de l'icosaèdre initial.
+
+    Paramètres GET optionnels :
+        radius: Rayon de l'icosaèdre (float, par défaut 1.0).
+        position: Position du centre (liste de 3 floats, par défaut [0.0, 0.0, 0.0]).
+        rotation_axis: Axe de rotation (liste de 3 floats, par défaut [0.0, 1.0, 0.0]).
+        rotation_angle: Angle de rotation en radians (float, par défaut 0.0).
+
+    Returns:
+        JSON contenant les sommets et les faces de l'icosaèdre.
+    """
+
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
     rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
@@ -51,8 +66,22 @@ def get_initial_icosahedron():
     except Exception as e:
         return jsonify({'error': f'Erreur lors de la génération de l\'icosaèdre : {e}'}), 500
 
+
 @geometry_api.route('/icosahedron/subdivide', methods=['GET'])
 def get_subdivided_icosahedron():
+    """
+    Subdivise l'icosaèdre et renvoie les nouvelles données.
+
+    Paramètres GET optionnels :
+        radius: Rayon de l'icosaèdre (float, par défaut 1.0).
+        position: Position du centre (liste de 3 floats, par défaut [0.0, 0.0, 0.0]).
+        rotation_axis: Axe de rotation (liste de 3 floats, par défaut [0.0, 1.0, 0.0]).
+        rotation_angle: Angle de rotation en radians (float, par défaut 0.0).
+
+    Returns:
+        JSON contenant les sommets et les faces de l'icosaèdre après subdivision.
+    """
+
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
     rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
@@ -80,6 +109,25 @@ def get_subdivided_icosahedron():
 
 @geometry_api.route('/icosahedron/animate', methods=['GET'])
 def animate_icosahedron():
+    """
+    Simule la dynamique temporelle sur l’icosaèdre.
+
+    Paramètres GET optionnels :
+        radius: Rayon de l'icosaèdre (float, par défaut 1.0).
+        position: Position du centre (liste de 3 floats, par défaut [0.0, 0.0, 0.0]).
+        rotation_axis: Axe de rotation (liste de 3 floats, par défaut [0.0, 1.0, 0.0]).
+        rotation_angle: Angle de rotation en radians (float, par défaut 0.0).
+        dt: Pas de temps (float, par défaut 0.01).
+        steps: Nombre d’étapes temporelles à simuler (int, par défaut 10).
+        sigma: Paramètre sigma (float, par défaut 10.0).
+        epsilon: Paramètre epsilon (float, par défaut 0.3).
+        rho: Paramètre rho (float, par défaut 28.0).
+        zeta: Paramètre zeta (float, par défaut 2.1).
+
+    Returns:
+        JSON contenant une liste de frames, chaque frame contenant les sommets et les faces de l'icosaèdre.
+    """
+
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
     rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
@@ -104,8 +152,13 @@ def animate_icosahedron():
     params = {'sigma': sigma, 'epsilon': epsilon, 'rho': rho, 'zeta': zeta}
 
     try:
+        # Génération icosaèdre initial
         vertices, faces = generate_icosahedron(radius, position, rotation_axis, rotation_angle)
+
+        # Initialisation de phi (par exemple, petits aléas autour de 0)
         phi = np.random.normal(scale=0.01, size=len(vertices))
+
+        # Simulation temporelle
         frames = []
         for _ in range(steps):
             vertices, phi = update_vertices(vertices, faces, phi, dt, params)
@@ -113,6 +166,7 @@ def animate_icosahedron():
                 'vertices': vertices.tolist(),
                 'faces': faces.tolist()
             })
+
         return jsonify({'frames': frames})
     except Exception as e:
         return jsonify({'error': f'Erreur lors de l\'animation de l\'icosaèdre : {e}'}), 500
@@ -124,6 +178,7 @@ def get_icosahedron_animate(steps=10, radius=1.0, position=None, rotation_axis=N
     """
     Fonction utilitaire pour générer les frames d'animation de l'icosaèdre (sans passer par Flask).
     """
+    
     if position is None:
         position = np.zeros(3)
     if rotation_axis is None:
@@ -139,4 +194,3 @@ def get_icosahedron_animate(steps=10, radius=1.0, position=None, rotation_axis=N
             'faces': faces.tolist()
         })
     return frames
-
