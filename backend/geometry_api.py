@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 import numpy as np
 from typing import Tuple, Optional, List, Dict, Any
-from .geometry import generate_icosahedron, subdivide_faces  # Correction ici
+from .geometry import generate_icosahedron, subdivide_faces
 from .icosahedron_dynamics import update_vertices
 import json
 
@@ -178,7 +178,7 @@ def get_icosahedron_animate(steps=10, radius=1.0, position=None, rotation_axis=N
     """
     Fonction utilitaire pour générer les frames d'animation de l'icosaèdre (sans passer par Flask).
     """
-    
+    import numpy as np
     if position is None:
         position = np.zeros(3)
     if rotation_axis is None:
