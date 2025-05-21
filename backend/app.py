@@ -2,7 +2,7 @@ from flask import Flask, jsonify, send_from_directory, current_app
 from logging.handlers import RotatingFileHandler
 import requests
 import time
-import hashlib
+import hashlib # <-- ASSUREZ-VOUS QUE CETTE LIGNE EST BIEN ICI
 import random
 import json
 import os
@@ -10,9 +10,11 @@ import logging
 import secrets
 import string
 from typing import List, Dict, Optional, Tuple, Any
+from flask_cors import CORS # Import pour CORS
+from backend.geometry_api import geometry_api, get_icosahedron_animate # Import du Blueprint et de la fonction utilitaire
 
-# --- Création de l'application Flask ---
 app = Flask(__name__)
+CORS(app) # Initialise CORS pour l'application Flask
 
 # -------------------- CONFIGURATION --------------------
 
@@ -25,11 +27,12 @@ DEFAULT_COORDINATES = [
     [48.8, 1.7]
 ]
 
-# L'API ANU QRNG est désactivée pour la stabilité, mais la variable est gardée en cas de besoin futur.
 ANU_QRNG_API_URL = os.getenv("ANU_QRNG_API_URL",
                             "https://qrng.anu.edu.au/API/jsonI.php?length=1&type=uint8")
 
 # Pour le fallback du PRNG si d'autres sources échouent ou sont désactivées.
+# Ces variables sont définies ici pour être accessibles globalement.
+QRNG_APIS = [{"url": ANU_QRNG_API_URL, "name": "ANU QRNG"}]
 FALLBACK_PRNG_SEED_LENGTH = 256 # Longueur en bits pour le PRNG de secours
 
 # Logging configuration
@@ -96,7 +99,7 @@ def load_config() -> Dict[str, Any]:
 
     return config
 
-config = load_config() # Appel de load_config() APRES LA DÉFINITION DES LOGGERS
+config = load_config()
 
 
 # -------------------- API CALLS (FONCTIONS UTILITAIRES) --------------------
@@ -129,10 +132,10 @@ def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]
         }
         return current_data
     except requests.exceptions.RequestException as e:
-        log_error(f"Erreur lors de la récupération des données météo pour {lat}, {lon} : {e}")
+        logger.error(f"Erreur lors de la récupération des données météo pour {lat}, {lon} : {e}")
         return None  # Important: Return None on error
     except Exception as e:
-        log_error(f"Erreur inattendue lors de la récupération des données météo pour {lat}, {lon} : {e}")
+        logger.error(f"Erreur inattendue lors de la récupération des données météo pour {lat}, {lon} : {e}")
         return None
 
 
@@ -149,7 +152,7 @@ def get_area_weather_data(coordinates: List[Tuple[float, float]]) -> List[Option
 def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[Dict[str, Any]]:
     """Combine les données météo de plusieurs points."""
     if not all_data:
-        log_error("Aucune donnée météo à combiner.")
+        logger.error("Aucune donnée météo à combiner.")
         return None
     combined_data = {}
     temperatures = [d.get("temperature") for d in all_data if isinstance(d.get("temperature"), (int, float))]
@@ -178,7 +181,7 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
             combined_data["avg_precipitation"] = sum(precipitations) / len(precipitations)
         return combined_data
     except Exception as e:
-        log_error(f"Erreur lors de la combinaison des données météo : {e}")
+        logger.error(f"Erreur lors de la combinaison des données météo : {e}")
         return None
 
 
@@ -187,7 +190,7 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
     Récupère un nombre aléatoire quantique normalisé [0,1] depuis l'API ANU QRNG.
     Retourne une valeur du PRNG de secours car l'API est instable.
     """
-    log_warning("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
+    logger.warning("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
     fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random() # Retourne une valeur du PRNG de secours
@@ -198,12 +201,9 @@ def generate_random_number_with_entropy(verbose: bool = False) -> Tuple[float, s
     Génère un nombre aléatoire robuste basé sur :
      - entropie météo,
      - horodatage précis,
-     - bruit local (os.urandom).
-     (L'entropie quantique est maintenant gérée par le fallback du PRNG interne).
+     - bruit local (os.urandom),
+     - (contribuant au PRNG de secours si l'API quantique est désactivée).
     """
-    # previous_weather_data n'est pas utilisé globalement ici.
-    # La ligne 'global previous_weather_data' a été retirée dans la version précédente.
-
     all_weather = get_area_weather_data(config['coordinates'])
     combined_weather = combine_weather_data(all_weather)
     
@@ -223,11 +223,12 @@ def generate_random_number_with_entropy(verbose: bool = False) -> Tuple[float, s
     seed_string += local_noise.hex()
 
     # Hash robuste (SHA-256)
-    hashed_entropy = hashlib.sha256(seed_string.encode()).hexdigest()
-    seed = int(hashed_entropy[:16], 16)
+    hasher = hashlib.sha256(seed_string.encode())
+    hashed_entropy = hasher.hexdigest()
+    seed = int(hashed_entropy[:16], 16) # La graine de random.seed() est un int
     random.seed(seed)
     random_number = random.random()
-    log_info(f"Nombre aléatoire généré: {random_number}, Hachage d'entropie: {hashed_entropy}")
+    logger.info(f"Nombre aléatoire généré: {random_number}, Hachage d'entropie: {hashed_entropy}")
     return random_number, hashed_entropy
 
 
@@ -245,20 +246,19 @@ def get_final_entropy() -> Optional[bytes]:
         all_weather_data_raw = get_area_weather_data(config['coordinates'])
         weather_data_processed = combine_weather_data(all_weather_data_raw)
         if not weather_data_processed:
-            log_error("Erreur lors de la récupération ou combinaison des données météo.")
+            logger.error("Erreur lors de la récupération ou combinaison des données météo.")
             return None
 
         # 2. Simuler l'icosaèdre dynamique (via fonction Python locale)
-        # Import de get_icosahedron_animate est fait dans le scope global ou doit être localement ici.
-        # Pour éviter des imports circulaires si geometry_api importe app.py, on fait l'import ici.
-        from backend.geometry_api import get_icosahedron_animate # S'assurer que c'est une fonction utilitaire autonome
+        # Assurez-vous que get_icosahedron_animate est bien importé de geometry_api
+        from backend.geometry_api import get_icosahedron_animate # <-- Import ici pour assurer la disponibilité
         icosahedron_frames = get_icosahedron_animate(steps=10) # Ceci devrait retourner la liste des frames
         
         # Nous devons extraire une chaîne/bytes des frames pour l'entropie
         icosahedron_data_for_seed = json.dumps({"frames": icosahedron_frames}, sort_keys=True)
         
         if not icosahedron_frames: # ou icosahedron_data_for_seed si plus pertinent
-            log_error("Erreur lors de la simulation de l'icosaèdre ou données manquantes.")
+            logger.error("Erreur lors de la simulation de l'icosaèdre ou données manquantes.")
             return None
 
         # 3. Récupérer l'entropie quantique (API externe, ou son fallback interne)
@@ -273,14 +273,14 @@ def get_final_entropy() -> Optional[bytes]:
         seed_string += os.urandom(16).hex()
 
         # 5. Hacher la graine (BLAKE2b)
-        hasher = hashlib.blake2b(seed_string.encode(), digest_size=32) # Correction: digest_size, et pas de 'key='
+        hasher = hashlib.blake2b(seed_string.encode(), digest_size=32) # Correction: digest_size
         hashed_entropy = hasher.digest()
 
-        log_info("Entropie finale générée avec succès.")
+        logger.info("Entropie finale générée avec succès.")
         return hashed_entropy
 
     except Exception as e:
-        log_error(f"Erreur inattendue lors de la génération de l'entropie finale : {e}")
+        logger.error(f"Erreur inattendue lors de la génération de l'entropie finale : {e}")
         return None
 
 
@@ -316,8 +316,8 @@ def generate_random():
         # La route renvoie le token comme "random_number" et "entropy_seed" (format hex) pour le front-end.
         return jsonify({"random_number": token_result, "entropy_seed": entropy_seed_bytes.hex()})
     except Exception as e:
-        log_error(f"Erreur lors de la génération du nombre aléatoire : {e}")
-        return jsonify({"error": str(e)}), 500 # Renvoie l'erreur pour un meilleur diagnostic
+        logger.error(f"Erreur lors de la génération du nombre aléatoire : {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/entropy', methods=['GET'])
@@ -331,7 +331,7 @@ def entropy_route():
         else:
             return jsonify({"error": "Failed to retrieve combined weather data"}), 500
     except Exception as e:
-        log_error(f"Erreur lors de la récupération de l'entropie météo : {e}")
+        logger.error(f"Erreur lors de la récupération de l'entropie météo : {e}")
         return jsonify({"error": str(e)}), 500
 
 

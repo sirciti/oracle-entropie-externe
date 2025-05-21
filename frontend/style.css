@@ -12,11 +12,70 @@ body, html {
     height: 100vh;
 }
 
-.container {
+.main-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 800px; /* Limite la largeur du contenu principal */
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.navigation {
+    display: flex;
+    margin-bottom: 20px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.nav-button {
+    background-color: #bb86fc;
+    color: #121212;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin: 0 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.nav-button:hover {
+    background-color: #6200ee;
+    color: #e0e0e0;
+}
+
+.nav-button.active {
+    background-color: #03dac6;
+    color: #121212;
+    font-weight: bold;
+}
+
+.interface-section {
+    width: 100%;
     background-color: #1e1e1e;
     padding: 40px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.interface-section.hidden {
+    display: none;
+}
+
+/* Styles existants pour les éléments internes */
+.container {
+    /* Garder les styles existants si nécessaires, ou les fusionner avec .interface-section */
+    /* background-color: #1e1e1e; */ /* Déjà dans .interface-section */
+    padding: 0; /* Géré par .interface-section */
+    border-radius: 0; /* Géré par .interface-section */
+    box-shadow: none; /* Géré par .interface-section */
     text-align: center;
 }
 
@@ -61,7 +120,7 @@ body, html {
     align-items: center;
     width: 100%;
     height: 60vh; /* Ajuste selon la hauteur désirée */
-    margin: 0 auto;
+    margin: 20px auto 0 auto; /* Marge au-dessus */
     overflow: hidden;
 }
 
@@ -72,4 +131,68 @@ body, html {
     margin: auto;
     background: transparent;
     border-radius: 8px;
+}
+
+/* Style pour le conteneur de l'outil interne */
+.internal-tool-container {
+    background-color: #2a2a2a; /* Couleur de fond légèrement différente */
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    text-align: center;
+    max-width: 100%; /* S'adapte à la largeur du parent */
+    margin: 0 auto;
+    color: #e0e0e0;
+    box-sizing: border-box;
+}
+
+.internal-tool-container h2 {
+    color: #03dac6; /* Couleur d'accentuation */
+    margin-bottom: 25px;
+}
+
+.input-group, .output-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-group label, .output-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    color: #bb86fc;
+}
+
+.input-group input[type="number"],
+.output-group textarea {
+    width: calc(100% - 20px); /* Prend toute la largeur moins le padding */
+    padding: 10px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #333;
+    color: #e0e0e0;
+    font-size: 1em;
+    box-sizing: border-box; /* Inclut padding et border dans la largeur */
+}
+
+.output-group textarea {
+    resize: vertical; /* Permet le redimensionnement vertical */
+    min-height: 80px;
+    font-family: 'Courier New', Courier, monospace; /* Police monospace pour les tokens */
+}
+
+.generate-button.copy-button {
+    margin-top: 10px;
+    background-color: #03dac6; /* Couleur différente pour le bouton copier */
+    color: #121212;
+}
+
+.generate-button.copy-button:hover {
+    background-color: #018786;
+}
+
+#feedback-message {
+    font-size: 0.9rem;
+    margin-top: 10px;
+    color: #f44336; /* Couleur par défaut pour les erreurs */
 }

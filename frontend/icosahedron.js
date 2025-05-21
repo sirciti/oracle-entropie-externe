@@ -77,7 +77,7 @@ function animate() {
 }
 
 // Récupération des frames depuis l’API Flask
-fetch('/icosahedron/animate?steps=80')
+fetch('http://127.0.0.1:5000/icosahedron/animate?steps=80')
     .then(response => response.json())
     .then(data => {
         frames = data.frames;

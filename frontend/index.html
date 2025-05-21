@@ -7,14 +7,49 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1 class="title">Nombre Aléatoire Généré</h1>
-        <div id="random-number" class="random-value">--</div>
-        <button id="generate-button" class="generate-button">Générer</button>
-        <div id="entropy-data" class="entropy-data"></div>
+    <div class="main-wrapper">
+        <nav class="navigation">
+            <button id="nav-main" class="nav-button active">Générateur Aléatoire Classique</button>
+            <button id="nav-internal-tool" class="nav-button">Outil Interne de Sécurité</button>
+        </nav>
+
+        <div id="main-interface" class="interface-section">
+            <div class="container">
+                <h1 class="title">Nombre Aléatoire Généré</h1>
+                <div id="random-number" class="random-value">--</div>
+                <button id="generate-button" class="generate-button">Générer</button>
+                <div id="entropy-data" class="entropy-data"></div>
+            </div>
+            <div id="icosahedron-3d"></div>
+        </div>
+
+        <div id="internal-tool-interface" class="interface-section hidden">
+            <div class="internal-tool-container">
+                <h2 class="title">Générateur de Sécurité Interne</h2>
+                <div class="input-group">
+                    <label for="token-length">Longueur du Token/Mot de Passe (8-128) :</label>
+                    <input type="number" id="token-length" value="32" min="8" max="128" />
+                </div>
+                <div class="input-group">
+                    <label>Inclure :</label>
+                    <label><input type="checkbox" id="include-lowercase" checked /> Minuscules</label>
+                    <label><input type="checkbox" id="include-uppercase" checked /> Majuscules</label>
+                    <label><input type="checkbox" id="include-numbers" checked /> Chiffres</label>
+                    <label><input type="checkbox" id="include-symbols" checked /> Symboles</label>
+                </div>
+                <button id="generate-secure-button" class="generate-button" disabled>Générer Token Sécurisé</button>
+                <div class="output-group">
+                    <label for="generated-token">Token Généré :</label>
+                    <textarea id="generated-token" readonly rows="3"></textarea>
+                    <button id="copy-token-button" class="generate-button copy-button" disabled>Copier</button>
+                </div>
+                <div id="feedback-message" role="alert" aria-live="polite"></div>
+            </div>
+        </div>
     </div>
-    <div id="icosahedron-3d"></div>
+    
     <script type="module" src="icosahedron.js"></script>
     <script type="module" src="script.js"></script>
-</body>
+    <script type="module" src="internal_tool.js"></script>
+    <script type="module" src="navigation.js"></script> </body>
 </html>
