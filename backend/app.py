@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, send_from_directory, current_app, request
 from logging.handlers import RotatingFileHandler
+from flask_cors import CORS
 import requests
 import time
 import hashlib
@@ -11,7 +12,12 @@ import secrets
 import string
 from typing import List, Dict, Optional, Tuple, Any
 
+# --- NOUVEAUX IMPORTS ---
+from backend.geometry_api import geometry_api, get_icosahedron_animate
+from backend.temporal_entropy import get_world_timestamps, mix_timestamps # <-- NOUVEL IMPORT
+
 app = Flask(__name__)
+CORS(app) # Initialize CORS with your app
 
 # -------------------- CONFIGURATION --------------------
 
@@ -186,8 +192,6 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
     Retourne une valeur du PRNG de secours car l'API est instable.
     """
     logger.warning("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
-    # On utilise hashlib pour le PRNG de secours, donc pas besoin de la boucle sur QRNG_APIS pour ce fallback.
-    # La variable QRNG_APIS n'est plus utilisée dans cette fonction, mais est définie globalement.
     fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random() # Retourne une valeur du PRNG de secours
@@ -243,12 +247,10 @@ def get_final_entropy() -> Optional[bytes]:
         all_weather_data_raw = get_area_weather_data(config['coordinates'])
         weather_data_processed = combine_weather_data(all_weather_data_raw)
         if not weather_data_processed:
-            logger.error("Erreur lors de la récupération ou combinaison des données météo.")
+            logger.error("Erreur lors de la récupération ou de la combinaison des données météo.")
             return None
 
         # 2. Simuler l'icosaèdre dynamique (via fonction Python locale)
-        # Import de get_icosahedron_animate est fait dans le scope global ou doit être localement ici.
-        # Pour éviter des imports circulaires si geometry_api importe app.py, on fait l'import ici.
         from backend.geometry_api import get_icosahedron_animate # S'assurer que c'est une fonction utilitaire autonome
         icosahedron_frames = get_icosahedron_animate(steps=10) # Ceci devrait retourner la liste des frames
         
@@ -262,12 +264,22 @@ def get_final_entropy() -> Optional[bytes]:
         # 3. Récupérer l'entropie quantique (API externe, ou son fallback interne)
         quantum_entropy_value = get_quantum_entropy() 
 
+        # --- NOUVELLE SOURCE: ENTROPIE TEMPORELLE MONDIALE ---
+        timestamps_list = get_world_timestamps() # Récupérer les timestamps mondiaux
+        mixed_timestamps_string = mix_timestamps(timestamps_list, mode='hybrid') # Mélanger
+        # Assurez-vous que mixed_timestamps_string n'est pas vide
+        if not mixed_timestamps_string:
+            logger.warning("Aucune entropie temporelle mondiale générée.")
+            
         # 4. Combiner toutes les sources d'entropie
         seed_string = str(time.time_ns())
         seed_string += json.dumps(weather_data_processed, sort_keys=True)
         seed_string += icosahedron_data_for_seed
         if quantum_entropy_value is not None:
             seed_string += str(quantum_entropy_value)
+        
+        seed_string += mixed_timestamps_string # Ajouter la nouvelle source d'entropie temporelle
+        
         seed_string += os.urandom(16).hex()
 
         # 5. Hacher la graine (BLAKE2b)
@@ -284,11 +296,6 @@ def get_final_entropy() -> Optional[bytes]:
 
 def generate_secure_token(entropy_seed: bytes, length: int = 32) -> str:
     """Génère un jeton cryptographiquement sûr à partir d'une graine d'entropie."""
-    # L'entropy_seed est déjà un haché BLAKE2b de 32 octets.
-    # Nous utilisons simplement secrets.token_hex qui s'appuie sur l'entropie du système d'exploitation.
-    # La contribution de notre chaîne d'entropie mixée est indirecte, via le système d'exploitation.
-    # Pour influencer directement la génération du token avec notre 'entropy_seed',
-    # un KDF plus sophistiqué comme HKDF serait utilisé ici.
     token = secrets.token_hex(length)
     return token
 
@@ -311,7 +318,6 @@ def generate_random():
             return jsonify({"error": "Failed to generate final entropy"}), 500
 
         token_result = generate_secure_token(entropy_seed_bytes, length=32)
-        # La route renvoie le token comme "random_number" et "entropy_seed" (format hex) pour le front-end.
         return jsonify({"random_number": token_result, "entropy_seed": entropy_seed_bytes.hex()})
     except Exception as e:
         logger.error(f"Erreur lors de la génération du nombre aléatoire : {e}")
@@ -350,7 +356,7 @@ def generate_token():
     length = request.args.get('length', default=32, type=int)
     include_lower = request.args.get('lowercase', default='true').lower() == 'true'
     include_upper = request.args.get('uppercase', default='true').lower() == 'true'
-    include_numbers = request.args.get('numbers', default='true').lower() == 'true' # Sera toujours true du front-end
+    include_numbers = request.args.get('numbers', default='true').lower() == 'true'
     include_symbols = request.args.get('symbols', default='true').lower() == 'true'
 
     # Validation côté serveur (sécurité essentielle)
@@ -364,7 +370,7 @@ def generate_token():
         charset += string.ascii_lowercase
     if include_upper:
         charset += string.ascii_uppercase
-    if include_numbers: # Chiffres sont obligatoires
+    if include_numbers:
         charset += string.digits
     if include_symbols:
         charset += '!@#$%^&*()-_=+[]{}|;:,.<>?' # Liste de symboles courants
