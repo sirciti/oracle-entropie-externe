@@ -174,3 +174,6 @@ cython_debug/
 .pypirc
 node_modules/
 .vite/
+
+# Ignorer les résultats des tests Playwright
+test-results/
