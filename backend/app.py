@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, send_from_directory, current_app, request
 from logging.handlers import RotatingFileHandler
-from flask_cors import CORS
 import requests
 import time
 import hashlib
@@ -11,8 +10,7 @@ import logging
 import secrets
 import string
 from typing import List, Dict, Optional, Tuple, Any
-
-# --- NOUVEAUX IMPORTS ---
+from flask_cors import CORS
 from backend.geometry_api import geometry_api, get_icosahedron_animate
 from backend.temporal_entropy import get_world_timestamps, mix_timestamps # <-- NOUVEL IMPORT
 
@@ -192,6 +190,8 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
     Retourne une valeur du PRNG de secours car l'API est instable.
     """
     logger.warning("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
+    # On utilise hashlib pour le PRNG de secours, donc pas besoin de la boucle sur QRNG_APIS pour ce fallback.
+    # La variable QRNG_APIS n'est plus utilisée dans cette fonction, mais est définie globalement.
     fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random() # Retourne une valeur du PRNG de secours
@@ -251,6 +251,7 @@ def get_final_entropy() -> Optional[bytes]:
             return None
 
         # 2. Simuler l'icosaèdre dynamique (via fonction Python locale)
+        # Assurez-vous que get_icosahedron_animate est bien importé de geometry_api
         from backend.geometry_api import get_icosahedron_animate # S'assurer que c'est une fonction utilitaire autonome
         icosahedron_frames = get_icosahedron_animate(steps=10) # Ceci devrait retourner la liste des frames
         
@@ -325,11 +326,11 @@ def generate_random():
 
 
 @app.route('/entropy', methods=['GET'])
-def entropy_route():
+def entropy_route(): # Renommer pour éviter le conflit avec la fonction utilitaire entropy()
     """API endpoint to get the combined weather data (for debugging or optional use)."""
     try:
-        all_weather = get_area_weather_data(config['coordinates'])
-        combined_weather = combine_weather_data(all_data)
+        all_weather_data_from_get_area = get_area_weather_data(config['coordinates']) # <-- Correction ici
+        combined_weather = combine_weather_data(all_weather_data_from_get_area) # <-- Et ici
         if combined_weather:
             return jsonify(combined_weather)
         else:
