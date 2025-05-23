@@ -1,8 +1,8 @@
-from flask import Flask, jsonify, send_from_directory, current_app
+from flask import Flask, jsonify, send_from_directory, current_app, request
 from logging.handlers import RotatingFileHandler
 import requests
 import time
-import hashlib # <-- ASSUREZ-VOUS QUE CETTE LIGNE EST BIEN ICI
+import hashlib
 import random
 import json
 import os
@@ -10,11 +10,8 @@ import logging
 import secrets
 import string
 from typing import List, Dict, Optional, Tuple, Any
-from flask_cors import CORS # Import pour CORS
-from backend.geometry_api import geometry_api, get_icosahedron_animate # Import du Blueprint et de la fonction utilitaire
 
 app = Flask(__name__)
-CORS(app) # Initialise CORS pour l'application Flask
 
 # -------------------- CONFIGURATION --------------------
 
@@ -31,8 +28,6 @@ ANU_QRNG_API_URL = os.getenv("ANU_QRNG_API_URL",
                             "https://qrng.anu.edu.au/API/jsonI.php?length=1&type=uint8")
 
 # Pour le fallback du PRNG si d'autres sources échouent ou sont désactivées.
-# Ces variables sont définies ici pour être accessibles globalement.
-QRNG_APIS = [{"url": ANU_QRNG_API_URL, "name": "ANU QRNG"}]
 FALLBACK_PRNG_SEED_LENGTH = 256 # Longueur en bits pour le PRNG de secours
 
 # Logging configuration
@@ -132,10 +127,10 @@ def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]
         }
         return current_data
     except requests.exceptions.RequestException as e:
-        logger.error(f"Erreur lors de la récupération des données météo pour {lat}, {lon} : {e}")
+        log_error(f"Erreur lors de la récupération des données météo pour {lat}, {lon} : {e}")
         return None  # Important: Return None on error
     except Exception as e:
-        logger.error(f"Erreur inattendue lors de la récupération des données météo pour {lat}, {lon} : {e}")
+        log_error(f"Erreur inattendue lors de la récupération des données météo pour {lat}, {lon} : {e}")
         return None
 
 
@@ -152,7 +147,7 @@ def get_area_weather_data(coordinates: List[Tuple[float, float]]) -> List[Option
 def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[Dict[str, Any]]:
     """Combine les données météo de plusieurs points."""
     if not all_data:
-        logger.error("Aucune donnée météo à combiner.")
+        log_error("Aucune donnée météo à combiner.")
         return None
     combined_data = {}
     temperatures = [d.get("temperature") for d in all_data if isinstance(d.get("temperature"), (int, float))]
@@ -181,7 +176,7 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
             combined_data["avg_precipitation"] = sum(precipitations) / len(precipitations)
         return combined_data
     except Exception as e:
-        logger.error(f"Erreur lors de la combinaison des données météo : {e}")
+        log_error(f"Erreur lors de la combinaison des données météo : {e}")
         return None
 
 
@@ -191,6 +186,8 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
     Retourne une valeur du PRNG de secours car l'API est instable.
     """
     logger.warning("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
+    # On utilise hashlib pour le PRNG de secours, donc pas besoin de la boucle sur QRNG_APIS pour ce fallback.
+    # La variable QRNG_APIS n'est plus utilisée dans cette fonction, mais est définie globalement.
     fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random() # Retourne une valeur du PRNG de secours
@@ -250,8 +247,9 @@ def get_final_entropy() -> Optional[bytes]:
             return None
 
         # 2. Simuler l'icosaèdre dynamique (via fonction Python locale)
-        # Assurez-vous que get_icosahedron_animate est bien importé de geometry_api
-        from backend.geometry_api import get_icosahedron_animate # <-- Import ici pour assurer la disponibilité
+        # Import de get_icosahedron_animate est fait dans le scope global ou doit être localement ici.
+        # Pour éviter des imports circulaires si geometry_api importe app.py, on fait l'import ici.
+        from backend.geometry_api import get_icosahedron_animate # S'assurer que c'est une fonction utilitaire autonome
         icosahedron_frames = get_icosahedron_animate(steps=10) # Ceci devrait retourner la liste des frames
         
         # Nous devons extraire une chaîne/bytes des frames pour l'entropie
@@ -273,7 +271,7 @@ def get_final_entropy() -> Optional[bytes]:
         seed_string += os.urandom(16).hex()
 
         # 5. Hacher la graine (BLAKE2b)
-        hasher = hashlib.blake2b(seed_string.encode(), digest_size=32) # Correction: digest_size
+        hasher = hashlib.blake2b(seed_string.encode(), digest_size=32)
         hashed_entropy = hasher.digest()
 
         logger.info("Entropie finale générée avec succès.")
@@ -325,7 +323,7 @@ def entropy_route():
     """API endpoint to get the combined weather data (for debugging or optional use)."""
     try:
         all_weather = get_area_weather_data(config['coordinates'])
-        combined_weather = combine_weather_data(all_weather)
+        combined_weather = combine_weather_data(all_data)
         if combined_weather:
             return jsonify(combined_weather)
         else:
@@ -348,12 +346,52 @@ def final_entropy():
 @app.route('/generate_token', methods=['GET'])
 def generate_token():
     """API endpoint to generate a secure token."""
-    entropy_seed_bytes = get_final_entropy()
-    if entropy_seed_bytes:
-        token = generate_secure_token(entropy_seed_bytes)
+    # Récupère les paramètres de composition depuis la requête GET
+    length = request.args.get('length', default=32, type=int)
+    include_lower = request.args.get('lowercase', default='true').lower() == 'true'
+    include_upper = request.args.get('uppercase', default='true').lower() == 'true'
+    include_numbers = request.args.get('numbers', default='true').lower() == 'true' # Sera toujours true du front-end
+    include_symbols = request.args.get('symbols', default='true').lower() == 'true'
+
+    # Validation côté serveur (sécurité essentielle)
+    if length < 8 or length > 128:
+        logger.error(f"Tentative de génération de token avec longueur invalide: {length}")
+        return jsonify({"error": "Longueur invalide (8-128)"}), 400
+    
+    # Construire le jeu de caractères basé sur les options
+    charset = ''
+    if include_lower:
+        charset += string.ascii_lowercase
+    if include_upper:
+        charset += string.ascii_uppercase
+    if include_numbers: # Chiffres sont obligatoires
+        charset += string.digits
+    if include_symbols:
+        charset += '!@#$%^&*()-_=+[]{}|;:,.<>?' # Liste de symboles courants
+
+    # S'assurer qu'au moins un type de caractère est sélectionné
+    if not charset: 
+        logger.error("Jeu de caractères vide après sélection des options.")
+        return jsonify({"error": "Au moins un type de caractère doit être sélectionné"}), 400
+
+    try:
+        # Générer l'entropie finale
+        entropy_seed_bytes = get_final_entropy()
+        if not entropy_seed_bytes:
+            logger.error("Échec de la récupération de l'entropie pour la génération de token.")
+            return jsonify({"error": "Échec de la génération d'entropie"}), 500
+
+        # Générer le token caractère par caractère en utilisant secrets.choice
+        # Cela assure que chaque caractère est choisi de manière cryptographiquement sûre.
+        token = ''.join(secrets.choice(charset) for _ in range(length))
+        
+        logger.info(f"Token généré avec succès de longueur {length} et composition: "
+                    f"Minuscules={include_lower}, Majuscules={include_upper}, "
+                    f"Chiffres={include_numbers}, Symboles={include_symbols}.")
         return jsonify({"token": token})
-    else:
-        return jsonify({"error": "Failed to generate secure token"}), 500
+    except Exception as e:
+        logger.error(f"Erreur lors de la génération du token : {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/')

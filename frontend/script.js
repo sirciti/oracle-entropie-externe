@@ -1,35 +1,9 @@
+// frontend/script.js
+
 document.addEventListener('DOMContentLoaded', () => {
     const randomNumberDisplay = document.getElementById('random-number');
     const generateButton = document.getElementById('generate-button');
     const entropyDataDisplay = document.getElementById('entropy-data');
-    const mainInterfaceSection = document.getElementById('main-interface'); // La section que ce script gère
-
-    // --- Gestion du redimensionnement du canvas Three.js ---
-    // Cette fonction est appelée ici car script.js est le point d'entrée principal du front-end.
-    // Elle est également appelée par icosahedron.js
-    function resizeCanvasToContainer() {
-        const canvas = document.querySelector('#icosahedron-3d canvas');
-        const container = document.getElementById('icosahedron-3d');
-
-        if (canvas && container) {
-            canvas.style.width = '100%';
-            canvas.style.height = '100%';
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-        }
-    }
-
-    window.addEventListener('resize', resizeCanvasToContainer);
-    const resizeInterval = setInterval(resizeCanvasToContainer, 500);
-
-    function stopResizeIntervalIfReady() {
-        const canvas = document.querySelector('#icosahedron-3d canvas');
-        if (canvas) {
-            clearInterval(resizeInterval);
-        }
-    }
-    setInterval(stopResizeIntervalIfReady, 1000);
-
 
     // --- Gestion du bouton de génération de nombre aléatoire (interface classique) ---
     if (generateButton && randomNumberDisplay) {
@@ -39,17 +13,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 entropyDataDisplay.textContent = '';
             }
 
-            fetch('http://127.0.0.1:5000/generate_random')
+            fetch('http://127.0.0.1:5000/generate_random') // URL absolue vers le backend Flask
                 .then(response => {
                     if (!response.ok) {
+                        // Si la réponse HTTP n'est pas OK, lever une erreur avec le statut
                         throw new Error(`Erreur HTTP! Statut: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
+                    // Vérifier que data.random_number est une chaîne non vide
                     if (data && typeof data.random_number === 'string' && data.random_number.length > 0) {
                         randomNumberDisplay.textContent = data.random_number;
                     } else {
+                        // Afficher une erreur plus spécifique si la donnée est invalide ou manquante
                         randomNumberDisplay.textContent = 'Erreur données invalides';
                         console.error('Données aléatoires inattendues ou manquantes:', data);
                     }
@@ -58,8 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 })
                 .catch(error => {
+                    // Gérer les erreurs survenues pendant le fetch ou le traitement de la réponse
                     console.error('Erreur lors de la génération du nombre aléatoire:', error);
-                    randomNumberDisplay.textContent = 'Erreur';
+                    // S'assurer que le message d'erreur est bien affiché
+                    if (randomNumberDisplay) randomNumberDisplay.textContent = 'Erreur'; 
                     if (entropyDataDisplay) entropyDataDisplay.textContent = '';
                 });
         });
