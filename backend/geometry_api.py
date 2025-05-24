@@ -1,3 +1,5 @@
+# backend/geometry_api.py
+
 from flask import Blueprint, jsonify, request
 import numpy as np
 from typing import Tuple, Optional, List, Dict, Any
@@ -6,24 +8,29 @@ import json
 # --- IMPORTS DES MODULES DE GÉOMÉTRIE (NOUVELLE ARBORESCENCE) ---
 # Icosaèdre
 from .geometry.icosahedron.generator import generate_icosahedron # Générateur d'icosaèdre
-from .geometry.icosahedron.dynamics import update_vertices as update_icosahedron_vertices # Renomme pour éviter le conflit
+from .geometry.icosahedron.dynamics import update_icosahedron_dynamics # Dynamique de l'icosaèdre
+
 # Pyramides
 from .geometry.pyramids.generator import generate_pyramids_system
 from .geometry.pyramids.dynamics import update_pyramids_dynamics
 
 # --- IMPORTS DES FONCTIONS GÉOMÉTRIQUES COMMUNES ---
-from .geometry.common import subdivide_faces # Pour la subdivision de l'icosaèdre si elle est toujours utilisée via route
+# 'subdivide_faces' et 'rotation_matrix' sont nécessaires ici si des routes les utilisent directement
+# 'compute_vertex_neighbors' est utilisé par icosahedron_dynamics.py, donc pas besoin ici directement
+from .geometry.common import subdivide_faces, rotation_matrix # subdivision_faces est utilisée par generate_klee_penrose_polyhedron
 
 geometry_api = Blueprint('geometry_api', __name__)
 
-# Paramètres par défaut pour la dynamique
+# Paramètres par défaut pour la dynamique (partagés par les deux géométries si applicable)
 DEFAULT_PARAMS = {
     'sigma': 10.0,
     'epsilon': 0.3,
     'rho': 28.0,
     'zeta': 2.1,
     'dt': 0.01,
-    'steps': 10  # nombre d’étapes temporelles à simuler
+    'steps': 10,  # nombre d’étapes temporelles à simuler
+    'chaos_factor': 0.05, # <-- Correction ajoutée
+    'noise_level': 0.1 # <-- Correction ajoutée
 }
 
 def parse_float_list(s: str) -> Optional[List[float]]:
@@ -112,7 +119,7 @@ def get_subdivided_icosahedron():
 
     try:
         vertices, faces = generate_icosahedron(radius, position, rotation_axis, rotation_angle)
-        new_vertices, new_faces = subdivide_faces(vertices, faces) # Utilise subdivide_faces de common.py
+        new_vertices, new_faces = subdivide_faces(vertices, faces) # Utilise subdivide_faces de .geometry.common
         return jsonify({
             'vertices': new_vertices.tolist(),
             'faces': new_faces.tolist()
@@ -175,7 +182,7 @@ def animate_icosahedron():
         # Simulation temporelle
         frames = []
         for _ in range(steps):
-            vertices, phi = update_icosahedron_dynamics(vertices, faces, phi, dt, params) # Utilisez le nom renommé
+            vertices, phi = update_icosahedron_dynamics(vertices, faces, phi, dt, params) # Appel à la dynamique de l'icosaèdre
             frames.append({
                 'vertices': vertices.tolist(),
                 'faces': faces.tolist()
@@ -261,7 +268,7 @@ def animate_pyramids():
         pyramids_system = generate_pyramids_system(base_size, num_layers, brick_size)
         
         frames = []
-        current_system_state = pyramids_system # L'état du système évolue
+        current_system_state = pyramids_system
         
         for _ in range(steps):
             current_system_state = update_pyramids_dynamics(current_system_state, time_step, chaos_factor, noise_level)

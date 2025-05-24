@@ -12,15 +12,14 @@ import string
 from typing import List, Dict, Optional, Tuple, Any
 from flask_cors import CORS
 
-# --- NOUVEAUX IMPORTS DES MODULES ORGANISÉS ---
-from backend.geometry_api import geometry_api # Import du Blueprint Flask pour la géométrie
-# Importe la fonction utilitaire get_icosahedron_animate depuis geometry_api pour l'appel direct
-from backend.geometry_api import get_icosahedron_animate # <-- NOUVEL IMPORT CIBLE
-
-from backend.temporal_entropy import get_world_timestamps, mix_timestamps # Importe les fonctions d'entropie temporelle
+# --- IMPORTS DES MODULES ORGANISÉS ---
+from backend.geometry_api import geometry_api, get_icosahedron_animate # <-- get_icosahedron_animate est importé ici
+from backend.temporal_entropy import get_world_timestamps, mix_timestamps
+from backend.entropy_oracle import generate_quantum_geometric_entropy
 
 app = Flask(__name__)
-CORS(app) # Initialize CORS with your app
+# IMPORTANT: CORS(app) doit être appelé après la création de l'application 'app'
+CORS(app) # Initialise CORS pour l'application Flask
 
 # -------------------- CONFIGURATION --------------------
 
@@ -33,6 +32,7 @@ DEFAULT_COORDINATES = [
     [48.8, 1.7]
 ]
 
+# L'API ANU QRNG est désactivée pour la stabilité, mais la variable est gardée en cas de besoin futur.
 ANU_QRNG_API_URL = os.getenv("ANU_QRNG_API_URL",
                             "https://qrng.anu.edu.au/API/jsonI.php?length=1&type=uint8")
 
@@ -178,7 +178,7 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
         if humidities:
             combined_data["avg_humidity"] = sum(humidities) / len(humidities)
         if pressures:
-            combined_data["avg_pressure"] = sum(pressures) / len(pressures)
+            combined_data["avg_pressure"] = sum(pressures) / len(presumed_parameters)
         if clouds:
             combined_data["avg_clouds"] = sum(clouds) / len(clouds)
         if precipitations:
@@ -195,8 +195,6 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
     Retourne une valeur du PRNG de secours car l'API est instable.
     """
     logger.warning("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
-    # On utilise hashlib pour le PRNG de secours, donc pas besoin de la boucle sur QRNG_APIS pour ce fallback.
-    # La variable QRNG_APIS n'est plus utilisée dans cette fonction, mais est définie globalement.
     fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random() # Retourne une valeur du PRNG de secours
