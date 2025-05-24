@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory, current_app, request
+from flask import Flask, jsonify, send_from_directory, request
 from logging.handlers import RotatingFileHandler
 import requests
 import time
@@ -11,8 +11,13 @@ import secrets
 import string
 from typing import List, Dict, Optional, Tuple, Any
 from flask_cors import CORS
-from backend.geometry_api import geometry_api, get_icosahedron_animate
-from backend.temporal_entropy import get_world_timestamps, mix_timestamps # <-- NOUVEL IMPORT
+
+# --- NOUVEAUX IMPORTS DES MODULES ORGANISÉS ---
+from backend.geometry_api import geometry_api # Import du Blueprint Flask pour la géométrie
+# Importe la fonction utilitaire get_icosahedron_animate depuis geometry_api pour l'appel direct
+from backend.geometry_api import get_icosahedron_animate # <-- NOUVEL IMPORT CIBLE
+
+from backend.temporal_entropy import get_world_timestamps, mix_timestamps # Importe les fonctions d'entropie temporelle
 
 app = Flask(__name__)
 CORS(app) # Initialize CORS with your app
@@ -326,11 +331,11 @@ def generate_random():
 
 
 @app.route('/entropy', methods=['GET'])
-def entropy_route(): # Renommer pour éviter le conflit avec la fonction utilitaire entropy()
+def entropy_route():
     """API endpoint to get the combined weather data (for debugging or optional use)."""
     try:
-        all_weather_data_from_get_area = get_area_weather_data(config['coordinates']) # <-- Correction ici
-        combined_weather = combine_weather_data(all_weather_data_from_get_area) # <-- Et ici
+        all_weather_data_from_get_area = get_area_weather_data(config['coordinates'])
+        combined_weather = combine_weather_data(all_weather_data_from_get_area)
         if combined_weather:
             return jsonify(combined_weather)
         else:

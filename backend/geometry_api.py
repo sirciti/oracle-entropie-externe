@@ -1,9 +1,18 @@
 from flask import Blueprint, jsonify, request
 import numpy as np
 from typing import Tuple, Optional, List, Dict, Any
-from .geometry import generate_icosahedron, subdivide_faces
-from .icosahedron_dynamics import update_vertices
 import json
+
+# --- IMPORTS DES MODULES DE GÉOMÉTRIE (NOUVELLE ARBORESCENCE) ---
+# Icosaèdre
+from .geometry.icosahedron.generator import generate_icosahedron # Générateur d'icosaèdre
+from .geometry.icosahedron.dynamics import update_vertices as update_icosahedron_vertices # Renomme pour éviter le conflit
+# Pyramides
+from .geometry.pyramids.generator import generate_pyramids_system
+from .geometry.pyramids.dynamics import update_pyramids_dynamics
+
+# --- IMPORTS DES FONCTIONS GÉOMÉTRIQUES COMMUNES ---
+from .geometry.common import subdivide_faces # Pour la subdivision de l'icosaèdre si elle est toujours utilisée via route
 
 geometry_api = Blueprint('geometry_api', __name__)
 
@@ -26,6 +35,10 @@ def parse_float_list(s: str) -> Optional[List[float]]:
         return None
     except (json.JSONDecodeError, TypeError):
         return None
+
+# ----------------------------------------------------------------------
+# ROUTES POUR L'ICOSAÈDRE
+# ----------------------------------------------------------------------
 
 @geometry_api.route('/icosahedron/initial', methods=['GET'])
 def get_initial_icosahedron():
@@ -99,13 +112,14 @@ def get_subdivided_icosahedron():
 
     try:
         vertices, faces = generate_icosahedron(radius, position, rotation_axis, rotation_angle)
-        new_vertices, new_faces = subdivide_faces(vertices, faces)
+        new_vertices, new_faces = subdivide_faces(vertices, faces) # Utilise subdivide_faces de common.py
         return jsonify({
             'vertices': new_vertices.tolist(),
             'faces': new_faces.tolist()
         })
     except Exception as e:
         return jsonify({'error': f'Erreur lors de la subdivision de l\'icosaèdre : {e}'}), 500
+
 
 @geometry_api.route('/icosahedron/animate', methods=['GET'])
 def animate_icosahedron():
@@ -161,7 +175,7 @@ def animate_icosahedron():
         # Simulation temporelle
         frames = []
         for _ in range(steps):
-            vertices, phi = update_vertices(vertices, faces, phi, dt, params)
+            vertices, phi = update_icosahedron_dynamics(vertices, faces, phi, dt, params) # Utilisez le nom renommé
             frames.append({
                 'vertices': vertices.tolist(),
                 'faces': faces.tolist()
@@ -171,14 +185,13 @@ def animate_icosahedron():
     except Exception as e:
         return jsonify({'error': f'Erreur lors de l\'animation de l\'icosaèdre : {e}'}), 500
 
-# --------- Fonction utilitaire pour l'entropie finale ---------
-
+# --------- Fonction utilitaire pour l'entropie finale (Icosaèdre) ---------
+# Cette fonction est appelée par app.py pour l'entropie finale
 def get_icosahedron_animate(steps=10, radius=1.0, position=None, rotation_axis=None, rotation_angle=0.0,
                             dt=0.01, sigma=10.0, epsilon=0.3, rho=28.0, zeta=2.1):
     """
     Fonction utilitaire pour générer les frames d'animation de l'icosaèdre (sans passer par Flask).
     """
-    import numpy as np
     if position is None:
         position = np.zeros(3)
     if rotation_axis is None:
@@ -188,9 +201,81 @@ def get_icosahedron_animate(steps=10, radius=1.0, position=None, rotation_axis=N
     phi = np.random.normal(scale=0.01, size=len(vertices))
     frames = []
     for _ in range(steps):
-        vertices, phi = update_vertices(vertices, faces, phi, dt, params)
+        vertices, phi = update_icosahedron_dynamics(vertices, faces, phi, dt, params) # Utilisez le nom renommé
         frames.append({
             'vertices': vertices.tolist(),
             'faces': faces.tolist()
         })
     return frames
+
+# ----------------------------------------------------------------------
+# ROUTES POUR LES PYRAMIDES (NOUVELLES)
+# ----------------------------------------------------------------------
+
+@geometry_api.route('/pyramids/initial', methods=['GET'])
+def get_initial_pyramids():
+    """
+    Génère et renvoie les données du système de pyramides initial.
+
+    Paramètres GET optionnels :
+        base_size (float): Taille de la base carrée (côté).
+        num_layers (int): Nombre de couches de briques par pyramide.
+        brick_size (float): Taille d'une brique (côté).
+    Returns:
+        JSON contenant le système de pyramides.
+    """
+    base_size = float(request.args.get('base_size', 5.0))
+    num_layers = int(request.args.get('num_layers', 3))
+    brick_size = float(request.args.get('brick_size', 1.0))
+    
+    try:
+        pyramids_system = generate_pyramids_system(base_size, num_layers, brick_size)
+        return jsonify(pyramids_system)
+    except Exception as e:
+        return jsonify({'error': f'Erreur lors de la génération des pyramides : {e}'}), 500
+
+@geometry_api.route('/pyramids/animate', methods=['GET'])
+def animate_pyramids():
+    """
+    Simule la dynamique temporelle sur le système de pyramides.
+
+    Paramètres GET optionnels :
+        base_size, num_layers, brick_size (pour la génération initiale)
+        time_step, chaos_factor, noise_level, steps (pour la dynamique)
+    Returns:
+        JSON contenant une liste de frames de l'évolution des pyramides.
+    """
+    # Paramètres de génération
+    base_size = float(request.args.get('base_size', 5.0))
+    num_layers = int(request.args.get('num_layers', 3))
+    brick_size = float(request.args.get('brick_size', 1.0))
+
+    # Paramètres de dynamique
+    time_step = float(request.args.get('time_step', DEFAULT_PARAMS['dt']))
+    chaos_factor = float(request.args.get('chaos_factor', DEFAULT_PARAMS['chaos_factor']))
+    noise_level = float(request.args.get('noise_level', DEFAULT_PARAMS['noise_level']))
+    steps = int(request.args.get('steps', DEFAULT_PARAMS['steps']))
+
+    try:
+        # Générer le système de pyramides initial
+        pyramids_system = generate_pyramids_system(base_size, num_layers, brick_size)
+        
+        frames = []
+        current_system_state = pyramids_system # L'état du système évolue
+        
+        for _ in range(steps):
+            current_system_state = update_pyramids_dynamics(current_system_state, time_step, chaos_factor, noise_level)
+            
+            # Ajouter une "frame" des données pertinentes pour la visualisation
+            # Pour l'instant, on renvoie une représentation simple des briques
+            frame_data = {
+                "pyramids": [
+                    {"id": p["id"], "bricks_positions": [b["position"] for b in p["bricks"]]}
+                    for p in current_system_state["pyramids"]
+                ]
+            }
+            frames.append(frame_data)
+            
+        return jsonify({'frames': frames})
+    except Exception as e:
+        return jsonify({'error': f'Erreur lors de l\'animation des pyramides : {e}'}), 500
