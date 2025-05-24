@@ -29,8 +29,8 @@ DEFAULT_PARAMS = {
     'zeta': 2.1,
     'dt': 0.01,
     'steps': 10,  # nombre d’étapes temporelles à simuler
-    'chaos_factor': 0.05, # <-- Correction ajoutée
-    'noise_level': 0.1 # <-- Correction ajoutée
+    'chaos_factor': 0.05, # Ajouté pour la dynamique des pyramides
+    'noise_level': 0.1 # Ajouté pour la dynamique des pyramides
 }
 
 def parse_float_list(s: str) -> Optional[List[float]]:
@@ -134,16 +134,7 @@ def animate_icosahedron():
     Simule la dynamique temporelle sur l’icosaèdre.
 
     Paramètres GET optionnels :
-        radius: Rayon de l'icosaèdre (float, par défaut 1.0).
-        position: Position du centre (liste de 3 floats, par défaut [0.0, 0.0, 0.0]).
-        rotation_axis: Axe de rotation (liste de 3 floats, par défaut [0.0, 1.0, 0.0]).
-        rotation_angle: Angle de rotation en radians (float, par défaut 0.0).
-        dt: Pas de temps (float, par défaut 0.01).
-        steps: Nombre d’étapes temporelles à simuler (int, par défaut 10).
-        sigma: Paramètre sigma (float, par défaut 10.0).
-        epsilon: Paramètre epsilon (float, par défaut 0.3).
-        rho: Paramètre rho (float, par défaut 28.0).
-        zeta: Paramètre zeta (float, par défaut 2.1).
+        radius, position, rotation_axis, rotation_angle, dt, steps, sigma, epsilon, rho, zeta
 
     Returns:
         JSON contenant une liste de frames, chaque frame contenant les sommets et les faces de l'icosaèdre.

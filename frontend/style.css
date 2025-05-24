@@ -138,6 +138,15 @@ body, html {
     border-radius: 8px;
 }
 
+#pyramids-visualizer canvas {
+    display: block !important;
+    width: 800px !important;
+    height: 600px !important;
+    background: #222 !important;
+    opacity: 1 !important;
+    z-index: 1000 !important;
+}
+
 .internal-tool-container {
     color: #e0e0e0;
 }

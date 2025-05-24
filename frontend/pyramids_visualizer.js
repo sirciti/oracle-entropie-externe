@@ -2,21 +2,25 @@
 
 import * as THREE from 'https://unpkg.com/three@0.154.0/build/three.module.js';
 
-let scene, camera, renderer, pyramidsGroup; // Ces variables doivent être globales au module
+let scene = null; // Initialiser à null pour le contrôle de l'état
+let camera = null;
+let renderer = null;
+let pyramidsGroup = null; // Groupe pour contenir les pyramides et les animer
+
 let frames = [];
 let currentFrame = 0;
-let animationId; // Pour stocker l'ID de requestAnimationFrame et pouvoir l'annuler
+let animationId = null; // Pour stocker l'ID de requestAnimationFrame et pouvoir l'annuler
 
 // Fonction d'initialisation de la scène Three.js pour les pyramides
-function initPyramidsVisualizer(containerId) {
+export function initPyramidsVisualizer(containerId) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error(`Conteneur #${containerId} non trouvé pour le visualiseur de pyramides.`);
         return { start: () => {}, stop: () => {}, resize: () => {} }; // Retourne des fonctions vides
     }
 
-    // --- Nettoyage et Réinitialisation de la Scène Three.js ---
-    // Annule l'animation précédente si elle existe
+    // --- Nettoyage et Réinitialisation de la Scène Three.js existante ---
+    // Annule l'animation précédente si elle était en cours
     if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
@@ -27,32 +31,38 @@ function initPyramidsVisualizer(containerId) {
         container.removeChild(container.firstChild);
     }
     
-    // Nettoyer les objets de la scène précédente si elle existe
+    // Nettoyer les objets de la scène précédente pour libérer la mémoire Three.js
     if (scene) {
         scene.traverse(function(object) {
             if (object instanceof THREE.Mesh) {
-                object.geometry.dispose();
-                object.material.dispose();
+                if (object.geometry) object.geometry.dispose();
+                if (object.material) {
+                    // Si le matériau est un tableau de matériaux
+                    if (Array.isArray(object.material)) {
+                        object.material.forEach(material => material.dispose());
+                    } else {
+                        object.material.dispose();
+                    }
+                }
             }
         });
         while (scene.children.length > 0) {
             scene.remove(scene.children[0]);
         }
-        scene = null; // Réinitialiser la variable de scène
     }
     // Nettoyer le renderer aussi
     if (renderer) {
         renderer.dispose();
         renderer = null;
     }
-    // Nettoyer la caméra
-    if (camera) {
-        camera = null;
-    }
+    // Réinitialiser les variables globales
+    scene = null;
+    camera = null;
+    pyramidsGroup = null;
 
 
-    // --- Recréation de la Scène, Caméra, Renderer ---
-    const newCanvas = document.createElement('canvas'); // Créer un nouveau canvas pour la nouvelle scène
+    // --- Recréation de la Scène, Caméra, Renderer pour la nouvelle visualisation ---
+    const newCanvas = document.createElement('canvas'); // Créer un nouveau canvas pour cette scène
     container.appendChild(newCanvas);
 
     scene = new THREE.Scene();
@@ -64,14 +74,15 @@ function initPyramidsVisualizer(containerId) {
         0.1,
         1000
     );
-    camera.position.set(0, 10, 30); // Ajuster la position de la caméra pour voir les pyramides entières
+    camera.position.set(0, 10, 30); // Positionner la caméra pour voir les pyramides entières
     camera.lookAt(0, 0, 0); // Regarder le centre
 
     renderer = new THREE.WebGLRenderer({ canvas: newCanvas, antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight, false);
+    renderer.setSize(container.clientWidth, container.clientHeight, false); // false = ne modifie pas le style CSS du canvas
 
     // Lumières
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
@@ -79,12 +90,12 @@ function initPyramidsVisualizer(containerId) {
     pyramidsGroup = new THREE.Group(); // Groupe pour contenir toutes les briques des pyramides
     scene.add(pyramidsGroup);
 
-    // Initialisation de l'écouteur de redimensionnement (pour la nouvelle instance de visualiseur)
+    // --- Gestion du Redimensionnement pour cette scène ---
     const onWindowResize = () => {
         if (container && renderer && camera) { // S'assurer que tous les objets sont initialisés
             const width = container.clientWidth;
             const height = container.clientHeight;
-            if (width === 0 || height === 0) return;
+            if (width === 0 || height === 0) return; // Éviter les divisions par zéro
 
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
@@ -92,10 +103,8 @@ function initPyramidsVisualizer(containerId) {
             renderer.render(scene, camera); // Rendu après redimensionnement
         }
     };
-    // S'assurer qu'un seul écouteur de redimensionnement est actif pour Three.js
-    window.removeEventListener('resize', onWindowResize);
+    window.removeEventListener('resize', onWindowResize); // S'assurer qu'un seul écouteur est actif
     window.addEventListener('resize', onWindowResize);
-
 
     // --- Charger les données d'animation des pyramides depuis le back-end ---
     // Les paramètres base_size, num_layers, brick_size sont importants pour la taille des briques
@@ -144,7 +153,12 @@ function initPyramidsVisualizer(containerId) {
                     const child = pyramidsGroup.children[0];
                     if (child instanceof THREE.Mesh) {
                         child.geometry.dispose();
-                        child.material.dispose();
+                        // Gérer les matériaux simples ou multiples
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(material => material.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
                     }
                     pyramidsGroup.remove(child);
                 }
@@ -161,12 +175,16 @@ function updatePyramidsGeometry(frame) {
         return;
     }
 
-    // Nettoyer le groupe avant d'ajouter les nouvelles briques
+    // Nettoyer le groupe avant d'ajouter les nouvelles briques (pour chaque frame)
     while (pyramidsGroup.children.length > 0) {
         const child = pyramidsGroup.children[0];
         if (child instanceof THREE.Mesh) {
-            child.geometry.dispose();
-            child.material.dispose();
+            child.geometry.dispose(); 
+            if (Array.isArray(child.material)) {
+                child.material.forEach(material => material.dispose());
+            } else {
+                child.material.dispose();
+            }
         }
         pyramidsGroup.remove(child);
     }
@@ -177,10 +195,10 @@ function updatePyramidsGeometry(frame) {
         return;
     }
 
-    // Les briques sont de taille 1.0 par défaut, assurez-vous que cela correspond à votre backend
-    // Si le backend génère des briques de taille différente, vous devrez passer cette taille.
-    // Pour l'instant, on lit la taille de la première brique de la première pyramide, si disponible
-    const defaultBrickSize = frame.pyramids[0] && frame.pyramids[0].bricks && frame.pyramids[0].bricks[0] && frame.pyramids[0].bricks[0].size !== undefined ? frame.pyramids[0].bricks[0].size : 1.0;
+    // Les briques sont de taille 1.0 par défaut dans le backend generate_pyramids_system
+    // Si la taille est passée par le backend, on peut l'utiliser, sinon une taille par défaut visible.
+    // On va chercher la taille de la brique dans la première brique de la première pyramide de la frame
+    const defaultBrickSize = (frame.pyramids[0] && frame.pyramids[0].bricks && frame.pyramids[0].bricks[0] && frame.pyramids[0].bricks[0].size !== undefined) ? frame.pyramids[0].bricks[0].size : 1.0;
 
 
     frame.pyramids.forEach(pyramidData => {
@@ -191,20 +209,21 @@ function updatePyramidsGeometry(frame) {
         
         pyramidData.bricks_positions.forEach(pos => {
             const brickGeometry = new THREE.BoxGeometry(defaultBrickSize, defaultBrickSize, defaultBrickSize); 
-            const brickMaterial = new THREE.MeshPhongMaterial({ color: 0x00c0ff }); // Couleur des briques
+            // La couleur peut aussi venir du backend (pyramidData.bricks[idx].color)
+            const brickMaterial = new THREE.MeshPhongMaterial({ color: 0x00c0ff }); 
             const brick = new THREE.Mesh(brickGeometry, brickMaterial);
             brick.position.set(pos[0], pos[1], pos[2]);
             pyramidsGroup.add(brick);
         });
     });
 
-    // Optionnel: ajuster la position du groupe pour centrer les pyramides
-    // Si les pyramides ne sont pas centrées au fur et à mesure de l'animation
-    pyramidsGroup.position.set(0, 0, 0); // Réinitialiser ou ajuster la position globale
+    // Ajuster la position du groupe pour centrer les pyramides dans la vue
+    // C'est un ajustement visuel pour le rendu Three.js
+    pyramidsGroup.position.set(0, -defaultBrickSize * 1.5, 0); // Décaler un peu vers le bas pour mieux voir les deux pyramides
 }
 
 // Boucle d'animation pour les pyramides
-function animatePyramids() {
+function animatePyramids() { 
     animationId = requestAnimationFrame(animatePyramids);
 
     if (frames.length > 0) {
@@ -226,6 +245,3 @@ function animatePyramids() {
         renderer.render(scene, camera);
     }
 }
-
-// Exporte la fonction d'initialisation pour qu'elle puisse être appelée par navigation.js
-export { initPyramidsVisualizer };
