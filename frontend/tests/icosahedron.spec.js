@@ -1,3 +1,4 @@
+// @ts-check
 import { test, expect } from '@playwright/test';
 
 test.describe('Oracle d\'Entropie Front-End', () => {
@@ -11,7 +12,13 @@ test.describe('Oracle d\'Entropie Front-End', () => {
         // Attendre que le canvas 3D soit visible et qu'il ait une taille > 0
         const canvasLocator = page.locator('#icosahedron-3d canvas');
         await expect(canvasLocator).toBeVisible({ timeout: 15000 });
-        const canvasSize = await canvasLocator.evaluate(el => ({width: el.width, height: el.height}));
+        const canvasSize = await canvasLocator.evaluate(el => {
+            // Utilisation de instanceof pour vérifier le type d'élément en JavaScript
+            if (el instanceof HTMLCanvasElement) {
+                return { width: el.width, height: el.height };
+            }
+            return { width: 0, height: 0 }; // Fallback si ce n'est pas un canvas (ne devrait pas arriver avec ce sélecteur)
+        });
         expect(canvasSize.width).toBeGreaterThan(0);
         expect(canvasSize.height).toBeGreaterThan(0);
     });
@@ -115,7 +122,7 @@ test.describe('Oracle d\'Entropie Front-End', () => {
         await expect(feedbackMessage).toHaveText('Token généré avec succès.', { timeout: 5000 });
         
         // Utiliser .inputValue() pour lire le contenu de la textarea de manière fiable
-        const generatedTokenText = await generatedTokenDisplay.inputValue(); // <-- CORRECTION ICI
+        const generatedTokenText = await generatedTokenDisplay.inputValue(); 
         await expect(generatedTokenText).toMatch(/^[0-9a-zA-Z!@#$%^&*()-_=+\[\]{}|;:,.<>?'"`~]+$/); 
 
         // Tester une composition spécifique : minuscules et chiffres, longueur 10
@@ -131,7 +138,7 @@ test.describe('Oracle d\'Entropie Front-End', () => {
         // Vérifier le message de succès pour cette composition
         await expect(feedbackMessage).toHaveText('Token généré avec succès.', { timeout: 5000 });
 
-        const generatedTokenTextSpecific = await generatedTokenDisplay.inputValue(); // <-- CORRECTION ICI
+        const generatedTokenTextSpecific = await generatedTokenDisplay.inputValue(); 
         await expect(generatedTokenTextSpecific).toHaveLength(10);
         await expect(generatedTokenTextSpecific).toMatch(/^[0-9a-z]+$/); // Seulement minuscules et chiffres
 

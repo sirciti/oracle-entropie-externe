@@ -1,43 +1,39 @@
 // frontend/pyramids_visualizer.js
 
-import * as THREE from 'https://unpkg.com/three@0.154.0/build/three.module.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js';
 
-let scene = null; // Initialiser à null pour le contrôle de l'état
+let scene = null; 
 let camera = null;
 let renderer = null;
-let pyramidsGroup = null; // Groupe pour contenir les pyramides et les animer
+let pyramidsGroup = null; 
 
 let frames = [];
 let currentFrame = 0;
-let animationId = null; // Pour stocker l'ID de requestAnimationFrame et pouvoir l'annuler
+let animationId = null; 
 
 // Fonction d'initialisation de la scène Three.js pour les pyramides
 export function initPyramidsVisualizer(containerId) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error(`Conteneur #${containerId} non trouvé pour le visualiseur de pyramides.`);
-        return { start: () => {}, stop: () => {}, resize: () => {} }; // Retourne des fonctions vides
+        return { start: () => {}, stop: () => {}, resize: () => {} };
     }
 
     // --- Nettoyage et Réinitialisation de la Scène Three.js existante ---
-    // Annule l'animation précédente si elle était en cours
     if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
     }
 
-    // Nettoyer le conteneur HTML (retirer l'ancien canvas s'il y en a un)
     while (container.firstChild) {
         container.removeChild(container.firstChild);
     }
     
-    // Nettoyer les objets de la scène précédente pour libérer la mémoire Three.js
     if (scene) {
         scene.traverse(function(object) {
             if (object instanceof THREE.Mesh) {
                 if (object.geometry) object.geometry.dispose();
                 if (object.material) {
-                    // Si le matériau est un tableau de matériaux
                     if (Array.isArray(object.material)) {
                         object.material.forEach(material => material.dispose());
                     } else {
@@ -50,23 +46,21 @@ export function initPyramidsVisualizer(containerId) {
             scene.remove(scene.children[0]);
         }
     }
-    // Nettoyer le renderer aussi
     if (renderer) {
         renderer.dispose();
         renderer = null;
     }
-    // Réinitialiser les variables globales
     scene = null;
     camera = null;
     pyramidsGroup = null;
 
 
     // --- Recréation de la Scène, Caméra, Renderer pour la nouvelle visualisation ---
-    const newCanvas = document.createElement('canvas'); // Créer un nouveau canvas pour cette scène
+    const newCanvas = document.createElement('canvas'); 
     container.appendChild(newCanvas);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x181818); // Fond sombre
+    scene.background = new THREE.Color(0x181818); 
 
     camera = new THREE.PerspectiveCamera(
         60,
@@ -74,11 +68,12 @@ export function initPyramidsVisualizer(containerId) {
         0.1,
         1000
     );
-    camera.position.set(0, 10, 30); // Positionner la caméra pour voir les pyramides entières
-    camera.lookAt(0, 0, 0); // Regarder le centre
+    // Ajustement de la caméra: un peu plus loin sur Z, centré sur Y=0
+    camera.position.set(0, 0, 40); // Plus loin sur Z, centré sur Y=0
+    camera.lookAt(0, 0, 0); // Toujours regarder le centre
 
     renderer = new THREE.WebGLRenderer({ canvas: newCanvas, antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight, false); // false = ne modifie pas le style CSS du canvas
+    renderer.setSize(container.clientWidth, container.clientHeight, false);
 
     // Lumières
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
@@ -87,28 +82,27 @@ export function initPyramidsVisualizer(containerId) {
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
 
-    pyramidsGroup = new THREE.Group(); // Groupe pour contenir toutes les briques des pyramides
+    pyramidsGroup = new THREE.Group(); 
     scene.add(pyramidsGroup);
 
     // --- Gestion du Redimensionnement pour cette scène ---
     const onWindowResize = () => {
-        if (container && renderer && camera) { // S'assurer que tous les objets sont initialisés
+        if (container && renderer && camera) { 
             const width = container.clientWidth;
             const height = container.clientHeight;
-            if (width === 0 || height === 0) return; // Éviter les divisions par zéro
+            if (width === 0 || height === 0) return;
 
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
             renderer.setSize(width, height, false);
-            renderer.render(scene, camera); // Rendu après redimensionnement
+            renderer.render(scene, camera);
         }
     };
-    window.removeEventListener('resize', onWindowResize); // S'assurer qu'un seul écouteur est actif
+    window.removeEventListener('resize', onWindowResize); 
     window.addEventListener('resize', onWindowResize);
 
     // --- Charger les données d'animation des pyramides depuis le back-end ---
-    // Les paramètres base_size, num_layers, brick_size sont importants pour la taille des briques
-    fetch('http://127.0.0.1:5000/pyramids/animate?steps=80&base_size=5&num_layers=3&brick_size=1') 
+    fetch('http://127.0.0.1:5000/pyramids/animate?steps=80&base_size=10&num_layers=5&brick_size=2') 
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);
@@ -116,12 +110,16 @@ export function initPyramidsVisualizer(containerId) {
             return response.json();
         })
         .then(data => {
-            console.log("Données reçues pour les pyramides:", data); // POUR DÉBOGAGE
+            console.log("Données reçues pour les pyramides:", data); 
             frames = data.frames;
-            currentFrame = 0; // Réinitialiser la frame
+            currentFrame = 0; 
             if (frames.length > 0) {
-                updatePyramidsGeometry(frames[0]); // Initialiser avec la première frame
-                // L'animation sera démarrée par .start() si l'utilisateur clique sur le bouton ou la navigation
+                updatePyramidsGeometry(frames[0]); 
+
+                // --- RETIRER LE TEST CUBE ROUGE ICI ---
+                // Le cube rouge n'est plus nécessaire car nous savons que le rendu fonctionne.
+                // Si vous l'avez décommenté, veuillez le commenter à nouveau ou le supprimer.
+
             } else {
                 console.warn("Aucune frame d'animation reçue pour les pyramides.");
             }
@@ -133,13 +131,11 @@ export function initPyramidsVisualizer(containerId) {
             }
         });
 
-    // Retourne un objet avec des méthodes de contrôle (start, stop, resize)
     return {
         start: () => { 
             if (!animationId) { 
                 animatePyramids(); 
-                // Assurez-vous que le conteneur est visible et que le canvas est à jour
-                if (container) onWindowResize(); // Force un resize pour s'assurer que le canvas a la bonne taille
+                if (container) onWindowResize(); 
             } 
         },
         stop: () => { 
@@ -147,13 +143,11 @@ export function initPyramidsVisualizer(containerId) {
                 cancelAnimationFrame(animationId); 
                 animationId = null; 
             } 
-            // Vider les objets de la scène Three.js quand on arrête et cache
             if (pyramidsGroup) {
                  while (pyramidsGroup.children.length > 0) {
                     const child = pyramidsGroup.children[0];
                     if (child instanceof THREE.Mesh) {
                         child.geometry.dispose();
-                        // Gérer les matériaux simples ou multiples
                         if (Array.isArray(child.material)) {
                             child.material.forEach(material => material.dispose());
                         } else {
@@ -164,7 +158,7 @@ export function initPyramidsVisualizer(containerId) {
                 }
             }
         },
-        resize: () => { onWindowResize(); } // Expose la fonction de redimensionnement
+        resize: () => { onWindowResize(); } 
     };
 }
 
@@ -175,7 +169,6 @@ function updatePyramidsGeometry(frame) {
         return;
     }
 
-    // Nettoyer le groupe avant d'ajouter les nouvelles briques (pour chaque frame)
     while (pyramidsGroup.children.length > 0) {
         const child = pyramidsGroup.children[0];
         if (child instanceof THREE.Mesh) {
@@ -189,16 +182,17 @@ function updatePyramidsGeometry(frame) {
         pyramidsGroup.remove(child);
     }
 
-    // Assurez-vous que la structure de la frame est correcte
     if (!frame || !frame.pyramids || !Array.isArray(frame.pyramids)) {
         console.error("Format de frame invalide pour les pyramides:", frame);
         return;
     }
 
-    // Les briques sont de taille 1.0 par défaut dans le backend generate_pyramids_system
-    // Si la taille est passée par le backend, on peut l'utiliser, sinon une taille par défaut visible.
-    // On va chercher la taille de la brique dans la première brique de la première pyramide de la frame
-    const defaultBrickSize = (frame.pyramids[0] && frame.pyramids[0].bricks && frame.pyramids[0].bricks[0] && frame.pyramids[0].bricks[0].size !== undefined) ? frame.pyramids[0].bricks[0].size : 1.0;
+    const actualBrickSize = (frame.pyramids[0] && frame.pyramids[0].brick_size !== undefined) ? frame.pyramids[0].brick_size : 1.0;
+
+    // CORRECTION 5: Appliquer un facteur d'échelle au groupe entier pour rendre les pyramides plus visibles
+    // Cela les rendra plus grandes dans la scène.
+    const globalScaleFactor = 4; // Facteur à ajuster selon la visibilité désirée
+    pyramidsGroup.scale.set(globalScaleFactor, globalScaleFactor, globalScaleFactor);
 
 
     frame.pyramids.forEach(pyramidData => {
@@ -208,18 +202,22 @@ function updatePyramidsGeometry(frame) {
         }
         
         pyramidData.bricks_positions.forEach(pos => {
-            const brickGeometry = new THREE.BoxGeometry(defaultBrickSize, defaultBrickSize, defaultBrickSize); 
-            // La couleur peut aussi venir du backend (pyramidData.bricks[idx].color)
+            const brickGeometry = new THREE.BoxGeometry(actualBrickSize, actualBrickSize, actualBrickSize); 
             const brickMaterial = new THREE.MeshPhongMaterial({ color: 0x00c0ff }); 
             const brick = new THREE.Mesh(brickGeometry, brickMaterial);
-            brick.position.set(pos[0], pos[1], pos[2]);
+            // Les positions sont déjà dans l'échelle du système, pas besoin de les multiplier par globalScaleFactor ici
+            brick.position.set(pos[0], pos[1], pos[2]); 
             pyramidsGroup.add(brick);
         });
     });
 
-    // Ajuster la position du groupe pour centrer les pyramides dans la vue
-    // C'est un ajustement visuel pour le rendu Three.js
-    pyramidsGroup.position.set(0, -defaultBrickSize * 1.5, 0); // Décaler un peu vers le bas pour mieux voir les deux pyramides
+    // CORRECTION 6: Ajuster la position du groupe pour centrer les pyramides dans la vue
+    // Les pyramides sont générées autour de y=0. Un décalage vers le bas pour mieux voir les deux.
+    // Si la caméra est centrée sur Y=0, ce décalage n'est plus nécessaire.
+    // Mais avec un scale factor, il faut peut-être décaler le groupe pour le centrer dans la vue de la caméra.
+    // Si les pyramides sont centrées sur (0,0,0) dans le back-end, alors le groupe peut rester à (0,0,0)
+    // et la caméra doit être positionnée en conséquence.
+    pyramidsGroup.position.set(0, 0, 0); // Laisser le groupe à l'origine et ajuster la caméra si besoin
 }
 
 // Boucle d'animation pour les pyramides
@@ -235,13 +233,13 @@ function animatePyramids() {
         }
     }
 
-    // Rotation globale du groupe de pyramides (pour que le système bouge)
+    // Rotation globale du groupe de pyramides
     if (pyramidsGroup) {
         pyramidsGroup.rotation.x += 0.005;
         pyramidsGroup.rotation.y += 0.007;
     }
 
-    if (renderer && scene && camera) { // S'assurer que tout est initialisé avant de rendre
+    if (renderer && scene && camera) {
         renderer.render(scene, camera);
     }
 }

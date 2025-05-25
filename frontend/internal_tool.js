@@ -1,10 +1,12 @@
+// frontend/internal_tool.js
+
 document.addEventListener('DOMContentLoaded', () => {
     // Sélectionne la section de l'outil interne (qui contient tous les éléments)
     const internalToolInterfaceSection = document.getElementById('internal-tool-interface');
 
     // Vérifie si la section de l'outil interne existe
     if (internalToolInterfaceSection) {
-        // Sélectionne les éléments DANS la section de l'outil interne
+        // Sélectionne les éléments DANS la section de l'outil interne (maintenant dans index.html)
         const lengthInput = document.getElementById('token-length');
         const includeLower = document.getElementById('include-lowercase');
         const includeUpper = document.getElementById('include-uppercase');
@@ -118,6 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Un ou plusieurs éléments nécessaires pour l'outil interne n'ont pas été trouvés dans le DOM. Assurez-vous que #internal-tool-interface est visible et contient tous les IDs.");
         }
     } else {
+        // Ce log est très important, il indique que la section interne elle-même n'est pas trouvée.
+        // Cela signifie que navigation.js ne l'a pas affichée correctement ou que l'ID est faux dans HTML.
         console.error("La section 'Outil Interne de Sécurité' (#internal-tool-interface) n'a pas été trouvée.");
     }
 });

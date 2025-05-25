@@ -10,18 +10,15 @@ import logging
 import secrets
 import string
 from typing import List, Dict, Optional, Tuple, Any
+from flask_cors import CORS
 
 # --- NOUVEAUX IMPORTS DES MODULES ORGANISÉS ---
-from backend.geometry_api import geometry_api # Import du Blueprint Flask pour la géométrie
-# get_icosahedron_animate est défini et importé depuis geometry_api, pas directement depuis app.py
-from backend.geometry_api import get_icosahedron_animate 
-from backend.temporal_entropy import get_world_timestamps, mix_timestamps # Importe les fonctions d'entropie temporelle
-from backend.entropy_oracle import generate_quantum_geometric_entropy # Importe la nouvelle source d'entropie quantique-géométrique
+from backend.geometry_api import geometry_api, get_icosahedron_animate
+from backend.temporal_entropy import get_world_timestamps, mix_timestamps
+from backend.entropy_oracle import generate_quantum_geometric_entropy
 
 app = Flask(__name__)
-# IMPORTANT: CORS(app) doit être appelé après la création de l'application 'app'
-from flask_cors import CORS
-CORS(app) # Initialise CORS pour l'application Flask
+CORS(app) # Initialize CORS with your app
 
 # -------------------- CONFIGURATION --------------------
 
@@ -34,7 +31,6 @@ DEFAULT_COORDINATES = [
     [48.8, 1.7]
 ]
 
-# L'API ANU QRNG est désactivée pour la stabilité, mais la variable est gardée en cas de besoin futur.
 ANU_QRNG_API_URL = os.getenv("ANU_QRNG_API_URL",
                             "https://qrng.anu.edu.au/API/jsonI.php?length=1&type=uint8")
 
@@ -180,7 +176,7 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
         if humidities:
             combined_data["avg_humidity"] = sum(humidities) / len(humidities)
         if pressures:
-            combined_data["avg_pressure"] = sum(pressures) / len(pressures) # Correction de 'presumed_parameters'
+            combined_data["avg_pressure"] = sum(pressures) / len(pressures)
         if clouds:
             combined_data["avg_clouds"] = sum(clouds) / len(clouds)
         if precipitations:
@@ -197,8 +193,6 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
     Retourne une valeur du PRNG de secours car l'API est instable.
     """
     logger.warning("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
-    # On utilise hashlib pour le PRNG de secours, donc pas besoin de la boucle sur QRNG_APIS pour ce fallback.
-    # La variable QRNG_APIS n'est plus utilisée dans cette fonction, mais est définie globalement.
     fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random() # Retourne une valeur du PRNG de secours
@@ -258,8 +252,7 @@ def get_final_entropy() -> Optional[bytes]:
             return None
 
         # 2. Simuler l'icosaèdre dynamique (via fonction Python locale)
-        # Import de get_icosahedron_animate est déjà fait en haut de app.py
-        # Assurez-vous que c'est une fonction utilitaire autonome
+        from backend.geometry_api import get_icosahedron_animate # S'assurer que c'est une fonction utilitaire autonome
         icosahedron_frames = get_icosahedron_animate(steps=10) # Ceci devrait retourner la liste des frames
         
         # Nous devons extraire une chaîne/bytes des frames pour l'entropie
@@ -333,7 +326,7 @@ def generate_random():
 
 
 @app.route('/entropy', methods=['GET'])
-def entropy_route():
+def entropy_route(): # Renommer pour éviter le conflit avec la fonction utilitaire entropy()
     """API endpoint to get the combined weather data (for debugging or optional use)."""
     try:
         all_weather_data_from_get_area = get_area_weather_data(config['coordinates'])

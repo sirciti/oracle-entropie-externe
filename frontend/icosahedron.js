@@ -1,4 +1,6 @@
-import * as THREE from 'https://unpkg.com/three@0.154.0/build/three.module.js';
+// frontend/icosahedron.js
+
+import { THREE } from './three_utils.js'; 
 
 const container = document.getElementById('icosahedron-3d');
 const canvas = document.createElement('canvas'); // Create canvas dynamically

@@ -40,16 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sectionId === 'main-interface') {
             if (icosahedron3DContainer) icosahedron3DContainer.style.display = 'flex'; // Afficher la 3D
             if (!icosahedronVisualizer) {
-                icosahedronVisualizer = initIcosahedronVisualizer('icosahedron-3d');
+                icosahedronVisualizer = initIcosahedronVisualizer('icosahedron-3d'); // <-- Utilise l'ID correct
             }
             if (icosahedronVisualizer) icosahedronVisualizer.start(); // Démarrer l'animation
         } else if (sectionId === 'pyramids-interface') { // Nouvelle section pour les pyramides
-            // Assurez-vous que cette section existe dans index.html si elle n'est pas déjà là
-            // Si la section "pyramids-interface" n'existe pas, le code ne fonctionnera pas comme prévu.
-            // Pour l'instant, le conteneur 3D est partagé.
             if (icosahedron3DContainer) icosahedron3DContainer.style.display = 'flex'; // Afficher la 3D
             if (!pyramidsVisualizer) {
-                pyramidsVisualizer = initPyramidsVisualizer('pyramids-visualizer'); // Utilise le même conteneur 3D
+                pyramidsVisualizer = initPyramidsVisualizer('icosahedron-3d'); // <-- Utilise l'ID correct du conteneur partagé
             }
             if (pyramidsVisualizer) pyramidsVisualizer.start(); // Démarrer l'animation
         }
@@ -91,41 +88,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // Afficher la section principale par défaut au chargement
     showSection('main-interface');
 });
-
-// frontend/pyramids_visualizer.js
-
-export function initPyramidsVisualizer(containerId) {
-    console.log("initPyramidsVisualizer appelé avec", containerId);
-    // Ajoutez ici le code d'initialisation spécifique pour le visualiseur de pyramides
-    // Cela peut inclure la création de la scène, de la caméra, des lumières, etc.
-    // Assurez-vous d'utiliser le même conteneur que pour l'icosaèdre si c'est ce qui est voulu
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.error("Conteneur pour les pyramides non trouvé:", containerId);
-        return null;
-    }
-
-    // Exemple d'initialisation (à adapter selon vos besoins)
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(renderer.domElement);
-
-    // Ajoutez ici des objets 3D, des lumières, etc. à la scène
-
-    return {
-        start: () => {
-            // Démarrer l'animation ou le rendu ici
-            function animate() {
-                requestAnimationFrame(animate);
-                // Mettez à jour les objets 3D, la caméra, etc. ici
-                renderer.render(scene, camera);
-            }
-            animate();
-        },
-        stop: () => {
-            // Arrêter l'animation ou le rendu ici
-        }
-    };
-}
