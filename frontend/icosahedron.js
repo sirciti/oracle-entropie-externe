@@ -2,69 +2,126 @@
 
 import { THREE } from './three_utils.js'; 
 
-const container = document.getElementById('icosahedron-3d');
-const canvas = document.createElement('canvas'); // Create canvas dynamically
-
-let renderer, camera, scene, icosahedronMesh, frames = [], currentFrame = 0;
-let animationId; // Pour stocker l'ID de requestAnimationFrame et pouvoir l'annuler
+let scene = null; 
+let camera = null;
+let renderer = null;
+let icosahedronMesh = null; // Le mesh de l'icosaèdre
+let frames = [];
+let currentFrame = 0;
+let animationId = null; // Pour stocker l'ID de requestAnimationFrame et pouvoir l'annuler
 
 // Fonction d'initialisation de la scène Three.js pour l'icosaèdre
-function initIcosahedronVisualizer(containerId) {
-    const localContainer = document.getElementById(containerId); // Utiliser une variable locale pour le conteneur
-    if (!localContainer) {
-        console.error(`Conteneur #${containerId} non trouvé pour le visualiseur d'icosaèdre.`);
+// Elle est exportée pour être appelée par navigation.js
+export function initIcosahedronVisualizer(containerId) {
+    console.log("INIT ICOSA: 1. initIcosahedronVisualizer appelé avec containerId:", containerId);
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`INIT ICOSA ERROR: Conteneur #${containerId} non trouvé pour le visualiseur d'icosaèdre.`);
         return { start: () => {}, stop: () => {}, resize: () => {} };
     }
-
-    // Annule l'animation précédente si elle existe
+    
+    // --- Nettoyage et Réinitialisation de la Scène Three.js existante ---
+    // Annule l'animation précédente si elle était en cours
     if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
+        console.log("INIT ICOSA: 2. Animation précédente annulée.");
     }
 
-    // Nettoyer le conteneur et la scène pour une réinitialisation propre
-    while (localContainer.firstChild) {
-        localContainer.removeChild(localContainer.firstChild);
+    // Nettoyer le conteneur HTML (retirer l'ancien canvas s'il y en a un)
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
     }
-    // Nettoyer la scène des objets précédents si elle existe
-    if (scene) {
-        while (scene.children.length > 0) {
-            const child = scene.children[0];
-            if (child instanceof THREE.Mesh) {
-                child.geometry.dispose();
-                child.material.dispose();
-            }
-            scene.remove(child);
-        }
-        scene = null; // Réinitialiser la scène
-    }
+    console.log("INIT ICOSA: 3. Conteneur HTML nettoyé.");
     
-    // Recréer le canvas et l'ajouter au conteneur
-    const newCanvas = document.createElement('canvas');
-    localContainer.appendChild(newCanvas);
+    // Nettoyer les objets de la scène précédente pour libérer la mémoire Three.js
+    if (scene) {
+        console.log("INIT ICOSA: 4. Nettoyage objets scène existante.");
+        scene.traverse(function(object) {
+            if (object instanceof THREE.Mesh) {
+                if (object.geometry) object.geometry.dispose();
+                if (object.material) {
+                    if (Array.isArray(object.material)) {
+                        object.material.forEach(material => material.dispose());
+                    } else {
+                        object.material.dispose();
+                    }
+                }
+            }
+        });
+        while (scene.children.length > 0) {
+            scene.remove(scene.children[0]);
+        }
+    }
+    // Nettoyer le renderer aussi
+    if (renderer) {
+        console.log("INIT ICOSA: 5. Renderer existant disposé.");
+        renderer.dispose();
+        renderer = null;
+    }
+    // Réinitialiser les variables globales
+    scene = null;
+    camera = null;
+    icosahedronMesh = null; // S'assurer que le mesh est réinitialisé
+    console.log("INIT ICOSA: 6. Variables Three.js globales réinitialisées.");
+
+
+    // --- Recréation de la Scène, Caméra, Renderer ---
+    const newCanvas = document.createElement('canvas'); 
+    container.appendChild(newCanvas);
+    console.log("INIT ICOSA: 7. Nouveau canvas créé et ajouté au conteneur:", newCanvas);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x181818);
+    scene.background = new THREE.Color(0x181818); 
+    console.log("INIT ICOSA: 8. Scène créée avec fond.");
 
     camera = new THREE.PerspectiveCamera(
-        60,
-        localContainer.clientWidth / localContainer.clientHeight,
-        0.1,
-        1000
+        60, // FOV
+        container.clientWidth / container.clientHeight,
+        0.1, // Near clipping plane
+        1000 // Far clipping plane
     );
-    camera.position.z = 5;
+    camera.position.z = 5; // Positionner la caméra pour l'icosaèdre
+    camera.lookAt(0, 0, 0); 
+    console.log("INIT ICOSA: 9. Caméra créée et positionnée:", camera.position);
 
     renderer = new THREE.WebGLRenderer({ canvas: newCanvas, antialias: true });
-    renderer.setSize(localContainer.clientWidth, localContainer.clientHeight, false);
+    renderer.setSize(container.clientWidth, container.clientHeight, false);
+    console.log(`INIT ICOSA: 10. Renderer créé et dimensionné ${renderer.domElement.width}x${renderer.domElement.height}`);
 
     // Lumières
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
+    console.log("INIT ICOSA: 11. Lumières ajoutées.");
 
-    // Charger les données d'animation de l'icosaèdre
-    fetch('http://127.0.0.1:5000/icosahedron/animate?steps=80')
+    // --- Gestion du Redimensionnement ---
+    const onWindowResize = () => {
+        if (container && renderer && camera) { 
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            if (width === 0 || height === 0) {
+                console.warn("RESIZE ICOSA WARN: Conteneur a des dimensions zéro lors du resize.");
+                return;
+            }
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height, false);
+            renderer.render(scene, camera);
+            console.log(`RESIZE ICOSA: Renderer.render appelé avec taille ${width}x${height}.`);
+        } else {
+            console.warn("RESIZE ICOSA WARN: Resize appelé mais Three.js non prêt (container, renderer, ou camera null).");
+        }
+    };
+    window.removeEventListener('resize', onWindowResize); 
+    window.addEventListener('resize', onWindowResize);
+    onWindowResize(); // Appel initial pour s'assurer que la taille est correcte
+    console.log("INIT ICOSA: 12. Listeners de resize configurés et appel initial.");
+
+    // --- Charger les données d'animation de l'icosaèdre depuis le back-end ---
+    fetch('http://127.0.0.1:5000/icosahedron/animate?steps=80') 
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);
@@ -72,78 +129,92 @@ function initIcosahedronVisualizer(containerId) {
             return response.json();
         })
         .then(data => {
+            console.log("FETCH ICOSA SUCCESS: 13. Données reçues:", data); 
             frames = data.frames;
-            currentFrame = 0; // Réinitialiser la frame
+            currentFrame = 0; 
             if (frames.length > 0) {
-                updateIcosahedronGeometry(frames[0]); // Initialiser avec la première frame
+                updateIcosahedronGeometry(frames[0]); 
+                // L'animation sera démarrée par .start()
             } else {
-                console.warn("Aucune frame d'animation reçue pour l'icosaèdre.");
+                console.warn("FETCH ICOSA WARN: 14. Aucune frame d'animation reçue pour l'icosaèdre.");
             }
         })
         .catch(error => {
-            console.error('Erreur lors de la récupération des données d\'animation de l\'icosaèdre:', error);
-            if (localContainer) {
-                localContainer.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement 3D de l\'icosaèdre.</p>';
+            console.error('FETCH ICOSA ERROR: Erreur lors de la récupération des données d\'animation de l\'icosaèdre:', error);
+            if (container) {
+                container.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement 3D de l\'icosaèdre.</p>';
             }
         });
 
-    // Écouteur pour le redimensionnement de la fenêtre
-    const onWindowResize = () => {
-        if (localContainer && renderer && camera) {
-            const width = localContainer.clientWidth;
-            const height = localContainer.clientHeight;
-            if (width === 0 || height === 0) return;
-
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-            renderer.setSize(width, height, false);
-            renderer.render(scene, camera);
-        }
-    };
-    window.removeEventListener('resize', onWindowResize); // S'assurer qu'un seul écouteur est actif
-    window.addEventListener('resize', onWindowResize);
-
     return {
-        start: () => { if (!animationId) animateIcosahedron(); },
-        stop: () => { if (animationId) cancelAnimationFrame(animationId); animationId = null; },
-        resize: () => { onWindowResize(); }
+        start: () => { 
+            console.log("CONTROL ICOSA: 15. start() appelé. animationId:", animationId);
+            if (!animationId) { 
+                animateIcosahedron(); 
+                if (container) onWindowResize(); 
+            } 
+        },
+        stop: () => { 
+            console.log("CONTROL ICOSA: 16. stop() appelé. animationId:", animationId);
+            if (animationId) { 
+                cancelAnimationFrame(animationId); 
+                animationId = null; 
+            } 
+            // Vider les objets de la scène
+            if (icosahedronMesh) {
+                scene.remove(icosahedronMesh);
+                icosahedronMesh.geometry.dispose();
+                if (Array.isArray(icosahedronMesh.material)) {
+                    icosahedronMesh.material.forEach(material => material.dispose());
+                } else {
+                    icosahedronMesh.material.dispose();
+                }
+                icosahedronMesh = null;
+            }
+        },
+        resize: () => { console.log("CONTROL ICOSA: 17. resize() appelé."); onWindowResize(); } 
     };
 }
 
 // Fonction pour créer ou mettre à jour la géométrie de l'icosaèdre
 function updateIcosahedronGeometry(frame) {
-    if (!icosahedronMesh && scene) { // S'assurer que le mesh est créé une seule fois
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(frame.vertices.flat(), 3));
-        geometry.setIndex(frame.faces.flat());
-        geometry.computeVertexNormals();
-
-        const material = new THREE.MeshPhongMaterial({
-            color: 0x00c0ff,
-            flatShading: true,
-            wireframe: false,
-            shininess: 60
-        });
-        icosahedronMesh = new THREE.Mesh(geometry, material);
-
-        const wireframe = new THREE.Mesh(
-            geometry.clone(),
-            new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, opacity: 0.3, transparent: true })
-        );
-        icosahedronMesh.add(wireframe);
-        scene.add(icosahedronMesh);
-    } else if (icosahedronMesh) {
-        // Mettre à jour les attributs de position de la géométrie existante
+    console.log("UPDATE ICOSA: 18. updateIcosahedronGeometry appelée.");
+    // Nettoyage du mesh existant si on veut le recréer à chaque frame (pour l'icosaèdre, on met à jour)
+    if (icosahedronMesh) {
         icosahedronMesh.geometry.attributes.position.array = new Float32Array(frame.vertices.flat());
         icosahedronMesh.geometry.attributes.position.needsUpdate = true;
-        icosahedronMesh.geometry.setIndex(new THREE.Uint16BufferAttribute(frame.faces.flat(), 1)); // Mettre à jour les indices si les faces changent
+        // Si les faces changent, il faudrait aussi mettre à jour les indices:
+        // icosahedronMesh.geometry.setIndex(new THREE.Uint16BufferAttribute(frame.faces.flat(), 1));
         icosahedronMesh.geometry.computeVertexNormals();
+        return; // Sortir après la mise à jour
     }
+
+    // Création initiale du mesh de l'icosaèdre
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(frame.vertices.flat(), 3));
+    geometry.setIndex(new THREE.Uint16BufferAttribute(frame.faces.flat(), 1));
+    geometry.computeVertexNormals();
+
+    const material = new THREE.MeshPhongMaterial({
+        color: 0x00c0ff,
+        flatShading: true,
+        wireframe: false,
+        shininess: 60
+    });
+    icosahedronMesh = new THREE.Mesh(geometry, material);
+
+    const wireframe = new THREE.Mesh(
+        geometry.clone(),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, opacity: 0.3, transparent: true })
+    );
+    icosahedronMesh.add(wireframe);
+    scene.add(icosahedronMesh);
+    console.log("UPDATE ICOSA: 19. Icosaèdre mesh créé et ajouté à la scène.");
 }
 
 
 // Boucle d'animation pour l'icosaèdre
-function animateIcosahedron() { // Renommé pour éviter le conflit avec animate() général
+function animateIcosahedron() { 
     animationId = requestAnimationFrame(animateIcosahedron);
 
     if (frames.length > 0) {
@@ -155,7 +226,6 @@ function animateIcosahedron() { // Renommé pour éviter le conflit avec animate
         }
     }
 
-    // Rotation automatique
     if (icosahedronMesh) {
         icosahedronMesh.rotation.x += 0.01;
         icosahedronMesh.rotation.y += 0.012;
@@ -165,6 +235,3 @@ function animateIcosahedron() { // Renommé pour éviter le conflit avec animate
         renderer.render(scene, camera);
     }
 }
-
-// Exporte la fonction d'initialisation pour qu'elle puisse être appelée par navigation.js
-export { initIcosahedronVisualizer };

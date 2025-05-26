@@ -1,6 +1,7 @@
 // frontend/pyramids_visualizer.js
 
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js';
+import { THREE } from './three_utils.js'; 
+
 
 let scene = null; 
 let camera = null;
@@ -13,23 +14,28 @@ let animationId = null;
 
 // Fonction d'initialisation de la scène Three.js pour les pyramides
 export function initPyramidsVisualizer(containerId) {
+    console.log("INIT PYRA: 1. initPyramidsVisualizer appelé avec containerId:", containerId);
     const container = document.getElementById(containerId);
     if (!container) {
-        console.error(`Conteneur #${containerId} non trouvé pour le visualiseur de pyramides.`);
+        console.error(`INIT PYRA ERROR: Conteneur #${containerId} non trouvé pour le visualiseur de pyramides.`);
         return { start: () => {}, stop: () => {}, resize: () => {} };
     }
+    console.log("INIT PYRA: 2.1 Conteneur trouvé. ClientWidth:", container.clientWidth, "clientHeight:", container.clientHeight);
 
     // --- Nettoyage et Réinitialisation de la Scène Three.js existante ---
     if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
+        console.log("INIT PYRA: 3. Animation précédente annulée.");
     }
 
     while (container.firstChild) {
         container.removeChild(container.firstChild);
     }
+    console.log("INIT PYRA: 4. Conteneur HTML nettoyé.");
     
     if (scene) {
+        console.log("INIT PYRA: 5. Nettoyage objets scène existante.");
         scene.traverse(function(object) {
             if (object instanceof THREE.Mesh) {
                 if (object.geometry) object.geometry.dispose();
@@ -47,59 +53,74 @@ export function initPyramidsVisualizer(containerId) {
         }
     }
     if (renderer) {
+        console.log("INIT PYRA: 6. Renderer existant disposé.");
         renderer.dispose();
         renderer = null;
     }
     scene = null;
     camera = null;
     pyramidsGroup = null;
+    console.log("INIT PYRA: 7. Variables Three.js globales réinitialisées.");
 
 
-    // --- Recréation de la Scène, Caméra, Renderer pour la nouvelle visualisation ---
+    // --- Recréation de la Scène, Caméra, Renderer ---
     const newCanvas = document.createElement('canvas'); 
     container.appendChild(newCanvas);
+    console.log("INIT PYRA: 8. Nouveau canvas créé et ajouté au conteneur:", newCanvas);
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x181818); 
+    console.log("INIT PYRA: 9. Scène créée avec fond.");
 
     camera = new THREE.PerspectiveCamera(
-        60,
+        60, // FOV
         container.clientWidth / container.clientHeight,
-        0.1,
-        1000
+        0.1, // Near clipping plane
+        1000 // Far clipping plane
     );
-    // Ajustement de la caméra: un peu plus loin sur Z, centré sur Y=0
-    camera.position.set(0, 0, 40); // Plus loin sur Z, centré sur Y=0
-    camera.lookAt(0, 0, 0); // Toujours regarder le centre
+    // REGARD NEUF ET ULTIME VISIBILITÉ: Caméra très loin pour voir le système géant
+    camera.position.set(0, 0, 200); // TRES loin sur Z pour voir le système x10
+    camera.lookAt(0, 0, 0); 
+    console.log("INIT PYRA: 10. Caméra créée et positionnée:", camera.position);
 
     renderer = new THREE.WebGLRenderer({ canvas: newCanvas, antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight, false);
+    console.log(`INIT PYRA: 11. Renderer créé et dimensionné ${renderer.domElement.width}x${renderer.domElement.height}`);
 
-    // Lumières
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    // Lumières (rendues plus fortes pour le test ultime)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); 
     scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0); 
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
+    console.log("INIT PYRA: 12. Lumières ajoutées.");
 
     pyramidsGroup = new THREE.Group(); 
     scene.add(pyramidsGroup);
-
-    // --- Gestion du Redimensionnement pour cette scène ---
+    console.log("INIT PYRA: 13. pyramidsGroup créé et ajouté à la scène.");
+    
+    // --- Gestion du Redimensionnement ---
     const onWindowResize = () => {
         if (container && renderer && camera) { 
             const width = container.clientWidth;
             const height = container.clientHeight;
-            if (width === 0 || height === 0) return;
-
+            if (width === 0 || height === 0) {
+                console.warn("RESIZE PYRA WARN: Conteneur a des dimensions zéro lors du resize.");
+                return;
+            }
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
             renderer.setSize(width, height, false);
             renderer.render(scene, camera);
+            console.log(`RESIZE PYRA: Renderer.render appelé avec taille ${width}x${height}.`);
+        } else {
+            console.warn("RESIZE PYRA WARN: Resize appelé mais Three.js non prêt (container, renderer, ou camera null).");
         }
     };
     window.removeEventListener('resize', onWindowResize); 
     window.addEventListener('resize', onWindowResize);
+    onWindowResize(); // Appel initial pour s'assurer que la taille est correcte
+    console.log("INIT PYRA: 15. Listeners de resize configurés et appel initial.");
 
     // --- Charger les données d'animation des pyramides depuis le back-end ---
     fetch('http://127.0.0.1:5000/pyramids/animate?steps=80&base_size=10&num_layers=5&brick_size=2') 
@@ -110,22 +131,22 @@ export function initPyramidsVisualizer(containerId) {
             return response.json();
         })
         .then(data => {
-            console.log("Données reçues pour les pyramides:", data); 
+            console.log("FETCH PYRA SUCCESS: 16. Données reçues (fetch successful):", data); 
             frames = data.frames;
             currentFrame = 0; 
             if (frames.length > 0) {
                 updatePyramidsGeometry(frames[0]); 
-
-                // --- RETIRER LE TEST CUBE ROUGE ICI ---
-                // Le cube rouge n'est plus nécessaire car nous savons que le rendu fonctionne.
-                // Si vous l'avez décommenté, veuillez le commenter à nouveau ou le supprimer.
-
+                // Forcer un rendu initial après la première mise à jour
+                if (renderer && scene && camera) {
+                    renderer.render(scene, camera);
+                    console.log("FETCH PYRA SUCCESS: 18. Rendu forcé après updatePyramidsGeometry.");
+                }
             } else {
-                console.warn("Aucune frame d'animation reçue pour les pyramides.");
+                console.warn("FETCH PYRA SUCCESS WARN: 19. Aucune frame d'animation reçue pour les pyramides.");
             }
         })
         .catch(error => {
-            console.error('Erreur lors de la récupération des données d\'animation des pyramides:', error);
+            console.error('FETCH PYRA ERROR: Erreur lors de la récupération des données d\'animation des pyramides:', error);
             if (container) {
                 container.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement 3D des pyramides.</p>';
             }
@@ -133,12 +154,14 @@ export function initPyramidsVisualizer(containerId) {
 
     return {
         start: () => { 
+            console.log("CONTROL PYRA: 20. start() appelé. animationId:", animationId);
             if (!animationId) { 
                 animatePyramids(); 
                 if (container) onWindowResize(); 
             } 
         },
         stop: () => { 
+            console.log("CONTROL PYRA: 21. stop() appelé. animationId:", animationId);
             if (animationId) { 
                 cancelAnimationFrame(animationId); 
                 animationId = null; 
@@ -158,16 +181,18 @@ export function initPyramidsVisualizer(containerId) {
                 }
             }
         },
-        resize: () => { onWindowResize(); } 
+        resize: () => { console.log("CONTROL PYRA: 22. resize() appelé."); onWindowResize(); } 
     };
 }
 
 // Fonction pour mettre à jour la géométrie des pyramides pour une frame donnée
 function updatePyramidsGeometry(frame) {
+    console.log("UPDATE PYRA: 23. updatePyramidsGeometry appelée."); 
     if (!pyramidsGroup) {
-        console.error("pyramidsGroup non initialisé.");
+        console.error("UPDATE PYRA ERROR: 24. pyramidsGroup non initialisé dans updatePyramidsGeometry.");
         return;
     }
+    console.log("UPDATE PYRA: 25. pyramidsGroup contient", pyramidsGroup.children.length, "enfants avant nettoyage.");
 
     while (pyramidsGroup.children.length > 0) {
         const child = pyramidsGroup.children[0];
@@ -181,43 +206,43 @@ function updatePyramidsGeometry(frame) {
         }
         pyramidsGroup.remove(child);
     }
+    console.log("UPDATE PYRA: 26. pyramidsGroup nettoyé. Contient", pyramidsGroup.children.length, "enfants.");
 
     if (!frame || !frame.pyramids || !Array.isArray(frame.pyramids)) {
-        console.error("Format de frame invalide pour les pyramides:", frame);
+        console.error("UPDATE PYRA ERROR: 27. Format de frame invalide pour les pyramides:", frame);
         return;
     }
 
     const actualBrickSize = (frame.pyramids[0] && frame.pyramids[0].brick_size !== undefined) ? frame.pyramids[0].brick_size : 1.0;
+    console.log("UPDATE PYRA: 28. actualBrickSize:", actualBrickSize);
 
-    // CORRECTION 5: Appliquer un facteur d'échelle au groupe entier pour rendre les pyramides plus visibles
-    // Cela les rendra plus grandes dans la scène.
-    const globalScaleFactor = 4; // Facteur à ajuster selon la visibilité désirée
-    pyramidsGroup.scale.set(globalScaleFactor, globalScaleFactor, globalScaleFactor);
+    // TEST ULTIME DE VISIBILITÉ: Facteur d'échelle très élevé et matériau de base
+    const debugScaleFactor = 10; // Rendre les briques 10 fois plus grandes
+    const debugBrickMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Rouge vif
+    console.log("UPDATE PYRA: 29. Debug scale factor:", debugScaleFactor);
 
-
+    let bricksAddedCount = 0;
     frame.pyramids.forEach(pyramidData => {
         if (!pyramidData || !pyramidData.bricks_positions || !Array.isArray(pyramidData.bricks_positions)) {
-            console.warn("Données de pyramide ou de briques invalides dans la frame:", pyramidData);
+            console.warn("UPDATE PYRA WARN: 30. Données de pyramide ou de briques invalides dans la frame:", pyramidData);
             return;
         }
         
         pyramidData.bricks_positions.forEach(pos => {
-            const brickGeometry = new THREE.BoxGeometry(actualBrickSize, actualBrickSize, actualBrickSize); 
-            const brickMaterial = new THREE.MeshPhongMaterial({ color: 0x00c0ff }); 
-            const brick = new THREE.Mesh(brickGeometry, brickMaterial);
-            // Les positions sont déjà dans l'échelle du système, pas besoin de les multiplier par globalScaleFactor ici
-            brick.position.set(pos[0], pos[1], pos[2]); 
+            const brickGeometry = new THREE.BoxGeometry(actualBrickSize * debugScaleFactor, actualBrickSize * debugScaleFactor, actualBrickSize * debugScaleFactor); 
+            const brick = new THREE.Mesh(brickGeometry, debugBrickMaterial); // Utiliser le matériau de débogage
+            
+            // Les positions sont déjà dans l'échelle du système du back-end.
+            // On les scale aussi par le debugScaleFactor pour qu'elles restent proportionnelles
+            brick.position.set(pos[0] * debugScaleFactor, pos[1] * debugScaleFactor, pos[2] * debugScaleFactor); 
             pyramidsGroup.add(brick);
+            bricksAddedCount++;
         });
     });
-
-    // CORRECTION 6: Ajuster la position du groupe pour centrer les pyramides dans la vue
-    // Les pyramides sont générées autour de y=0. Un décalage vers le bas pour mieux voir les deux.
-    // Si la caméra est centrée sur Y=0, ce décalage n'est plus nécessaire.
-    // Mais avec un scale factor, il faut peut-être décaler le groupe pour le centrer dans la vue de la caméra.
-    // Si les pyramides sont centrées sur (0,0,0) dans le back-end, alors le groupe peut rester à (0,0,0)
-    // et la caméra doit être positionnée en conséquence.
-    pyramidsGroup.position.set(0, 0, 0); // Laisser le groupe à l'origine et ajuster la caméra si besoin
+    console.log("UPDATE PYRA: 31. Total briques ajoutées au groupe:", bricksAddedCount);
+    
+    pyramidsGroup.position.set(0, 0, 0); 
+    console.log("UPDATE PYRA: 32. pyramidsGroup position set à (0,0,0).");
 }
 
 // Boucle d'animation pour les pyramides
@@ -233,7 +258,6 @@ function animatePyramids() {
         }
     }
 
-    // Rotation globale du groupe de pyramides
     if (pyramidsGroup) {
         pyramidsGroup.rotation.x += 0.005;
         pyramidsGroup.rotation.y += 0.007;
