@@ -121,8 +121,7 @@ export function initIcosahedronVisualizer(containerId) {
     console.log("INIT ICOSA: 12. Listeners de resize configurés et appel initial.");
 
     // --- Charger les données d'animation de l'icosaèdre depuis le back-end ---
-    fetch('http://127.0.0.1:5000/icosahedron/animate?steps=80') 
-        .then(response => {
+    fetch('http://127.0.0.1:5000/geometry/icosahedron/animate?steps=80')        .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);
             }
