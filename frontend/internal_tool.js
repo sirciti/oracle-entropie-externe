@@ -1,21 +1,21 @@
 // frontend/internal_tool.js
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
     // Sélectionne la section de l'outil interne (qui contient tous les éléments)
-    const internalToolInterfaceSection = document.getElementById('internal-tool-interface');
+    const internalToolInterfaceSection = document.getElementById("internal-tool-interface");
 
     // Vérifie si la section de l'outil interne existe
     if (internalToolInterfaceSection) {
         // Sélectionne les éléments DANS la section de l'outil interne (maintenant dans index.html)
-        const lengthInput = document.getElementById('token-length');
-        const includeLower = document.getElementById('include-lowercase');
-        const includeUpper = document.getElementById('include-uppercase');
-        const includeNumbers = document.getElementById('include-numbers');
-        const includeSymbols = document.getElementById('include-symbols');
-        const generateSecureButton = document.getElementById('generate-secure-button');
-        const generatedTokenDisplay = document.getElementById('generated-token');
-        const copyTokenButton = document.getElementById('copy-token-button');
-        const feedback = document.getElementById('feedback-message');
+        const lengthInput = document.getElementById("token-length");
+        const includeLower = document.getElementById("include-lowercase");
+        const includeUpper = document.getElementById("include-uppercase");
+        const includeNumbers = document.getElementById("include-numbers");
+        const includeSymbols = document.getElementById("include-symbols");
+        const generateSecureButton = document.getElementById("generate-secure-button");
+        const generatedTokenDisplay = document.getElementById("generated-token");
+        const copyTokenButton = document.getElementById("copy-token-button");
+        const feedback = document.getElementById("feedback-message");
 
         // Vérifie que tous les éléments nécessaires pour cet outil sont présents
         if (lengthInput && includeLower && includeUpper && includeNumbers &&
@@ -28,34 +28,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 const charTypesSelected = [includeLower, includeUpper, includeNumbers, includeSymbols].filter(cb => cb.checked).length;
 
                 if (isNaN(length) || length < 8 || length > 128) {
-                    feedback.textContent = 'La longueur doit être comprise entre 8 et 128.';
-                    feedback.style.color = '#f44336';
+                    feedback.textContent = "La longueur doit être comprise entre 8 et 128.";
+                    feedback.style.color = "#f44336";
                     generateSecureButton.disabled = true;
                     copyTokenButton.disabled = true;
                     return false;
                 }
                 if (charTypesSelected === 0) {
-                    feedback.textContent = 'Veuillez sélectionner au moins un type de caractère.';
-                    feedback.style.color = '#f44336';
+                    feedback.textContent = "Veuillez sélectionner au moins un type de caractère.";
+                    feedback.style.color = "#f44336";
                     generateSecureButton.disabled = true;
                     copyTokenButton.disabled = true;
                     return false;
                 }
-                feedback.textContent = '';
+                feedback.textContent = "";
                 generateSecureButton.disabled = false;
                 return true;
             }
 
             // Ajoute les écouteurs d'événements pour la validation en temps réel
             [lengthInput, includeLower, includeUpper, includeNumbers, includeSymbols].forEach(el =>
-                el.addEventListener('input', validateInput)
+                el.addEventListener("input", validateInput)
             );
 
             // Validation initiale au chargement de l'interface
             validateInput();
 
             // Gère le bouton de génération sécurisée
-            generateSecureButton.addEventListener('click', () => {
+            generateSecureButton.addEventListener("click", () => {
                 if (!validateInput()) return;
 
                 const length = parseInt(lengthInput.value, 10);
@@ -67,9 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     symbols: includeSymbols.checked
                 });
 
-                generatedTokenDisplay.value = 'Génération en cours...';
+                generatedTokenDisplay.value = "Génération en cours...";
                 copyTokenButton.disabled = true;
-                feedback.textContent = '';
+                feedback.textContent = "";
 
                 fetch(`http://127.0.0.1:5000/generate_token?${params.toString()}`)
                     .then(response => {
@@ -79,38 +79,38 @@ document.addEventListener('DOMContentLoaded', () => {
                         return response.json();
                     })
                     .then(data => {
-                        if (data && typeof data.token === 'string' && data.token.length > 0) {
+                        if (data && typeof data.token === "string" && data.token.length > 0) {
                             generatedTokenDisplay.value = data.token;
                             copyTokenButton.disabled = false;
-                            feedback.textContent = 'Token généré avec succès.';
-                            feedback.style.color = 'green';
+                            feedback.textContent = "Token généré avec succès.";
+                            feedback.style.color = "green";
                         } else {
-                            generatedTokenDisplay.value = '';
-                            feedback.textContent = 'Erreur : token non reçu ou invalide.';
-                            feedback.style.color = '#f44336';
+                            generatedTokenDisplay.value = "";
+                            feedback.textContent = "Erreur : token non reçu ou invalide.";
+                            feedback.style.color = "#f44336";
                             copyTokenButton.disabled = true;
                         }
                     })
                     .catch(error => {
-                        console.error('Erreur lors de la génération du token sécurisé:', error);
-                        generatedTokenDisplay.value = '';
+                        console.error("Erreur lors de la génération du token sécurisé:", error);
+                        generatedTokenDisplay.value = "";
                         feedback.textContent = `Erreur lors de la génération : ${error.message}`;
-                        feedback.style.color = '#f44336';
+                        feedback.style.color = "#f44336";
                         copyTokenButton.disabled = true;
                     });
             });
 
             // Gère le bouton de copie
-            copyTokenButton.addEventListener('click', () => {
+            copyTokenButton.addEventListener("click", () => {
                 generatedTokenDisplay.select();
                 try {
-                    document.execCommand('copy');
-                    feedback.textContent = 'Token copié dans le presse-papiers !';
-                    feedback.style.color = 'green';
+                    document.execCommand("copy");
+                    feedback.textContent = "Token copié dans le presse-papiers !";
+                    feedback.style.color = "green";
                 } catch (err) {
-                    console.error('Erreur lors de la copie:', err);
-                    feedback.textContent = 'Échec de la copie. Veuillez copier manuellement.';
-                    feedback.style.color = '#f44336';
+                    console.error("Erreur lors de la copie:", err);
+                    feedback.textContent = "Échec de la copie. Veuillez copier manuellement.";
+                    feedback.style.color = "#f44336";
                 }
             });
 

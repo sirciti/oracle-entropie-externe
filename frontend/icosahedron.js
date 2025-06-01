@@ -1,6 +1,6 @@
 // frontend/icosahedron.js
 
-import { THREE } from './three_utils.js'; 
+import { THREE } from "./three_utils.js"; 
 
 let scene = null; 
 let camera = null;
@@ -67,7 +67,7 @@ export function initIcosahedronVisualizer(containerId) {
 
 
     // --- Recréation de la Scène, Caméra, Renderer ---
-    const newCanvas = document.createElement('canvas'); 
+    const newCanvas = document.createElement("canvas"); 
     container.appendChild(newCanvas);
     console.log("INIT ICOSA: 7. Nouveau canvas créé et ajouté au conteneur:", newCanvas);
 
@@ -115,13 +115,13 @@ export function initIcosahedronVisualizer(containerId) {
             console.warn("RESIZE ICOSA WARN: Resize appelé mais Three.js non prêt (container, renderer, ou camera null).");
         }
     };
-    window.removeEventListener('resize', onWindowResize); 
-    window.addEventListener('resize', onWindowResize);
+    window.removeEventListener("resize", onWindowResize); 
+    window.addEventListener("resize", onWindowResize);
     onWindowResize(); // Appel initial pour s'assurer que la taille est correcte
     console.log("INIT ICOSA: 12. Listeners de resize configurés et appel initial.");
 
     // --- Charger les données d'animation de l'icosaèdre depuis le back-end ---
-    fetch('http://127.0.0.1:5000/geometry/icosahedron/animate?steps=80')        .then(response => {
+    fetch("http://127.0.0.1:5000/geometry/icosahedron/animate?steps=80")        .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);
             }
@@ -139,9 +139,9 @@ export function initIcosahedronVisualizer(containerId) {
             }
         })
         .catch(error => {
-            console.error('FETCH ICOSA ERROR: Erreur lors de la récupération des données d\'animation de l\'icosaèdre:', error);
+            console.error("FETCH ICOSA ERROR: Erreur lors de la récupération des données d'animation de l'icosaèdre:", error);
             if (container) {
-                container.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement 3D de l\'icosaèdre.</p>';
+                container.innerHTML = "<p style=\"color: red; text-align: center;\">Erreur de chargement 3D de l'icosaèdre.</p>";
             }
         });
 
@@ -190,7 +190,7 @@ function updateIcosahedronGeometry(frame) {
 
     // Création initiale du mesh de l'icosaèdre
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(frame.vertices.flat(), 3));
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(frame.vertices.flat(), 3));
     geometry.setIndex(new THREE.Uint16BufferAttribute(frame.faces.flat(), 1));
     geometry.computeVertexNormals();
 

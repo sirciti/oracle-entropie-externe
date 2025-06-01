@@ -1,14 +1,20 @@
-import numpy as np
+import time
 import random
+import numpy as np
 from typing import List, Dict, Any
 
+try:
+    from .generator import CubeGenerator
+except ImportError:
+    from backend.geometry.cubes.generator import CubeGenerator
 
 def update_cubes_dynamics(
     cubes_system: List[Dict[str, Any]],
-    delta_time: float,
+    delta_time: float = 0.03,
     gravity: float = -9.81 * 0.05,
     bounce_factor: float = 0.85,
-    confinement_size: float = 30.0
+    confinement_size: float = 30.0,
+    chaos: float = 0.7
 ) -> List[Dict[str, Any]]:
     updated_cubes_system = []
     half_confinement = confinement_size / 2.0
@@ -24,46 +30,57 @@ def update_cubes_dynamics(
             ball["position"] = ball["position"].copy()
             ball["velocity"] = ball["velocity"].copy()
 
-        # 1. Translation du cube avec bruit
+        # Ajouter un compteur de chaos persistant
+        if "chaos_counter" not in updated_cube:
+            updated_cube["chaos_counter"] = random.uniform(0, 10)
+
+        chaos_factor = chaos * (1 + np.sin(updated_cube["chaos_counter"]))  # Variation unique
+        updated_cube["chaos_counter"] += delta_time * 2  # Évolution du chaos
+
         for i in range(3):
-            updated_cube["velocity"][i] += random.uniform(-0.8, 0.8) * delta_time
-            updated_cube["angular_velocity"][i] += random.uniform(-0.08, 0.08) * delta_time
-            updated_cube["velocity"][i] += random.uniform(-0.2, 0.2) * delta_time
+            # Forces chaotiques
+            rand_force = random.uniform(-2.0, 2.0) * delta_time * chaos_factor
+            periodic_force = 1.0 * np.sin(time.time() * 3 + i + updated_cube["chaos_counter"]) * delta_time
+            updated_cube["velocity"][i] += rand_force + periodic_force
+            updated_cube["angular_velocity"][i] += random.uniform(-0.3, 0.3) * updated_cube["position"][i] * delta_time
             updated_cube["position"][i] += updated_cube["velocity"][i] * delta_time
+
+            # Collisions avec les parois
             if abs(updated_cube["position"][i]) + updated_cube["size"] / 2.0 > half_confinement:
-                updated_cube["velocity"][i] *= -bounce_factor
-                if updated_cube["position"][i] > 0:
-                    updated_cube["position"][i] = half_confinement - updated_cube["size"] / 2.0
-                else:
-                    updated_cube["position"][i] = -half_confinement + updated_cube["size"] / 2.0
+                updated_cube["velocity"][i] *= -random.uniform(0.6, 0.9)
+                updated_cube["position"][i] = (
+                    half_confinement - updated_cube["size"] / 2.0
+                    if updated_cube["position"][i] > 0
+                    else -half_confinement + updated_cube["size"] / 2.0
+                )
 
-        # 2. Rotation du cube
-        updated_cube["rotation"][0] += updated_cube["angular_velocity"][0] * delta_time
-        updated_cube["rotation"][1] += updated_cube["angular_velocity"][1] * delta_time
-        updated_cube["rotation"][2] += updated_cube["angular_velocity"][2] * delta_time
-        updated_cube["angular_velocity"] = [v * 0.995 for v in updated_cube["angular_velocity"]]
+        # Mise à jour des rotations avec chaos
+        updated_cube["rotation"] = [
+            r + w * delta_time + random.uniform(-0.1, 0.1) * chaos_factor
+            for r, w in zip(updated_cube["rotation"], updated_cube["angular_velocity"])
+        ]
 
-        # 3. Dynamique des billes
+        # Dynamique des billes
         half_cube_size = updated_cube["size"] / 2.0
         for ball in updated_cube["balls"]:
             ball_pos = np.array(ball["position"])
             ball_vel = np.array(ball["velocity"])
-            ball_vel[1] += gravity * delta_time
+            ball_vel[1] += gravity * delta_time * chaos_factor
             ball_pos += ball_vel * delta_time
 
             inner_limit = half_cube_size - ball["radius"]
             for i in range(3):
                 if abs(ball_pos[i]) > inner_limit:
-                    ball_vel[i] *= -bounce_factor
+                    ball_vel[i] *= -random.uniform(0.6, 0.9)
                     ball_pos[i] = inner_limit if ball_pos[i] > 0 else -inner_limit
-                    ball["velocity"][i] += random.uniform(-0.01, 0.01)
+                    ball_vel[i] += random.uniform(-0.3, 0.3) * chaos_factor
 
             ball["position"] = ball_pos.tolist()
             ball["velocity"] = ball_vel.tolist()
 
         updated_cubes_system.append(updated_cube)
 
-    # Gestion simple des collisions entre cubes
+    # Collisions entre cubes
     for i, cube1 in enumerate(updated_cubes_system):
         for cube2 in updated_cubes_system[i + 1:]:
             pos1 = np.array(cube1["position"])
@@ -76,21 +93,3 @@ def update_cubes_dynamics(
                 cube2["velocity"] = (vel1 * 0.9 + vel2 * 0.1).tolist()
 
     return updated_cubes_system
-
-
-if __name__ == '__main__':
-    # Test unitaire simple pour la dynamique
-    try:
-        generator = CubeGenerator()
-    except Exception:
-        from backend.geometry.cubes.generator import CubeGenerator
-        generator = CubeGenerator()
-
-    initial_system = generator.generate_cubes_system()
-    print("Initial Cube Pos:", initial_system[0]["position"])
-    print("Initial Ball Pos:", initial_system[0]["balls"][0]["position"])
-
-    for step in range(100):
-        initial_system = update_cubes_dynamics(initial_system, delta_time=0.05)
-        if step % 20 == 0:
-            print(f"Step {step}: Cube Pos={initial_system[0]['position'][1]:.2f}, Ball Pos={initial_system[0]['balls'][0]['position'][1]:.2f}")

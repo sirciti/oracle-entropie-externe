@@ -234,10 +234,9 @@ def animate_cubes():
         cube_size = float(request.args.get('cube_size', 8.0))
         num_balls_per_cube = int(request.args.get('num_balls_per_cube', 3))
         confinement_size = float(request.args.get('space_bounds', 30.0))
-        steps = int(request.args.get('steps', DEFAULT_PARAMS['steps']))
-        dt = float(request.args.get('dt', DEFAULT_PARAMS['dt']))
-        gravity = float(request.args.get('gravity', -9.81 * 0.05))
-        bounce_factor = float(request.args.get('bounce_factor', 0.85))
+        steps = int(request.args.get('steps', 150))
+        dt = float(request.args.get('dt', 0.03))
+        chaos = float(request.args.get('chaos', 0.7))
 
         generator = CubeGenerator()
         cubes_system = generator.generate_cubes_system(
@@ -251,8 +250,7 @@ def animate_cubes():
         current_system = cubes_system
         for _ in range(steps):
             current_system = update_cubes_dynamics(
-                current_system, delta_time=dt, gravity=gravity,
-                bounce_factor=bounce_factor, confinement_size=confinement_size
+                current_system, delta_time=dt, confinement_size=confinement_size, chaos=chaos
             )
             frame_data = {
                 "cubes": [

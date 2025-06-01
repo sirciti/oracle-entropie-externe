@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <link rel="icon" type="image/png" href="/TriCore.png" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oracle d'Entropie</title>
@@ -12,38 +13,51 @@
             <button id="nav-main" class="nav-button active">Générateur Aléatoire Classique</button>
             <button id="nav-icosahedron" class="nav-button">Icosaèdre Dynamique</button>
             <button id="nav-pyramids" class="nav-button">Pyramides Dynamiques</button>
-            <button id="nav-cubes" class="nav-button">Cubes Dynamiques</button> <button id="nav-internal-tool" class="nav-button">Outil Interne de Sécurité</button>
+            <button id="nav-cubes" class="nav-button">Cubes Dynamiques</button>
+            <button id="nav-internal-tool" class="nav-button">Outil Interne de Sécurité</button>
         </nav>
 
+        <!-- Interface Générateur Aléatoire Classique -->
         <div id="main-interface" class="interface-section">
             <div class="content-card">
                 <h1 class="title">Nombre Aléatoire Généré</h1>
-                <div id="random-number" class="random-value">--</div>
+                <div class="output-group">
+  <label for="random-number">Nombre aléatoire généré :</label>
+  <textarea id="random-number" class="random-token-box" readonly rows="2"></textarea>
+</div>
                 <button id="generate-button" class="generate-button">Générer</button>
                 <div id="entropy-data" class="entropy-data"></div>
             </div>
         </div>
 
+        <!-- Interface Icosaèdre -->
         <div id="icosahedron-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Icosaèdre Dynamique</h2>
                 <button id="toggle-icosahedron-animation" class="generate-button">Stop Animation</button>
             </div>
-            <div id="icosahedron-3d"></div> </div>
+            <div id="icosahedron-3d"></div>
+        </div>
 
+        <!-- Interface Pyramides -->
         <div id="pyramids-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Pyramides Dynamiques</h2>
                 <button id="toggle-pyramids-animation" class="generate-button">Stop Animation</button>
             </div>
-            <div id="icosahedron-3d-pyramids"></div> </div>
+            <div id="icosahedron-3d-pyramids"></div>
+        </div>
 
+        <!-- Interface Cubes -->
         <div id="cubes-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Cubes Dynamiques</h2>
-                <button id="toggle-cubes-animation" class="generate-button">Stop Animation</button> </div>
-            <div id="icosahedron-3d-cubes"></div> </div>
+                <button id="toggle-cubes-animation" class="generate-button">Stop Animation</button>
+            </div>
+            <div id="icosahedron-3d-cubes"></div>
+        </div>
 
+        <!-- Interface Outil Interne -->
         <div id="internal-tool-interface" class="interface-section hidden">
             <div class="content-card internal-tool-container">
                 <h2 class="title">Générateur de Sécurité Interne</h2>
@@ -68,11 +82,13 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- Scripts JavaScript (ordre important si dépendances entre eux) -->
     <script type="module" src="three_utils.js"></script>
     <script type="module" src="icosahedron.js"></script>
     <script type="module" src="pyramids_visualizer.js"></script>
-    <script type="module" src="cubes_visualizer.js"></script> <script type="module" src="script.js"></script>
+    <script type="module" src="cubes_visualizer.js"></script>
+    <script type="module" src="script.js"></script>
     <script type="module" src="internal_tool.js"></script>
     <script type="module" src="navigation.js"></script>
 </body>

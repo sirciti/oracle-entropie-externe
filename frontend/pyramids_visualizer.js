@@ -1,6 +1,6 @@
 // frontend/pyramids_visualizer.js
 
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js';
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js";
 
 let scene = null; 
 let camera = null;
@@ -64,7 +64,7 @@ export function initPyramidsVisualizer(containerId) {
 
 
     // --- Recréation de la Scène, Caméra, Renderer pour la nouvelle visualisation ---
-    const newCanvas = document.createElement('canvas'); 
+    const newCanvas = document.createElement("canvas"); 
     container.appendChild(newCanvas);
     console.log("INIT PYRA: 8. Nouveau canvas créé et ajouté au conteneur:", newCanvas);
 
@@ -117,15 +117,15 @@ export function initPyramidsVisualizer(containerId) {
             console.warn("RESIZE PYRA WARN: Resize appelé mais Three.js non prêt (container, renderer, ou camera null).");
         }
     };
-    window.removeEventListener('resize', onWindowResize); 
-    window.addEventListener('resize', onWindowResize);
+    window.removeEventListener("resize", onWindowResize); 
+    window.addEventListener("resize", onWindowResize);
     onWindowResize(); // Appel initial pour s'assurer que la taille est correcte
     console.log("INIT PYRA: 15. Listeners de resize configurés et appel initial.");
 
     // --- Charger les données d'animation des pyramides depuis le back-end ---
     // Les paramètres base_size, num_layers, brick_size sont importants.
     // Utiliser des valeurs plus grandes pour que les pyramides soient bien visibles (pour le test)
-    fetch('http://127.0.0.1:5000/geometry/pyramids/animate?steps=80&base_size=10&num_layers=5&brick_size=2')
+    fetch("http://127.0.0.1:5000/geometry/pyramids/animate?steps=80&base_size=10&num_layers=5&brick_size=2")
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);
@@ -148,9 +148,9 @@ export function initPyramidsVisualizer(containerId) {
             }
         })
         .catch(error => {
-            console.error('FETCH PYRA ERROR: Erreur lors de la récupération des données d\'animation des pyramides:', error);
+            console.error("FETCH PYRA ERROR: Erreur lors de la récupération des données d'animation des pyramides:", error);
             if (container) {
-                container.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement 3D des pyramides.</p>';
+                container.innerHTML = "<p style=\"color: red; text-align: center;\">Erreur de chargement 3D des pyramides.</p>";
             }
         });
 
