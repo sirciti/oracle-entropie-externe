@@ -112,29 +112,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Boutons d’animation
     const toggleIcosahedronAnimationButton = document.getElementById("toggle-icosahedron-animation");
-    toggleIcosahedronAnimationButton?.addEventListener("click", () => {
-        if (icosahedronVisualizer) {
-            icosahedronVisualizer.isRunning ? icosahedronVisualizer.stop() : icosahedronVisualizer.start();
-            toggleIcosahedronAnimationButton.textContent = icosahedronVisualizer.isRunning ? "Stop Animation" : "Start Animation";
-        }
-    });
+toggleIcosahedronAnimationButton?.addEventListener("click", () => {
+    if (icosahedronVisualizer) {
+        const isRunning = icosahedronVisualizer.isRunning();
+        isRunning ? icosahedronVisualizer.stop() : icosahedronVisualizer.start();
+        toggleIcosahedronAnimationButton.textContent = isRunning ? "Start Animation" : "Stop Animation";
+    }
+});
 
     const togglePyramidsAnimationButton = document.getElementById("toggle-pyramids-animation");
-    togglePyramidsAnimationButton?.addEventListener("click", () => {
-        if (pyramidsVisualizer) {
-            pyramidsVisualizer.isRunning ? pyramidsVisualizer.stop() : pyramidsVisualizer.start();
-            togglePyramidsAnimationButton.textContent = pyramidsVisualizer.isRunning ? "Stop Animation" : "Start Animation";
-        }
-    });
-
+togglePyramidsAnimationButton?.addEventListener("click", () => {
+    if (pyramidsVisualizer) {
+        const isRunning = pyramidsVisualizer.isRunning();
+        isRunning ? pyramidsVisualizer.stop() : pyramidsVisualizer.start();
+        togglePyramidsAnimationButton.textContent = isRunning ? "Start Animation" : "Stop Animation";
+    }
+});
     const toggleCubesAnimationButton = document.getElementById("toggle-cubes-animation");
     toggleCubesAnimationButton?.addEventListener("click", () => {
-        if (cubesVisualizer) {
-            cubesVisualizer.isRunning ? cubesVisualizer.stop() : cubesVisualizer.start();
-            toggleCubesAnimationButton.textContent = cubesVisualizer.isRunning ? "Stop Animation" : "Start Animation";
-        }
-    });
-
+    if (cubesVisualizer) {
+        const isRunning = cubesVisualizer.isRunning(); // Appeler la fonction
+        isRunning ? cubesVisualizer.stop() : cubesVisualizer.start();
+        toggleCubesAnimationButton.textContent = isRunning ? "Start Animation" : "Stop Animation";
+    }
+});
     // Afficher la section principale par défaut
     showSection("main-interface");
 });
