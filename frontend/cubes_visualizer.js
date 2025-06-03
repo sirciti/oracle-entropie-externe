@@ -5,33 +5,50 @@ let camera = null;
 let renderer = null;
 let cubesGroup = null;
 let animationFrameId = null;
-let currentStep = 0;
-let frames = [];
 let isAnimatingFlag = false;
 
+// Structure pour stocker les données dynamiques des cubes
+let cubesData = [];
+
 function animateCubes() {
-    if (!isAnimatingFlag) return;
+    if (!isAnimatingFlag) {
+        console.log("ANIMATE CUBES: Arrêté par isAnimatingFlag=false.");
+        return;
+    }
     animationFrameId = requestAnimationFrame(animateCubes);
 
-    if (frames.length === 0 || currentStep >= frames.length) {
-        currentStep = 0;
-        fetch("http://127.0.0.1:5000/geometry/cubes/animate?steps=150&dt=0.03&chaos=0.7")
-            .then(response => {
-                if (!response.ok) throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-                return response.json();
-            })
-            .then(data => {
-                frames = data.frames;
-                if (frames.length > 0) {
-                    updateCubesGeometry(frames[currentStep]); // Ligne ~26
-                    currentStep++;
+    // Mettre à jour les positions et rotations des cubes
+    cubesData.forEach(cube => {
+        // Déplacer avec vitesse
+        cube.position.add(cube.velocity);
+        // Rebondir sur les limites (±20)
+        ['x', 'y', 'z'].forEach(axis => {
+            if (cube.position[axis] > 20 || cube.position[axis] < -20) {
+                cube.velocity[axis] *= -1;
+                cube.position[axis] = Math.max(-20, Math.min(20, cube.position[axis]));
+            }
+        });
+        // Rotation aléatoire
+        cube.rotation.x += (Math.random() - 0.5) * 0.03;
+        cube.rotation.y += (Math.random() - 0.5) * 0.03;
+        cube.rotation.z += (Math.random() - 0.5) * 0.03;
+        // Mettre à jour les billes
+        cube.balls.forEach(ball => {
+            // Déplacer avec vitesse
+            ball.position.add(ball.velocity);
+            // Rebondir dans le cube (±size * 0.25)
+            ['x', 'y', 'z'].forEach(axis => {
+                if (Math.abs(ball.position[axis]) > cube.size * 0.25) {
+                    ball.velocity[axis] *= -1;
+                    ball.position[axis] = Math.max(-cube.size * 0.25, Math.min(cube.size * 0.25, ball.position[axis]));
                 }
-            })
-            .catch(error => console.error("FETCH CUBES ERROR:", error));
-    } else {
-        updateCubesGeometry(frames[currentStep]); // Ligne ~32
-        currentStep++;
-    }
+            });
+            ball.mesh.position.copy(ball.position);
+        });
+        // Appliquer les transformations au mesh
+        cube.mesh.position.copy(cube.position);
+        cube.mesh.rotation.copy(cube.rotation);
+    });
 
     if (renderer && scene && camera) {
         renderer.render(scene, camera);
@@ -40,16 +57,17 @@ function animateCubes() {
 
 function stopAnimation() {
     cancelAnimationFrame(animationFrameId);
-    currentStep = 0;
+    animationFrameId = null;
     isAnimatingFlag = false;
 }
 
-function updateCubesGeometry(frame) {
+function updateCubesGeometry() {
     console.log("UPDATE CUBES: 23. updateCubesGeometry appelée.");
     if (!cubesGroup) {
         console.error("UPDATE CUBES ERROR: 24. cubesGroup non initialisé.");
         return;
     }
+    // Nettoyer les anciens meshes
     while (cubesGroup.children.length > 0) {
         const child = cubesGroup.children[0];
         if (child instanceof THREE.Mesh || child instanceof THREE.LineSegments) {
@@ -64,41 +82,63 @@ function updateCubesGeometry(frame) {
         }
         cubesGroup.remove(child);
     }
-    if (!frame || !frame.cubes || !Array.isArray(frame.cubes)) {
-        console.error("UPDATE CUBES ERROR: 27. Format de frame invalide:", frame);
-        return;
-    }
-    let cubesAddedCount = 0;
-    frame.cubes.forEach(cubeData => {
-        if (!cubeData || cubeData.position === undefined || cubeData.size === undefined ||
-            cubeData.rotation === undefined || cubeData.balls_positions === undefined) {
-            console.warn("UPDATE CUBES WARN: 28. Données de cube invalides:", cubeData);
-            return;
-        }
-        const cubeSize = cubeData.size;
+    // Initialiser les cubes dynamiques (10 cubes)
+    cubesData = [];
+    for (let i = 0; i < 10; i++) {
+        const cubeSize = 2 + Math.random() * 3; // Taille entre 2 et 5
         const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
         const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
         const cubeMesh = new THREE.Mesh(cubeGeometry, cubeMaterial);
-        cubeMesh.position.set(cubeData.position[0], cubeData.position[1], cubeData.position[2]);
-        cubeMesh.rotation.set(
-            THREE.MathUtils.degToRad(cubeData.rotation[0]),
-            THREE.MathUtils.degToRad(cubeData.rotation[1]),
-            THREE.MathUtils.degToRad(cubeData.rotation[2])
-        );
-        cubesGroup.add(cubeMesh);
-        cubesAddedCount++;
-        const ballRadius = cubeData.ball_radius || (cubeSize / 8.0);
-        const ballMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
-        if (cubeData.balls_positions && Array.isArray(cubeData.balls_positions)) {
-            cubeData.balls_positions.forEach(ballPos => {
-                const ballGeometry = new THREE.SphereGeometry(ballRadius, 32, 32);
-                const ballMesh = new THREE.Mesh(ballGeometry, ballMaterial);
-                ballMesh.position.set(ballPos[0], ballPos[1], ballPos[2]);
-                cubeMesh.add(ballMesh);
-            });
+        const cube = {
+            mesh: cubeMesh,
+            position: new THREE.Vector3(
+                (Math.random() - 0.5) * 40,
+                (Math.random() - 0.5) * 40,
+                (Math.random() - 0.5) * 40
+            ),
+            velocity: new THREE.Vector3(
+                (Math.random() - 0.5) * 0.2,
+                (Math.random() - 0.5) * 0.2,
+                (Math.random() - 0.5) * 0.2
+            ),
+            rotation: new THREE.Euler(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI,
+                Math.random() * Math.PI
+            ),
+            size: cubeSize,
+            balls: []
+        };
+        // Ajouter 3 à 5 billes par cube
+        const numBalls = 3 + Math.floor(Math.random() * 3);
+        const ballRadius = cubeSize / 8;
+        const ballMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+        for (let j = 0; j < numBalls; j++) {
+            const ballGeometry = new THREE.SphereGeometry(ballRadius, 32, 32);
+            const ballMesh = new THREE.Mesh(ballGeometry, ballMaterial);
+            const ball = {
+                mesh: ballMesh,
+                position: new THREE.Vector3(
+                    (Math.random() - 0.5) * cubeSize * 0.5,
+                    (Math.random() - 0.5) * cubeSize * 0.5,
+                    (Math.random() - 0.5) * cubeSize * 0.5
+                ),
+                velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.1,
+                    (Math.random() - 0.5) * 0.1,
+                    (Math.random() - 0.5) * 0.1
+                )
+            };
+            ballMesh.position.copy(ball.position);
+            cubeMesh.add(ballMesh);
+            cube.balls.push(ball);
         }
-    });
-    console.log("UPDATE CUBES: 29. Total cubes ajoutés:", cubesAddedCount);
+        cubeMesh.position.copy(cube.position);
+        cubeMesh.rotation.copy(cube.rotation);
+        cubesGroup.add(cubeMesh);
+        cubesData.push(cube);
+    }
+    console.log("UPDATE CUBES: 29. Total cubes ajoutés:", cubesData.length);
     cubesGroup.position.set(0, 0, 0);
     const box = new THREE.Box3().setFromObject(cubesGroup);
     console.log("UPDATE CUBES: Bounding Box:", box);
@@ -109,7 +149,7 @@ export function initCubesVisualizer(containerId) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error(`INIT CUBES ERROR: 2. Conteneur #${containerId} non trouvé.`);
-        return { start: () => {}, stop: () => {}, resize: () => {}, isRunning: false };
+        return { start: () => {}, stop: () => {}, resize: () => {}, isRunning: () => false };
     }
     console.log("INIT CUBES: 2.1 Conteneur trouvé. ClientWidth:", container.clientWidth, "clientHeight:", container.clientHeight);
 
@@ -150,7 +190,8 @@ export function initCubesVisualizer(containerId) {
     scene = null;
     camera = null;
     cubesGroup = null;
-    console.log("INIT CUBES: 7. Variables Three.js globales réinitialisées.");
+    cubesData = [];
+    console.log("INIT CUBES: 7. Variables globales réinitialisées.");
 
     // Recréation
     const newCanvas = document.createElement("canvas");
@@ -186,6 +227,9 @@ export function initCubesVisualizer(containerId) {
     scene.add(cubesGroup);
     console.log("INIT CUBES: 13. cubesGroup créé et ajouté à la scène.");
 
+    // Initialiser les cubes
+    updateCubesGeometry();
+
     const onWindowResize = () => {
         if (container && renderer && camera) {
             const width = container.clientWidth;
@@ -196,23 +240,27 @@ export function initCubesVisualizer(containerId) {
             }
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
-                        renderer.setSize(width, height, false);
-                        renderer.render(scene, camera);
-                        console.log(`RESIZE CUBES: Renderer.render appelé avec taille ${width}x${height}`);
-                    }
-                };
-            
-                // Optionally, add the resize event listener here
-                window.addEventListener("resize", onWindowResize);
-            
-                // Return control functions
-                return {
-                    start: () => {
-                        isAnimatingFlag = true;
-                        animateCubes();
-                    },
-                    stop: stopAnimation,
-                    resize: onWindowResize,
-                    isRunning: () => isAnimatingFlag
-                };
-            }
+            renderer.setSize(width, height, false);
+            renderer.render(scene, camera);
+            console.log(`RESIZE CUBES: Renderer.render appelé avec taille ${width}x${height}`);
+        }
+    };
+
+    window.addEventListener("resize", onWindowResize);
+    onWindowResize();
+    console.log("INIT CUBES: 14. Listener de resize configuré.");
+
+    return {
+        start: () => {
+            console.log("START CUBES: Animation démarrée.");
+            isAnimatingFlag = true;
+            animateCubes();
+        },
+        stop: () => {
+            console.log("STOP CUBES: Animation arrêtée.");
+            stopAnimation();
+        },
+        resize: onWindowResize,
+        isRunning: () => isAnimatingFlag
+    };
+}
