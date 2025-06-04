@@ -179,4 +179,5 @@ node_modules/
 # frontend/node_modules/ # Déjà couvert par node_modules/ en haut
 # frontend/test-results/ # Déjà couvert par test-results/ en bas
 test-results/ # Dossier de résultats de tests (Playwright, Pytest)
-# .last-run.json/ # Les fichiers individuels dans test-results/ sont couverts par le dossier parent
+# .last-run.json/ # Les fichiers individuels dans test-results/ sont couverts par le dossier parentnode_modules/
+frontend/node_modules/.vite/deps/_metadata.json

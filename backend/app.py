@@ -18,7 +18,8 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 sentry_sdk.init(
     dsn="https://29f8b7efc9e08f8ab4f63a42a7947b7e@o4509440127008768.ingest.de.sentry.io/4509440193396816",
     integrations=[FlaskIntegration()],
-    traces_sample_rate=1.0
+    traces_sample_rate=1.0,
+    environment="production"  # ou "development"
 )
 
 # --- IMPORTS DES MODULES ORGANISÉS ---
