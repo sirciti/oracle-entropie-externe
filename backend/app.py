@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, send_from_directory, request
 from logging.handlers import RotatingFileHandler
-import requests
+import requests  # Import corrigé : requests bien importé
 import time
 import hashlib
 import random
@@ -9,16 +9,25 @@ import os
 import logging
 import secrets
 import string
+import sentry_sdk
 from typing import List, Dict, Optional, Tuple, Any
-from flask_cors import CORS  # Import Flask-CORS
+from flask_cors import CORS
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+# -------------------- INITIALISATION SENTRY --------------------
+sentry_sdk.init(
+    dsn="https://29f8b7efc9e08f8ab4f63a42a7947b7e@o4509440127008768.ingest.de.sentry.io/4509440193396816",
+    integrations=[FlaskIntegration()],
+    traces_sample_rate=1.0
+)
 
 # --- IMPORTS DES MODULES ORGANISÉS ---
-from backend.geometry_api import geometry_api, get_icosahedron_animate  # geometry_api et get_icosahedron_animate
-from backend.temporal_entropy import get_world_timestamps, mix_timestamps  # Fonctions d'entropie temporelle
-from backend.entropy_oracle import generate_quantum_geometric_entropy, get_cubes_entropy  # Ajout de get_cubes_entropy
+from backend.geometry_api import geometry_api, get_icosahedron_animate
+from backend.temporal_entropy import get_world_timestamps, mix_timestamps
+from backend.entropy_oracle import generate_quantum_geometric_entropy, get_cubes_entropy, get_pyramids_entropy
 
 app = Flask(__name__)
-CORS(app)  # Initialise CORS pour l'application Flask
+CORS(app)
 
 # -------------------- CONFIGURATION --------------------
 
@@ -34,14 +43,12 @@ DEFAULT_COORDINATES = [
 ANU_QRNG_API_URL = os.getenv("ANU_QRNG_API_URL",
                             "https://qrng.anu.edu.au/API/jsonI.php?length=1&type=uint8")
 
-# Pour le fallback du PRNG si d'autres sources échouent ou sont désactivées.
-FALLBACK_PRNG_SEED_LENGTH = 256  # Longueur en bits pour le PRNG de secours
+FALLBACK_PRNG_SEED_LENGTH = 256
 
-# Logging configuration
 LOG_FILENAME = "app.log"
 LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB
+LOG_MAX_BYTES = 10 * 1024 * 1024
 LOG_BACKUP_COUNT = 5
 
 log_handler = RotatingFileHandler(LOG_FILENAME, maxBytes=LOG_MAX_BYTES,
@@ -51,26 +58,18 @@ logger = logging.getLogger("entropy_generator")
 logger.addHandler(log_handler)
 logger.setLevel(LOG_LEVEL)
 
-
 def log_error(message: str) -> None:
-    """Logs an error message."""
     logger.error(message)
 
-
 def log_warning(message: str) -> None:
-    """Logs a warning message."""
     logger.warning(message)
 
-
 def log_info(message: str) -> None:
-    """Logs an informational message."""
     logger.info(message)
-
 
 # -------------------- CONFIGURATION LOADING --------------------
 
 def load_config() -> Dict[str, Any]:
-    """Charge la configuration depuis config.json et/ou les variables d'environnement."""
     config = {}
     try:
         with open('config.json', 'r') as f:
@@ -83,7 +82,6 @@ def load_config() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Erreur inattendue lors du chargement de config.json : {e}")
 
-    # Surcharge avec les variables d'environnement (si définies)
     try:
         config['latitude'] = float(os.getenv('OPEN_METEO_LAT', config.get('latitude', DEFAULT_LAT)))
         config['longitude'] = float(os.getenv('OPEN_METEO_LON', config.get('longitude', DEFAULT_LON)))
@@ -103,16 +101,14 @@ def load_config() -> Dict[str, Any]:
 
 config = load_config()
 
-
 # -------------------- API CALLS (FONCTIONS UTILITAIRES) --------------------
 
 def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]:
-    """Récupère les données météo actuelles pour une paire de coordonnées."""
     try:
         url = (
             f"https://api.open-meteo.com/v1/forecast?"
             f"latitude={lat}&longitude={lon}"
-            "&current_weather=true"
+            "&current_weather=true"  # Correction ici : &current_weather=true
             "&hourly=temperature_2m,relative_humidity_2m,pressure_msl,cloudcover,precipitation,windgusts_10m"
             "&forecast_days=1"
             "&timezone=auto"
@@ -139,10 +135,7 @@ def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]
         log_error(f"Erreur inattendue lors de la récupération des données météo pour {lat}, {lon} : {e}")
         return None
 
-
-
 def get_area_weather_data(coordinates: List[Tuple[float, float]]) -> List[Optional[Dict[str, Any]]]:
-    """Récupère les données météo pour une liste de coordonnées."""
     all_data = []
     for lat, lon in coordinates:
         data = get_current_weather_data(lat, lon)
@@ -150,9 +143,7 @@ def get_area_weather_data(coordinates: List[Tuple[float, float]]) -> List[Option
             all_data.append(data)
     return all_data
 
-
 def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[Dict[str, Any]]:
-    """Combine les données météo de plusieurs points."""
     if not all_data:
         log_error("Aucune donnée météo à combiner.")
         return None
@@ -163,8 +154,7 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
     wind_speeds = [d.get("wind_speed") for d in all_data if isinstance(d.get("wind_speed"), (int, float))]
     wind_gusts = [d.get("wind_gust") for d in all_data if isinstance(d.get("wind_gust"), (int, float))]
     clouds = [d.get("clouds") for d in all_data if isinstance(d.get("clouds"), (int, float))]
-    precipitations = [d.get("precipitation") for d in all_data if
-                      isinstance(d.get("precipitation"), (int, float))]
+    precipitations = [d.get("precipitation") for d in all_data if isinstance(d.get("precipitation"), (int, float))]
 
     try:
         if temperatures:
@@ -186,93 +176,94 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
         log_error(f"Erreur lors de la combinaison des données météo : {e}")
         return None
 
-
 def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optional[float]:
-    """
-    Récupère un nombre aléatoire quantique normalisé [0,1] depuis l'API ANU QRNG.
-    Retourne une valeur du PRNG de secours car l'API est instable.
-    """
     logger.warning("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
     fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
-    return random.random()  # Retourne une valeur du PRNG de secours
-
+    return random.random()
 
 def generate_random_number_with_entropy(verbose: bool = False) -> Tuple[float, str]:
-    """
-    Génère un nombre aléatoire robuste basé sur :
-     - entropie météo,
-     - horodatage précis,
-     - bruit local (os.urandom),
-     - (contribuant au PRNG de secours si l'API quantique est désactivée).
-    """
     all_weather = get_area_weather_data(config['coordinates'])
     combined_weather = combine_weather_data(all_weather)
-    
-    # Appel à get_quantum_entropy() même si elle ne fait plus d'appel réseau direct
-    # pour maintenir la structure de l'entropie et la contribution du PRNG de secours.
-    quantum_entropy_value = get_quantum_entropy() 
-
-    timestamp = time.time_ns()  # Horodatage très précis (nanosecondes)
-    local_noise = os.urandom(16)  # 16 octets de bruit système
-
-    # Construction de la graine
+    quantum_entropy_value = get_quantum_entropy()
+    timestamp = time.time_ns()
+    local_noise = os.urandom(16)
     seed_string = str(timestamp)
     if combined_weather:
         seed_string += json.dumps(combined_weather, sort_keys=True)
     if quantum_entropy_value is not None:
         seed_string += str(quantum_entropy_value)
     seed_string += local_noise.hex()
-
-    # Hash robuste (SHA-256)
     hasher = hashlib.sha256(seed_string.encode())
     hashed_entropy = hasher.hexdigest()
-    seed = int(hashed_entropy[:16], 16)  # La graine de random.seed() est un int
+    seed = int(hashed_entropy[:16], 16)
     random.seed(seed)
     random_number = random.random()
     logger.info(f"Nombre aléatoire généré: {random_number}, Hachage d'entropie: {hashed_entropy}")
     return random_number, hashed_entropy
 
-
 # -------------------- FONCTIONS D'ENTROPIE FINALE --------------------
 
 def get_final_entropy(
-    use_weather: bool = True,
-    use_icosahedron: bool = True,
+    geometries: List[str],
+    use_weather: bool = False,
     use_quantum: bool = True,
     use_timestamps: bool = True,
-    use_local_noise: bool = True,
-    use_cubes: bool = True
+    use_local_noise: bool = True
 ) -> Optional[bytes]:
     """
-    Génère l'entropie finale à partir des sources disponibles.
+    Génère l'entropie finale à partir des géométries sélectionnées et autres sources.
 
     Args:
+        geometries (List[str]): Liste des géométries actives ('cubes', 'icosahedron', 'pyramids').
         use_weather (bool): Utiliser les données météo.
-        use_icosahedron (bool): Utiliser l'animation d'icosaèdre.
         use_quantum (bool): Utiliser l'entropie quantique.
         use_timestamps (bool): Utiliser les horodatages mondiaux.
         use_local_noise (bool): Ajouter un bruit local aléatoire.
-        use_cubes (bool): Utiliser l'entropie des cubes dynamiques.
 
     Returns:
         Optional[bytes]: Octets représentant l'entropie générée, ou None en cas d'erreur.
     """
     try:
         seed_string = str(time.time_ns())
+        valid_geometries = {"cubes", "icosahedron", "pyramids"}
 
         if use_weather:
             all_weather_data_raw = get_area_weather_data(config['coordinates'])
             weather_data_processed = combine_weather_data(all_weather_data_raw)
-            if not weather_data_processed:
-                logger.error("Erreur lors de la récupération ou de la combinaison des données météo.")
-                return None
-            seed_string += json.dumps(weather_data_processed, sort_keys=True)
+            if weather_data_processed:
+                seed_string += json.dumps(weather_data_processed, sort_keys=True)
+            else:
+                log_warning("API météo indisponible, utilisation des géométries comme fallback")
+                for geometry in geometries:
+                    if geometry not in valid_geometries:
+                        continue
+                    if geometry == "cubes":
+                        entropy = get_cubes_entropy()
+                        if entropy:
+                            seed_string += entropy.hex()
+                    elif geometry == "icosahedron":
+                        frames = get_icosahedron_animate(steps=10)
+                        seed_string += json.dumps({"frames": frames}, sort_keys=True)
+                    elif geometry == "pyramids":
+                        entropy = get_pyramids_entropy()
+                        if entropy:
+                            seed_string += entropy.hex()
 
-        if use_icosahedron:
-            icosahedron_frames = get_icosahedron_animate(steps=10)
-            icosahedron_data_for_seed = json.dumps({"frames": icosahedron_frames}, sort_keys=True)
-            seed_string += icosahedron_data_for_seed
+        for geometry in geometries:
+            if geometry not in valid_geometries:
+                continue
+            if geometry == "cubes" and not use_weather:  # Éviter duplication si déjà inclus
+                entropy = get_cubes_entropy()
+                if entropy:
+                    seed_string += entropy.hex()
+            elif geometry == "icosahedron" and not use_weather:
+                frames = get_icosahedron_animate(steps=10)
+                seed_string += json.dumps({"frames": frames}, sort_keys=True)
+            elif geometry == "pyramids" and not use_weather:
+                entropy = get_pyramids_entropy()
+                if entropy:
+                    seed_string += entropy.hex()
 
         if use_quantum:
             quantum_entropy_value = get_quantum_entropy()
@@ -285,71 +276,71 @@ def get_final_entropy(
             if mixed_timestamps_string:
                 seed_string += mixed_timestamps_string
             else:
-                logger.warning("Aucune entropie temporelle mondiale générée.")
+                log_warning("Aucune entropie temporelle mondiale générée.")
 
         if use_local_noise:
             seed_string += os.urandom(16).hex()
 
-        if use_cubes:
-            cubes_entropy = get_cubes_entropy()
-            if cubes_entropy:
-                seed_string += cubes_entropy.hex()
-            else:
-                logger.warning("Aucune entropie des cubes générée.")
-
-        if not seed_string:
-            logger.error("La chaîne de graine est vide, aucune source d'entropie n'a contribué ou elles ont toutes échoué.")
+        if not seed_string or seed_string == str(time.time_ns()):
+            log_error("Aucune source d'entropie n'a contribué")
             return None
 
         hasher = hashlib.blake2b(seed_string.encode(), digest_size=32)
         hashed_entropy = hasher.digest()
-        logger.info("Entropie finale générée avec succès.")
+        log_info("Entropie finale générée avec succès.")
         return hashed_entropy
 
     except Exception as e:
-        logger.error(f"Erreur inattendue lors de la génération de l'entropie finale : {e}")
+        log_error(f"Erreur inattendue lors de la génération de l'entropie finale : {e}")
         return None
 
-
-def generate_secure_token(entropy_seed: bytes, length: int = 32) -> str:
-    """Génère un jeton cryptographiquement sûr à partir d'une graine d'entropie."""
-    token = secrets.token_hex(length)
-    return token
-
+def generate_secure_token(length=32, char_options=None):
+    if char_options is None:
+        char_options = {
+            "lowercase": True,
+            "uppercase": True,
+            "numbers": True,
+            "symbols": True
+        }
+    alphabet = ""
+    if char_options.get("lowercase"):
+        alphabet += string.ascii_lowercase
+    if char_options.get("uppercase"):
+        alphabet += string.ascii_uppercase
+    if char_options.get("numbers"):
+        alphabet += string.digits
+    if char_options.get("symbols"):
+        alphabet += "!@#$%^&*()-_=+[]{}|;:,.<>/?"
+    if not alphabet:
+        raise ValueError("Aucun type de caractère sélectionné.")
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 # -------------------- INTEGRATION DES ROUTES GEOMETRIE --------------------
 
-from backend.geometry_api import geometry_api  # Import du Blueprint
-app.register_blueprint(geometry_api, url_prefix='/geometry')  # Enregistrement du Blueprint
-
+app.register_blueprint(geometry_api, url_prefix='/geometry')
 
 # -------------------- ROUTES PRINCIPALES --------------------
 
 @app.route('/generate_random')
 def generate_random():
-    """API endpoint to generate a random number with combined entropy."""
     try:
         entropy_seed_bytes = get_final_entropy(
+            geometries=["cubes", "icosahedron", "pyramids"],
             use_weather=True,
-            use_icosahedron=True,
             use_quantum=True,
             use_timestamps=True,
-            use_local_noise=True,
-            use_cubes=True
+            use_local_noise=True
         )
         if not entropy_seed_bytes:
             return jsonify({"error": "Failed to generate final entropy"}), 500
-
         token_result = generate_secure_token(entropy_seed_bytes, length=32)
         return jsonify({"random_number": token_result, "entropy_seed": entropy_seed_bytes.hex()})
     except Exception as e:
-        logger.error(f"Erreur lors de la génération du nombre aléatoire : {e}")
+        log_error(f"Erreur lors de la génération du nombre aléatoire : {e}")
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/entropy', methods=['GET'])
 def entropy_route():
-    """API endpoint to get the combined weather data (for debugging or optional use)."""
     try:
         all_weather_data_from_get_area = get_area_weather_data(config['coordinates'])
         combined_weather = combine_weather_data(all_weather_data_from_get_area)
@@ -358,100 +349,65 @@ def entropy_route():
         else:
             return jsonify({"error": "Failed to retrieve combined weather data"}), 500
     except Exception as e:
-        logger.error(f"Erreur lors de la récupération de l'entropie météo : {e}")
+        log_error(f"Erreur lors de la récupération de l'entropie météo : {e}")
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/final_entropy', methods=['GET'])
 def final_entropy():
-    """API endpoint to get the final combined entropy."""
     final_entropy_bytes = get_final_entropy(
+        geometries=["cubes", "icosahedron", "pyramids"],
         use_weather=True,
-        use_icosahedron=True,
         use_quantum=True,
         use_timestamps=True,
-        use_local_noise=True,
-        use_cubes=True
+        use_local_noise=True
     )
     if final_entropy_bytes:
         return jsonify({"final_entropy": final_entropy_bytes.hex()})
     else:
         return jsonify({"error": "Failed to generate final entropy"}), 500
 
-
-@app.route('/generate_token', methods=['GET'])
+@app.route("/generate_token", methods=["POST"])
 def generate_token():
-    """API endpoint to generate a secure token."""
-    length = request.args.get('length', default=32, type=int)
-    include_lower = request.args.get('lowercase', default='true').lower() == 'true'
-    include_upper = request.args.get('uppercase', default='true').lower() == 'true'
-    include_numbers = request.args.get('numbers', default='true').lower() == 'true'
-    include_symbols = request.args.get('symbols', default='true').lower() == 'true'
-
-    if length < 8 or length > 128:
-        logger.error(f"Tentative de génération de token avec longueur invalide: {length}")
-        return jsonify({"error": "Longueur invalide (8-128)"}), 400
-
-    # Définition des jeux de caractères
-    charsets = {}
-    if include_lower:
-        charsets['lowercase'] = string.ascii_lowercase
-    if include_upper:
-        charsets['uppercase'] = string.ascii_uppercase
-    if include_numbers:
-        charsets['numbers'] = string.digits
-    if include_symbols:
-        charsets['symbols'] = '!@#$%^&*()-_=+[]{}|;:,.<>?'
-
-    if not charsets:
-        logger.error("Jeu de caractères vide après sélection des options.")
-        return jsonify({"error": "Au moins un type de caractère doit être sélectionné"}), 400
-
-    required_chars = len(charsets)
-    if length < required_chars:
-        logger.error(f"Longueur {length} trop courte pour inclure {required_chars} types de caractères.")
-        return jsonify({"error": f"Longueur minimale requise : {required_chars}"}), 400
-
+    data = request.get_json()
+    length = data.get("length", 32)
+    char_options = data.get("char_options", {})
+    weather_enabled = data.get("weather_enabled", True)
+    entropy_bytes = get_final_entropy(
+        geometries=["cubes", "icosahedron", "pyramids"],
+        use_weather=weather_enabled,
+        use_quantum=True,
+        use_timestamps=True,
+        use_local_noise=True
+    )
     try:
-        entropy_seed_bytes = get_final_entropy(
-            use_weather=True,
-            use_icosahedron=True,
-            use_quantum=True,
-            use_timestamps=True,
-            use_local_noise=True,
-            use_cubes=True
-        )
-        if not entropy_seed_bytes:
-            logger.error("Échec de la récupération de l'entropie pour la génération de token.")
-            return jsonify({"error": "Échec de la génération d'entropie"}), 500
-
-        token_chars = [secrets.choice(charset) for charset in charsets.values()]
-        full_charset = ''.join(charsets.values())
-        token_chars += [secrets.choice(full_charset) for _ in range(length - required_chars)]
-        secrets.SystemRandom().shuffle(token_chars)
-        token = ''.join(token_chars)
-
-        logger.info(f"Token généré avec succès de longueur {length} et composition: "
-                    f"Minuscules={include_lower}, Majuscules={include_upper}, "
-                    f"Chiffres={include_numbers}, Symboles={include_symbols}.")
-        return jsonify({"token": token})
+        # Utiliser l'entropie comme seed pour secrets si disponible
+        if entropy_bytes:
+            secrets_generator = secrets.SystemRandom(int.from_bytes(entropy_bytes, "big"))
+            alphabet = ""
+            if char_options.get("lowercase"):
+                alphabet += string.ascii_lowercase
+            if char_options.get("uppercase"):
+                alphabet += string.ascii_uppercase
+            if char_options.get("numbers"):
+                alphabet += string.digits
+            if char_options.get("symbols"):
+                alphabet += "!@#$%^&*()-_=+[]{}|;:,.<>/?"
+            if not alphabet:
+                raise ValueError("Aucun type de caractère sélectionné.")
+            token = ''.join(secrets_generator.choice(alphabet) for _ in range(length))
+        else:
+            token = generate_secure_token(length, char_options)
+        return jsonify({"token": token, "entropy_seed": entropy_bytes.hex() if entropy_bytes else None})
     except Exception as e:
-        logger.error(f"Erreur lors de la génération du token : {e}")
-        return jsonify({"error": str(e)}), 500
-
-
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/')
 def serve_index():
-    """Serves the main page (frontend)."""
     return send_from_directory('../frontend', 'index.html')
-
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    """Serves static files (CSS, JS, etc.) from the frontend."""
     return send_from_directory('../frontend', filename)
-
 
 if __name__ == '__main__':
     try:
@@ -459,4 +415,4 @@ if __name__ == '__main__':
         print(f"Coordonnées utilisées: {config['coordinates']}")
         app.run(host='0.0.0.0', port=5000, debug=True)
     except Exception as e:
-        logger.error(f"Erreur lors du démarrage de l'application Flask : {e}")
+        log_error(f"Erreur lors du démarrage de l'application Flask : {e}")

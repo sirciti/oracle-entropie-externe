@@ -22,7 +22,7 @@ function animateCubes() {
         // Déplacer avec vitesse
         cube.position.add(cube.velocity);
         // Rebondir sur les limites (±20)
-        ['x', 'y', 'z'].forEach(axis => {
+        ["x", "y", "z"].forEach(axis => {
             if (cube.position[axis] > 20 || cube.position[axis] < -20) {
                 cube.velocity[axis] *= -1;
                 cube.position[axis] = Math.max(-20, Math.min(20, cube.position[axis]));
@@ -37,7 +37,7 @@ function animateCubes() {
             // Déplacer avec vitesse
             ball.position.add(ball.velocity);
             // Rebondir dans le cube (±size * 0.25)
-            ['x', 'y', 'z'].forEach(axis => {
+            ["x", "y", "z"].forEach(axis => {
                 if (Math.abs(ball.position[axis]) > cube.size * 0.25) {
                     ball.velocity[axis] *= -1;
                     ball.position[axis] = Math.max(-cube.size * 0.25, Math.min(cube.size * 0.25, ball.position[axis]));

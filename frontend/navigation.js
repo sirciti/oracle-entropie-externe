@@ -1,6 +1,8 @@
 import { initIcosahedronVisualizer } from "./icosahedron.js";
 import { initPyramidsVisualizer } from "./pyramids_visualizer.js";
 import { initCubesVisualizer } from "./cubes_visualizer.js";
+import * as Sentry from "@sentry/browser";
+Sentry.init({ dsn: "https://29f8b7efc9e08f8ab4f63a42a7947b7e@o4509440127008768.ingest.de.sentry.io/4509440193396816", tracesSampleRate: 1.0 });
 
 document.addEventListener("DOMContentLoaded", () => {
     // Gestion des états des visualiseurs
@@ -174,6 +176,36 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Gestion du bouton de génération de token
+    const generateTokenButton = document.getElementById("generate-token-btn");
+    generateTokenButton?.addEventListener("click", async () => {
+        const weatherEnabled = document.getElementById("weather-enabled")?.checked || false;
+        const geometries = [];
+        if (document.getElementById("cubes")?.checked) geometries.push("cubes");
+        if (document.getElementById("icosahedron")?.checked) geometries.push("icosahedron");
+        if (document.getElementById("pyramids")?.checked) geometries.push("pyramids");
+        await generateToken(geometries, weatherEnabled);
+    });
+
     // Afficher la section principale par défaut
     showSection("main-interface");
 });
+
+async function generateToken(geometries = ["cubes", "icosahedron", "pyramids"], weatherEnabled = true) {
+    try {
+        const response = await fetch("http://127.0.0.1:5000/generate_token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ geometries, weather_enabled: weatherEnabled })
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        document.getElementById("token-output")?.setAttribute("value", data.token);
+        return data.token;
+    } catch (error) {
+        console.error("Erreur génération token:", error);
+        const tokenErrorElem = document.getElementById("token-error");
+        if (tokenErrorElem) tokenErrorElem.textContent = `Erreur: ${error.message}`;
+        throw error;
+    }
+}

@@ -20,12 +20,30 @@
         <!-- Interface Générateur Aléatoire Classique -->
         <div id="main-interface" class="interface-section">
             <div class="content-card">
-                <h1 class="title">Nombre Aléatoire Généré</h1>
+                <h1 class="title">Générateur Aléatoire Classique</h1>
+                <div class="input-group">
+                    <label for="classic-token-length">Longueur du Token (8-128) :</label>
+                    <input type="number" id="classic-token-length" value="32" min="8" max="128" />
+                </div>
+                <div class="input-group">
+                    <span class="group-label">Inclure :</span>
+                    <label><input type="checkbox" id="classic-lowercase" checked /> Minuscules</label>
+                    <label><input type="checkbox" id="classic-uppercase" checked /> Majuscules</label>
+                    <label><input type="checkbox" id="classic-numbers" checked /> Chiffres</label>
+                    <label><input type="checkbox" id="classic-symbols" checked /> Symboles</label>
+                </div>
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" id="classic-weather" checked />
+                        Utiliser l’API météo
+                    </label>
+                </div>
                 <div class="output-group">
-  <label for="random-number">Nombre aléatoire généré :</label>
-  <textarea id="random-number" class="random-token-box" readonly rows="2"></textarea>
-</div>
+                    <label for="random-number">Token généré :</label>
+                    <textarea id="random-number" class="random-token-box" readonly rows="2"></textarea>
+                </div>
                 <button id="generate-button" class="generate-button">Générer</button>
+                <div id="feedback-classic" role="alert" aria-live="polite"></div>
                 <div id="entropy-data" class="entropy-data"></div>
             </div>
         </div>
@@ -91,5 +109,12 @@
     <script type="module" src="script.js"></script>
     <script type="module" src="internal_tool.js"></script>
     <script type="module" src="navigation.js"></script>
+    <script src="https://browser.sentry-cdn.com/7.116.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
+<script>
+  Sentry.init({
+    dsn: 'https://29f8b7efc9e08f8ab4f63a42a7947b7e@o4509440127008768.ingest.de.sentry.io/4509440193396816',
+    tracesSampleRate: 1.0
+  });
+</script>
 </body>
 </html>
