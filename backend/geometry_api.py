@@ -7,19 +7,19 @@ import json
 
 # --- IMPORTS DES MODULES DE GÉOMÉTRIE (NOUVELLE ARBORESCENCE) ---
 # Icosaèdre
-from backend.geometry.icosahedron.generator import generate_icosahedron
-from backend.geometry.icosahedron.dynamics import update_icosahedron_dynamics
+from geometry.icosahedron.generator import generate_icosahedron
+from geometry.icosahedron.dynamics import update_icosahedron_dynamics
 
 # Pyramides
-from backend.geometry.pyramids.generator import generate_pyramids_system
-from backend.geometry.pyramids.dynamics import update_pyramids_dynamics
+from geometry.pyramids.generator import generate_pyramids_system
+from geometry.pyramids.dynamics import update_pyramids_dynamics
 
 # Cubes
-from backend.geometry.cubes.generator import CubeGenerator
-from backend.geometry.cubes.dynamics import update_cubes_dynamics
+from geometry.cubes.generator import CubeGenerator
+from geometry.cubes.dynamics import update_cubes_dynamics
 
 # Commun
-from backend.geometry.common import subdivide_faces, rotation_matrix
+from geometry.common import subdivide_faces, rotation_matrix
 
 geometry_api = Blueprint('geometry_api', __name__)
 
@@ -133,6 +133,9 @@ def animate_icosahedron():
                 'vertices': vertices.tolist(),
                 'faces': faces.tolist()
             })
+        # Correction : vérifier que frames n'est pas vide
+        if not frames:
+            return jsonify({'error': "Aucune frame générée"}), 500
         return jsonify({'frames': frames})
     except Exception as e:
         return jsonify({'error': f'Erreur lors de l\'animation de l\'icosaèdre : {e}'}), 500
@@ -195,6 +198,9 @@ def animate_pyramids():
                 }
                 frame_data["pyramids"].append(pyramid_frame)
             frames.append(frame_data)
+        # Correction : vérifier que frames n'est pas vide
+        if not frames:
+            return jsonify({'error': "Aucune frame générée"}), 500
         return jsonify({'frames': frames})
     except Exception as e:
         return jsonify({'error': f'Erreur lors de l\'animation des pyramides : {e}'}), 500
@@ -272,4 +278,4 @@ def animate_cubes():
     
 @geometry_api.route('/test', methods=['GET'])
 def test_route():
-    return jsonify({"message": "Blueprint geometry_api fonctionne"})    
+    return jsonify({"message": "Blueprint geometry_api fonctionne"})

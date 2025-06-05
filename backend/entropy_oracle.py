@@ -6,24 +6,22 @@ import logging
 from typing import Optional, List, Dict, Any
 
 try:
-    import blake3  # pip install blake3
+    import blake3
     BLAKE3_AVAILABLE = True
 except ImportError:
     BLAKE3_AVAILABLE = False
 
-# Importer les modules géométriques et autres dépendances
-from .geometry.icosahedron.generator import generate_klee_penrose_polyhedron
-from .geometry.pyramids.generator import generate_pyramids_system
-from .geometry.pyramids.dynamics import update_pyramids_dynamics
-from .geometry.cubes.generator import CubeGenerator
-from .geometry.cubes.dynamics import update_cubes_dynamics
-from .fractal_lsystem import FractalLSystem
-from .quantum_nodes import QuantumNode
-from .temporal_entropy import get_world_timestamps, mix_timestamps
+# Imports absolus
+from geometry.icosahedron.generator import generate_klee_penrose_polyhedron
+from geometry.pyramids.generator import generate_pyramids_system
+from geometry.pyramids.dynamics import update_pyramids_dynamics
+from geometry.cubes.generator import CubeGenerator
+from geometry.cubes.dynamics import update_cubes_dynamics
+from utils import get_area_weather_data, combine_weather_data, get_quantum_entropy, load_config
 
 logger = logging.getLogger("entropy_oracle")
+config = load_config()
 
-# --- Entropie géométrique cubes ---
 def get_cubes_entropy(
     num_cubes: int = 3,
     cube_size: float = 8.0,
@@ -59,29 +57,25 @@ def get_cubes_entropy(
                 signature_data.extend(ball["velocity"])
         signature_string = json.dumps(signature_data, sort_keys=True)
         hashed_signature = hashlib.blake2b(signature_string.encode(), digest_size=32).digest()
-        logger.info(f"Entropie des cubes générée avec succès: {hashed_signature.hex()}")
+        logger.info(f"Entropie des cubes générée: {hashed_signature.hex()}")
         return hashed_signature
     except Exception as e:
         logger.error(f"Erreur dans get_cubes_entropy: {e}")
         return None
 
-# --- Entropie pyramides ---
 def get_pyramids_entropy() -> Optional[bytes]:
     try:
-        # Exemple d'appel local, à adapter selon ton architecture réelle
         pyramids_state = generate_pyramids_system(layers=3)
         updated_state = update_pyramids_dynamics(pyramids_state, steps=10)
         entropy_string = json.dumps(updated_state, sort_keys=True)
         entropy = hashlib.sha256(entropy_string.encode()).digest()
-        logger.info("Entropie des pyramides générée avec succès")
+        logger.info("Entropie des pyramides générée")
         return entropy
     except Exception as e:
         logger.error(f"Erreur lors de la génération de l'entropie des pyramides : {e}")
         return None
 
-# --- Entropie finale combinée ---
-def get_final_entropy(
-    hash_algo: str = 'blake3',
+def generate_quantum_geometric_entropy(
     use_weather: bool = True,
     use_icosahedron: bool = True,
     use_quantum: bool = True,
@@ -91,24 +85,15 @@ def get_final_entropy(
     use_pyramids: bool = True,
     icosa_subdivisions: int = 1,
     pyramid_layers: int = 3,
-    lsystem_iterations: int = 2,
     cubes_num_cubes: int = 3,
     cubes_cube_size: float = 8.0,
     cubes_num_balls_per_cube: int = 3,
-    cubes_space_bounds: float = 30.0,
-    get_area_weather_data=None,
-    combine_weather_data=None,
-    config=None,
-    get_quantum_entropy=None
+    cubes_space_bounds: float = 30.0
 ) -> Optional[bytes]:
-    """
-    Combine toutes les sources d'entropie pour produire une graine robuste
-    hash_algo: 'blake3' (par défaut) ou 'sha3_512'
-    """
     try:
         seed_string_parts = [str(time.time_ns())]
 
-        if use_weather and get_area_weather_data and combine_weather_data and config:
+        if use_weather:
             all_weather_data_raw = get_area_weather_data(config['coordinates'])
             weather_data_processed = combine_weather_data(all_weather_data_raw)
             if weather_data_processed:
@@ -123,12 +108,13 @@ def get_final_entropy(
             else:
                 logger.warning("Aucune donnée d'icosaèdre générée.")
 
-        if use_quantum and get_quantum_entropy:
+        if use_quantum:
             quantum_entropy_value = get_quantum_entropy()
             if quantum_entropy_value is not None:
                 seed_string_parts.append(str(quantum_entropy_value))
 
         if use_timestamps:
+            from backend.temporal_entropy import get_world_timestamps, mix_timestamps
             timestamps_list = get_world_timestamps()
             mixed_timestamps_string = mix_timestamps(timestamps_list, mode='hybrid')
             if mixed_timestamps_string:
@@ -158,34 +144,15 @@ def get_final_entropy(
             else:
                 logger.warning("Aucune entropie des pyramides générée.")
 
-        if len(seed_string_parts) == 1:  # Seulement le timestamp
+        if len(seed_string_parts) == 1:
             logger.error("Aucune source d'entropie n'a contribué")
             return None
 
         seed_string = "".join(seed_string_parts)
-        # --- Hachage final : BLAKE3 prioritaire, fallback SHA-3 ---
-        if hash_algo == 'blake3':
-            if not BLAKE3_AVAILABLE:
-                raise ImportError("Le module blake3 n'est pas installé. Utilisez 'pip install blake3'.")
-            seed = blake3.blake3(seed_string.encode()).digest()
-        elif hash_algo == 'sha3_512':
-            seed = hashlib.sha3_512(seed_string.encode()).digest()
-        else:
-            raise ValueError("hash_algo doit être 'blake3' ou 'sha3_512'.")
-
-        logger.info("Entropie finale générée avec succès.")
-        return seed
-
+        hasher = hashlib.blake2b(seed_string.encode(), digest_size=32)
+        hashed_entropy = hasher.digest()
+        logger.info("Entropie quantique/géométrique générée.")
+        return hashed_entropy
     except Exception as e:
-        logger.error(f"Erreur inattendue dans get_final_entropy: {e}", exc_info=True)
+        logger.error(f"Erreur dans generate_quantum_geometric_entropy : {e}")
         return None
-
-# --- Exemple d'utilisation ---
-if __name__ == "__main__":
-    try:
-        seed = get_final_entropy('blake3')
-        print(f"Graine finale BLAKE3 (hex): {seed.hex()}")
-    except ImportError as e:
-        print(e)
-        seed = get_final_entropy('sha3_512')
-        print(f"Graine finale SHA-3 (hex): {seed.hex()}")
