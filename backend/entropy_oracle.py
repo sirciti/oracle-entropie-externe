@@ -1,12 +1,17 @@
-import numpy as np
-import hashlib
-import json
-import time
 import os
+import time
+import json
+import hashlib
 import logging
-from typing import Tuple, Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any
 
-# Importer les fonctions et classes nécessaires des modules de géométrie réorganisés
+try:
+    import blake3  # pip install blake3
+    BLAKE3_AVAILABLE = True
+except ImportError:
+    BLAKE3_AVAILABLE = False
+
+# Importer les modules géométriques et autres dépendances
 from .geometry.icosahedron.generator import generate_klee_penrose_polyhedron
 from .geometry.pyramids.generator import generate_pyramids_system
 from .geometry.pyramids.dynamics import update_pyramids_dynamics
@@ -16,19 +21,9 @@ from .fractal_lsystem import FractalLSystem
 from .quantum_nodes import QuantumNode
 from .temporal_entropy import get_world_timestamps, mix_timestamps
 
-logger = logging.getLogger("entropy_generator")
+logger = logging.getLogger("entropy_oracle")
 
-# Paramètres par défaut pour la dynamique
-DEFAULT_GEOMETRY_PARAMS = {
-    'sigma': 10.0,
-    'epsilon': 0.3,
-    'rho': 28.0,
-    'zeta': 2.1,
-    'dt': 0.01,
-    'chaos_factor': 0.05,
-    'noise_level': 0.1
-}
-
+# --- Entropie géométrique cubes ---
 def get_cubes_entropy(
     num_cubes: int = 3,
     cube_size: float = 8.0,
@@ -37,9 +32,6 @@ def get_cubes_entropy(
     simulation_steps: int = 10,
     delta_time: float = 0.016
 ) -> Optional[bytes]:
-    """
-    Génère de l'entropie à partir de la dynamique simulée d'un système de cubes et de billes.
-    """
     try:
         cube_generator = CubeGenerator()
         cubes_system = cube_generator.generate_cubes_system(
@@ -48,7 +40,6 @@ def get_cubes_entropy(
             num_balls_per_cube=num_balls_per_cube,
             space_bounds=space_bounds
         )
-        
         current_cubes_state = cubes_system
         for _ in range(simulation_steps):
             current_cubes_state = update_cubes_dynamics(
@@ -58,7 +49,6 @@ def get_cubes_entropy(
                 bounce_factor=0.85,
                 confinement_size=space_bounds
             )
-        
         signature_data = []
         for cube in current_cubes_state:
             signature_data.extend(cube["position"])
@@ -67,38 +57,38 @@ def get_cubes_entropy(
             for ball in cube["balls"]:
                 signature_data.extend(ball["position"])
                 signature_data.extend(ball["velocity"])
-        
         signature_string = json.dumps(signature_data, sort_keys=True)
         hashed_signature = hashlib.blake2b(signature_string.encode(), digest_size=32).digest()
-        
         logger.info(f"Entropie des cubes générée avec succès: {hashed_signature.hex()}")
         return hashed_signature
     except Exception as e:
         logger.error(f"Erreur dans get_cubes_entropy: {e}")
         return None
 
+# --- Entropie pyramides ---
 def get_pyramids_entropy() -> Optional[bytes]:
-    """Génère l'entropie basée sur l'animation des pyramides."""
     try:
-        response = requests.get("http://127.0.0.1:5000/geometry/pyramids/animate?steps=10", timeout=5)
-        if response.status_code == 200:
-            frames = response.json()['frames']
-            entropy = hashlib.sha256(json.dumps(frames, sort_keys=True).encode()).hexdigest()
-            logger.info("Entropie des pyramides générée avec succès")
-            return bytes.fromhex(entropy)
-        logger.error("Échec de la récupération des données d'animation des pyramides")
-        return None
+        # Exemple d'appel local, à adapter selon ton architecture réelle
+        pyramids_state = generate_pyramids_system(layers=3)
+        updated_state = update_pyramids_dynamics(pyramids_state, steps=10)
+        entropy_string = json.dumps(updated_state, sort_keys=True)
+        entropy = hashlib.sha256(entropy_string.encode()).digest()
+        logger.info("Entropie des pyramides générée avec succès")
+        return entropy
     except Exception as e:
-        logger.error(f"Erreur lors de la récupération de l'entropie des pyramides : {e}")
+        logger.error(f"Erreur lors de la génération de l'entropie des pyramides : {e}")
         return None
 
-def generate_quantum_geometric_entropy(
+# --- Entropie finale combinée ---
+def get_final_entropy(
+    hash_algo: str = 'blake3',
     use_weather: bool = True,
     use_icosahedron: bool = True,
     use_quantum: bool = True,
     use_timestamps: bool = True,
     use_local_noise: bool = True,
     use_cubes: bool = True,
+    use_pyramids: bool = True,
     icosa_subdivisions: int = 1,
     pyramid_layers: int = 3,
     lsystem_iterations: int = 2,
@@ -112,13 +102,8 @@ def generate_quantum_geometric_entropy(
     get_quantum_entropy=None
 ) -> Optional[bytes]:
     """
-    Génère l'entropie finale en combinant diverses sources géométriques, temporelles, etc.
-    Les sources peuvent être activées/désactivées via des drapeaux booléens.
-
-    Args:
-        use_weather, use_icosahedron, use_quantum, use_timestamps, use_local_noise, use_cubes: Activer/désactiver les sources.
-        icosa_subdivisions, pyramid_layers, lsystem_iterations, cubes_*: Paramètres spécifiques aux géométries.
-        get_area_weather_data, combine_weather_data, config, get_quantum_entropy: Dépendances passées pour éviter les imports circulaires.
+    Combine toutes les sources d'entropie pour produire une graine robuste
+    hash_algo: 'blake3' (par défaut) ou 'sha3_512'
     """
     try:
         seed_string_parts = [str(time.time_ns())]
@@ -166,16 +151,41 @@ def generate_quantum_geometric_entropy(
             else:
                 logger.warning("Aucune entropie des cubes générée.")
 
+        if use_pyramids:
+            pyramids_entropy_bytes = get_pyramids_entropy()
+            if pyramids_entropy_bytes:
+                seed_string_parts.append(pyramids_entropy_bytes.hex())
+            else:
+                logger.warning("Aucune entropie des pyramides générée.")
+
         if len(seed_string_parts) == 1:  # Seulement le timestamp
             logger.error("Aucune source d'entropie n'a contribué")
             return None
 
         seed_string = "".join(seed_string_parts)
-        hasher = hashlib.blake2b(seed_string.encode(), digest_size=32)
-        hashed_entropy = hasher.digest()
+        # --- Hachage final : BLAKE3 prioritaire, fallback SHA-3 ---
+        if hash_algo == 'blake3':
+            if not BLAKE3_AVAILABLE:
+                raise ImportError("Le module blake3 n'est pas installé. Utilisez 'pip install blake3'.")
+            seed = blake3.blake3(seed_string.encode()).digest()
+        elif hash_algo == 'sha3_512':
+            seed = hashlib.sha3_512(seed_string.encode()).digest()
+        else:
+            raise ValueError("hash_algo doit être 'blake3' ou 'sha3_512'.")
+
         logger.info("Entropie finale générée avec succès.")
-        return hashed_entropy
+        return seed
 
     except Exception as e:
-        logger.error(f"Erreur inattendue dans generate_quantum_geometric_entropy: {e}", exc_info=True)
+        logger.error(f"Erreur inattendue dans get_final_entropy: {e}", exc_info=True)
         return None
+
+# --- Exemple d'utilisation ---
+if __name__ == "__main__":
+    try:
+        seed = get_final_entropy('blake3')
+        print(f"Graine finale BLAKE3 (hex): {seed.hex()}")
+    except ImportError as e:
+        print(e)
+        seed = get_final_entropy('sha3_512')
+        print(f"Graine finale SHA-3 (hex): {seed.hex()}")
