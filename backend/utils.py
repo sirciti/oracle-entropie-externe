@@ -1,3 +1,5 @@
+import pytest
+import requests_mock
 import requests
 import json
 import os
@@ -6,6 +8,7 @@ import hashlib
 import time
 import random
 from typing import List, Dict, Optional, Any, Tuple
+from sentry_sdk.transport import Transport
 
 logger = logging.getLogger("entropy_generator")
 
@@ -129,3 +132,11 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
     fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random()
+
+class SentryTestTransport(Transport):
+    def __init__(self):
+        super().__init__(None)
+        self.envelopes = []
+
+    def capture_envelope(self, envelope):
+        self.envelopes.append(envelope)

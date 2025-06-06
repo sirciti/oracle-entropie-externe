@@ -273,12 +273,11 @@ def serve_static(filename):
 
 @app.route('/test-sentry')
 def test_sentry():
-    try:
-        result = 1 / 0  # Déclenche ZeroDivisionError
-        return jsonify({"result": result})
-    except Exception as e:
-        logger.error(f"Sentry test error: {e}")
-        return jsonify({"error": str(e)}), 500
+    if app.config.get('ENV') == 'development' or app.config.get('TESTING', False):
+        # Provoque une division par zéro pour tester Sentry uniquement en dev/test
+        return 1 / 0
+    else:
+        return "Sentry test endpoint is disabled in production", 403
 
 if __name__ == '__main__':
     try:
