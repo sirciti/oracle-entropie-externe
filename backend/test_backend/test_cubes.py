@@ -1,5 +1,8 @@
 # backend/test_backend/test_cubes.py
 
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import pytest
 from backend.app import app
 from flask import Flask # Import Flask for app.app_context() in fixture
@@ -47,7 +50,7 @@ def test_cubes_animate(test_client):
     assert 'ball_radius' in data['frames'][0]['cubes'][0]
 
 def test_cubes_animate_params(test_client):
-    response = test_client.get('/geometry/cubes/animate?steps=10&dt=0.01&gravity=-0.5&bounce_factor=0.9')
+    response = test_client.get('/geometry/cubes/animate?steps=10&dt=0.01&chaos=0.5')
     assert response.status_code == 200
     data = response.get_json()
     assert len(data['frames']) == 10

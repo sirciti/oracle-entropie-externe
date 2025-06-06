@@ -245,13 +245,15 @@ def stream_tokens():
         )
         generator = TokenStreamGenerator(hash_algo="blake3", seed=entropy_bytes, char_options=char_options)
         tokens = generator.generate_token_stream(num_tokens, length)
-        if tokens:
-            return jsonify({"tokens": tokens, "entropy_seed": entropy_bytes.hex() if entropy_bytes else None})
-        else:
-            return jsonify({"error": "Failed to generate token stream"})
+        if not tokens:
+            return jsonify({"error": "Échec de génération des tokens"}), 400
+        return jsonify({"tokens": tokens, "entropy_seed": entropy_bytes.hex() if entropy_bytes else None}), 200
+    except ValueError as e:
+        log_error(f"Error generating token stream: {e}")
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         log_error(f"Error generating token stream: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400
 
 @app.route("/")
 def serve_index():
@@ -268,6 +270,15 @@ def serve_static(filename):
     except Exception as e:
         logger.error(f"Erreur lors du service du fichier statique {filename}: {e}")
         return jsonify({"error": f"File {filename} not found"}), 404
+
+@app.route('/test-sentry')
+def test_sentry():
+    try:
+        result = 1 / 0  # Déclenche ZeroDivisionError
+        return jsonify({"result": result})
+    except Exception as e:
+        logger.error(f"Sentry test error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     try:

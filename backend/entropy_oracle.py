@@ -43,8 +43,7 @@ def get_cubes_entropy(
             current_cubes_state = update_cubes_dynamics(
                 current_cubes_state,
                 delta_time=delta_time,
-                gravity=-9.81 * 0.05,
-                bounce_factor=0.85,
+                chaos=0.05,  # Align with geometry_api.py
                 confinement_size=space_bounds
             )
         signature_data = []
@@ -65,8 +64,13 @@ def get_cubes_entropy(
 
 def get_pyramids_entropy() -> Optional[bytes]:
     try:
-        pyramids_state = generate_pyramids_system(layers=3)
-        updated_state = update_pyramids_dynamics(pyramids_state, steps=10)
+        pyramids_state = generate_pyramids_system(base_size=5.0, num_layers=3, brick_size=1.0)
+        updated_state = update_pyramids_dynamics(
+            pyramids_state,
+            time_step=0.01,
+            chaos_factor=0.05,
+            noise_level=0.1
+        )
         entropy_string = json.dumps(updated_state, sort_keys=True)
         entropy = hashlib.sha256(entropy_string.encode()).digest()
         logger.info("Entropie des pyramides générée")

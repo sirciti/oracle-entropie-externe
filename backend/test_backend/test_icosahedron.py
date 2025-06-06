@@ -1,15 +1,17 @@
 # backend/test_backend/test_icosahedron.py
 
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import pytest
 from backend.app import app
-from flask import Flask # Import Flask for app.app_context() in fixture
-import json
+from flask import Flask
 
 @pytest.fixture
 def test_client():
     """Fixture pour créer un client de test Flask avec un contexte d'application."""
     app.config['TESTING'] = True
-    with app.app_context(): # Crée le contexte d'application
+    with app.app_context():
         with app.test_client() as client:
             yield client
 
@@ -30,12 +32,11 @@ def test_entropy_route(test_client):
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, dict)
-    # On peut s'attendre à avg_temperature, etc., ou à une erreur si les données météo ne sont pas disponibles
-    assert 'avg_temperature' in data or 'error' in data 
+    assert 'avg_temperature' in data or 'error' in data
 
 def test_icosahedron_initial(test_client):
-    """Test de la route /icosahedron/initial (génération d'icosaèdre)."""
-    response = test_client.get('/icosahedron/initial')
+    """Test de la route /geometry/icosahedron/initial (génération d'icosaèdre)."""
+    response = test_client.get('/geometry/icosahedron/initial?radius=1.0&position=[0,0,0]')
     assert response.status_code == 200
     data = response.get_json()
     assert 'vertices' in data and 'faces' in data
@@ -45,37 +46,37 @@ def test_icosahedron_initial(test_client):
     assert len(data['faces']) > 0
 
 def test_icosahedron_subdivide(test_client):
-    """Test de la route /icosahedron/subdivide (subdivision d'icosaèdre)."""
-    response = test_client.get('/icosahedron/subdivide')
+    """Test de la route /geometry/icosahedron/subdivide (subdivision d'icosaèdre)."""
+    response = test_client.get('/geometry/icosahedron/subdivide?radius=1.0&position=[0,0,0]')
     assert response.status_code == 200
     data = response.get_json()
     assert 'vertices' in data and 'faces' in data
     assert isinstance(data['vertices'], list)
     assert isinstance(data['faces'], list)
-    # S'assure que la subdivision a ajouté des sommets
-    initial_vertices_count = len(test_client.get('/icosahedron/initial').get_json()['vertices'])
+    initial_response = test_client.get('/geometry/icosahedron/initial?radius=1.0&position=[0,0,0]')
+    initial_vertices_count = len(initial_response.get_json()['vertices'])
     assert len(data['vertices']) > initial_vertices_count
 
 def test_icosahedron_animate(test_client):
-    """Test de la route /icosahedron/animate (animation de l'icosaèdre)."""
-    response = test_client.get('/icosahedron/animate?steps=2')
+    """Test de la route /geometry/icosahedron/animate (animation de l'icosaèdre)."""
+    response = test_client.get('/geometry/icosahedron/animate?steps=2&position=[0,0,0]')
     assert response.status_code == 200
     data = response.get_json()
     assert 'frames' in data
     assert isinstance(data['frames'], list)
-    assert len(data['frames']) == 2 # Vérifie le nombre de frames
+    assert len(data['frames']) == 2
 
 def test_icosahedron_animate_params(test_client):
-    """Test de la route /icosahedron/animate avec paramètres."""
-    response = test_client.get('/icosahedron/animate?radius=2&rotation_angle=0.785&steps=5')
+    """Test de la route /geometry/icosahedron/animate avec paramètres."""
+    response = test_client.get('/geometry/icosahedron/animate?radius=2&rotation_angle=0.785&steps=5&position=[0,0,0]')
     assert response.status_code == 200
     data = response.get_json()
     assert 'frames' in data
     assert len(data['frames']) == 5
 
 def test_icosahedron_animate_invalid_params(test_client):
-    """Test de la route /icosahedron/animate avec paramètres invalides."""
-    response = test_client.get('/icosahedron/animate?position=invalid')
+    """Test de la route /geometry/icosahedron/animate avec paramètres invalides."""
+    response = test_client.get('/geometry/icosahedron/animate?position=invalid')
     assert response.status_code == 400
     data = response.get_json()
     assert 'error' in data
@@ -87,32 +88,47 @@ def test_final_entropy(test_client):
     data = response.get_json()
     assert 'final_entropy' in data
     assert isinstance(data['final_entropy'], str)
-    assert len(data['final_entropy']) == 64 # BLAKE2b digest_size=32 -> 64 hex chars
+    assert len(data['final_entropy']) == 64
 
 def test_generate_token(test_client):
-    """Test de la route /generate_token (génération de token sécurisé avec options)."""
-    response = test_client.get('/generate_token?length=16&lowercase=true&numbers=true')
+    """Test de la route /stream_tokens (génération de token sécurisé avec options)."""
+    response = test_client.post('/stream_tokens', json={
+        'num_tokens': 1, 'length': 16,
+        'char_options': {'lowercase': True, 'uppercase': False, 'numbers': True, 'symbols': False}
+    })
     assert response.status_code == 200
     data = response.get_json()
-    assert 'token' in data
-    assert isinstance(data['token'], str)
-    assert len(data['token']) == 16 # Vérifie la longueur demandée
-    assert any(char.islower() for char in data['token']) # Vérifie la composition
-    assert any(char.isdigit() for char in data['token'])
+    assert 'tokens' in data
+    assert isinstance(data['tokens'], list)
+    assert len(data['tokens']) == 1
+    token = data['tokens'][0]
+    assert isinstance(token, str)
+    assert len(token) == 16
+    assert any(char.islower() for char in token)
+    assert any(char.isdigit() for char in token)
 
-    response_all_types = test_client.get('/generate_token?length=64&lowercase=true&uppercase=true&numbers=true&symbols=true')
+    response_all_types = test_client.post('/stream_tokens', json={
+        'num_tokens': 1, 'length': 64,
+        'char_options': {'lowercase': True, 'uppercase': True, 'numbers': True, 'symbols': True}
+    })
     assert response_all_types.status_code == 200
     data_all_types = response_all_types.get_json()
-    assert len(data_all_types['token']) == 64
-    assert any(char.islower() for char in data_all_types['token'])
-    assert any(char.isupper() for char in data_all_types['token'])
-    assert any(char.isdigit() for char in data_all_types['token'])
-    assert any(char in '!@#$%^&*()-_=+[]{}|;:,.<>?' for char in data_all_types['token'])
+    assert len(data_all_types['tokens'][0]) == 64
+    assert any(char.islower() for char in data_all_types['tokens'][0])
+    assert any(char.isupper() for char in data_all_types['tokens'][0])
+    assert any(char.isdigit() for char in data_all_types['tokens'][0])
+    assert any(char in '!@#$%^&*()-_=+[]{}|;:,.<>?' for char in data_all_types['tokens'][0])
 
-    response_invalid_length = test_client.get('/generate_token?length=5')
+    response_invalid_length = test_client.post('/stream_tokens', json={
+        'num_tokens': 1, 'length': 5,
+        'char_options': {'lowercase': True, 'uppercase': True, 'numbers': True, 'symbols': False}
+    })
     assert response_invalid_length.status_code == 400
     assert 'error' in response_invalid_length.get_json()
 
-    response_no_charset = test_client.get('/generate_token?lowercase=false&uppercase=false&numbers=false&symbols=false')
+    response_no_charset = test_client.post('/stream_tokens', json={
+        'num_tokens': 1, 'length': 16,
+        'char_options': {'lowercase': False, 'uppercase': False, 'numbers': False, 'symbols': False}
+    })
     assert response_no_charset.status_code == 400
     assert 'error' in response_no_charset.get_json()
