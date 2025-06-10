@@ -2,36 +2,37 @@ import string
 import logging
 import secrets
 import hashlib
-from typing import Optional, Dict, List
-from blake3 import blake3 # pip install blake3
+import os
+from typing import Optional, Dict, List, Any
+from blake3 import blake3
 import sentry_sdk
+# CORRECTION : Importez LoggingIntegration correctement
+from sentry_sdk.integrations.logging import LoggingIntegration # <-- Correction ici
 
 # Dépendances internes (à importer depuis le package backend)
-# Nous allons les passer en paramètre ou les importer si elles sont nécessaires
-# ici pour éviter les imports circulaires. Pour l'instant, on suppose app.py les passera
-# ou on les importe pour le test direct.
 try:
-    from .entropy_oracle import get_final_entropy
+    from backend.entropy.quantum.entropy_oracle import get_final_entropy
 except ImportError:
-    # Fallback pour exécution directe du script à des fins de test
-    # En production ou lors d'imports dans Flask, l'import relatif fonctionnera
     print("WARNING: Using mock get_final_entropy for direct script execution. Replace with actual import.")
     def get_final_entropy(hash_algo='blake3', **kwargs):
-        # Mocking a valid seed for direct script execution
         if hash_algo == 'blake3':
-            return blake3("mock_seed_data_blake3".encode()).digest()
+            return blake3(b"mock_seed_data_blake3_test_mode_1234567890abcdef").digest()
         else:
-            return hashlib.sha3_512("mock_seed_data_sha3".encode()).digest()
+            return hashlib.sha3_512(b"mock_seed_data_sha3_512_test_mode_abcdefghijk").digest()[:32]
 
-# Configurer le logger pour ce module
 logger = logging.getLogger("token_stream")
-# Assurez-vous que le logger a au moins un handler dans app.py pour voir les logs.
 
-# Configurer Sentry (DSN à remplacer par le tien)
 sentry_sdk.init(
-    dsn="https://29f8b7efc9e08f8ab4f63a42a7947b7e@o4509440127008768.ingest.de.sentry.io/4509440193396816",# Remplace par ton DSN réel en production
+    dsn=os.environ.get("SENTRY_DSN", "https://example@sentry.io/example"),
+    # CORRECTION : Utilisez LoggingIntegration directement
+    integrations=[
+        LoggingIntegration( # <-- Correction ici
+            level=logging.INFO,
+            event_level=logging.ERROR
+        )
+    ],
     traces_sample_rate=1.0,
-    environment="development" # Ou "production"
+    environment=os.getenv("FLASK_ENV", "dev")
 )
 
 class TokenStreamGenerator:
@@ -47,10 +48,6 @@ class TokenStreamGenerator:
     ):
         """
         Initialise le générateur avec une graine et des options de caractères.
-        Args:
-            hash_algo: 'blake3' ou 'sha3_512'
-            seed: Graine d'entropie (32 octets minimum), sinon générée via get_final_entropy
-            char_options: {'lowercase': bool, 'uppercase': bool, 'numbers': bool, 'symbols': bool}
         """
         try:
             if hash_algo not in ['blake3', 'sha3_512']:
@@ -65,15 +62,24 @@ class TokenStreamGenerator:
             }
             self.alphabet = self._build_alphabet()
             if not self.alphabet:
-                raise ValueError("Aucun type de caractère sélectionné")
+                raise ValueError("Aucun type de caractère sélectionné.")
 
-            # Obtenir la graine si non fournie. Utilise la graine finale du système.
-            self.seed = seed or get_final_entropy(hash_algo=hash_algo, use_cubes=True) # Utilise la graine du système
-            if not self.seed or len(self.seed) < 32:
-                raise ValueError("Graine d'entropie invalide ou trop courte (doit être >= 32 octets).")
+            self.seed = seed
+            if self.seed is None:
+                 self.seed = get_final_entropy(hash_algo=hash_algo, use_cubes=True,
+                                                use_weather=True, use_icosahedron=True,
+                                                use_quantum=True, use_timestamps=True,
+                                                use_local_noise=True, use_pyramids=True)
             
-            self.counter = 0 # Compteur pour Hash_DRBG
-            self.buffer = bytearray() # Buffer pour stocker les octets générés
+            if not self.seed or len(self.seed) < 32:
+                if self.seed and len(self.seed) < 32:
+                    logger.warning(f"Graine d'entropie trop courte ({len(self.seed)} octets). Padding avec des zéros.")
+                    self.seed = self.seed.ljust(32, b'\0')
+                else:
+                    raise ValueError("Graine d'entropie invalide ou absente (doit être >= 32 octets après padding).")
+            
+            self.counter = 0
+            self.buffer = bytearray()
             logger.info("TokenStreamGenerator initialisé avec succès")
         except Exception as e:
             sentry_sdk.capture_exception(e)
@@ -90,16 +96,15 @@ class TokenStreamGenerator:
         if self.char_options.get("numbers"):
             alphabet += string.digits
         if self.char_options.get("symbols"):
-            alphabet += string.punctuation # Utilise string.punctuation pour une liste standard de symboles
+            alphabet += string.punctuation
         return alphabet
 
     def _generate_bytes(self, num_bytes: int) -> bytes:
         """
         Implémente le cœur de Hash_DRBG pour générer des octets pseudo-aléatoires.
-        Prend la graine interne et le compteur, les hache, et retourne une partie du haché.
         """
         try:
-            data_to_hash = self.seed + self.counter.to_bytes(8, "big") # Combine graine et compteur
+            data_to_hash = self.seed + self.counter.to_bytes(8, "big")
             
             if self.hash_algo == "blake3":
                 hash_output = blake3(data_to_hash).digest()
@@ -108,8 +113,8 @@ class TokenStreamGenerator:
             else:
                 raise ValueError("Algorithme de hachage Hash_DRBG non supporté.")
             
-            self.counter += 1 # Incrémente le compteur pour la prochaine génération
-            return hash_output[:num_bytes] # Retourne les octets demandés
+            self.counter += 1
+            return hash_output[:num_bytes]
         except Exception as e:
             sentry_sdk.capture_exception(e)
             logger.error(f"Erreur dans _generate_bytes (Hash_DRBG): {e}", exc_info=True)
@@ -119,16 +124,14 @@ class TokenStreamGenerator:
         """
         Génère un token de longueur donnée, en garantissant la composition des caractères
         si les types sont sélectionnés.
-        Args:
-            length: Longueur du token (8-128)
-        Returns:
-            str: Token généré ou None en cas d'erreur
         """
         try:
             if not 8 <= length <= 128:
                 raise ValueError("Longueur doit être entre 8 et 128.")
+            
             token_chars = []
             charsets_to_guarantee = []
+
             if self.char_options.get("lowercase"):
                 charsets_to_guarantee.append(string.ascii_lowercase)
             if self.char_options.get("uppercase"):
@@ -137,40 +140,41 @@ class TokenStreamGenerator:
                 charsets_to_guarantee.append(string.digits)
             if self.char_options.get("symbols"):
                 charsets_to_guarantee.append(string.punctuation)
+            
             required_chars_count = len(charsets_to_guarantee)
+
             if length < required_chars_count:
                 raise ValueError(f"Longueur {length} trop courte pour inclure {required_chars_count} types de caractères.")
-            system_random = secrets.SystemRandom()
+
+            system_random = secrets.SystemRandom() 
             for charset_pool in charsets_to_guarantee:
                 token_chars.append(system_random.choice(charset_pool))
+            
             full_alphabet_list = list(self.alphabet)
             remaining_length = length - len(token_chars)
-            while remaining_length > 0:
-                num_bytes_needed = min(remaining_length, 32)
-                raw_bytes = self._generate_bytes(num_bytes_needed)
+            
+            if remaining_length > 0:
+                num_bytes_needed = remaining_length 
+                raw_bytes = self._generate_bytes(num_bytes_needed) 
+
                 for byte_val in raw_bytes:
-                    if remaining_length <= 0:
-                        break
-                    index = byte_val % len(full_alphabet_list)
+                    index = byte_val % len(full_alphabet_list) 
                     token_chars.append(full_alphabet_list[index])
-                    remaining_length -= 1
+
             system_random.shuffle(token_chars)
+            
             token = ''.join(token_chars)
-            logger.info(f"Token généré: {token} (longueur: {len(token)})")
+            
+            logger.info(f"Token généré: {token[:10]}... (longueur: {length})")
             return token
         except Exception as e:
             sentry_sdk.capture_exception(e)
-            logger.error(f"Erreur dans generate_token: {e}", exc_info=True)
+            logger.error(f"Erreur dans generate_token (CSPRNG): {e}", exc_info=True)
             return None
 
     def generate_token_stream(self, num_tokens: int, length: int) -> List[Optional[str]]:
         """
         Génère un flux de tokens.
-        Args:
-            num_tokens: Nombre de tokens à générer
-            length: Longueur de chaque token
-        Returns:
-            List[Optional[str]]: Liste des tokens générés
         """
         try:
             tokens = []
@@ -186,10 +190,9 @@ class TokenStreamGenerator:
             logger.error(f"Erreur dans generate_token_stream: {e}", exc_info=True)
             return []
 
-# Tests unitaires simples pour le module
+# Tests unitaires simples pour le module (pour exécution directe)
 if __name__ == "__main__":
     import unittest
-    # Configurer le logger pour qu'il affiche dans la console pendant le test direct
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     class TestTokenStreamGenerator(unittest.TestCase):
@@ -199,7 +202,6 @@ if __name__ == "__main__":
             token = generator.generate_token(32)
             self.assertIsNotNone(token)
             self.assertEqual(len(token), 32)
-            # Vérifier que tous les types sont présents (si la longueur le permet)
             self.assertTrue(any(c in string.ascii_lowercase for c in token))
             self.assertTrue(any(c in string.ascii_uppercase for c in token))
             self.assertTrue(any(c in string.digits for c in token))
@@ -235,7 +237,6 @@ if __name__ == "__main__":
 
         def test_short_token_composition_guarantee(self):
             print("\n--- Test Short Token Composition Guarantee ---")
-            # Demande 4 types de caractères pour un token de longueur 8 (le minimum pour garantir)
             char_opts = {"lowercase": True, "uppercase": True, "numbers": True, "symbols": True}
             generator = TokenStreamGenerator(hash_algo="blake3", char_options=char_opts)
             token = generator.generate_token(8)
@@ -251,9 +252,9 @@ if __name__ == "__main__":
             print("\n--- Test Invalid Length ---")
             generator = TokenStreamGenerator(hash_algo="blake3")
             with self.assertRaises(ValueError):
-                generator.generate_token(5) # Trop court
+                generator.generate_token(5)
             with self.assertRaises(ValueError):
-                generator.generate_token(150) # Trop long
+                generator.generate_token(150)
             print("Tests de longueur invalide réussis.")
 
         def test_no_charset_selected_raises_error(self):
@@ -264,5 +265,3 @@ if __name__ == "__main__":
             print("Test 'aucun jeu de caractères' réussi.")
 
     unittest.main(argv=[''], exit=False)
-
-

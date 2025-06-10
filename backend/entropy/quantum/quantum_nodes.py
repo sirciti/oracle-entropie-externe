@@ -1,78 +1,99 @@
-import numpy as np
 import warnings
-from typing import Optional, Any
+import math
+import hashlib
+import os
+import time
+import random
+from typing import Optional
 
-# Solution professionnelle avec fallback si Qiskit manquant
+# Tente d'importer Qiskit, sinon utilise un mode simplifié
 try:
-    from qiskit import QuantumCircuit, Aer, execute
-    QISKIT_AVAILABLE = True
+    # from qiskit import QuantumCircuit, transpile, Aer # Importations spécifiques à Qiskit
+    # from qiskit_aer import AerSimulator # Remplacé par AerSimulator pour la compatibilité Qiskit 1.0+
+    # from qiskit.quantum_info import Statevector, entropy as qiskit_entropy
+    QISKIT_AVAILABLE = False # Met à False pour l'instant car l'import pose des problèmes récurrents
+
+    # Si vous installez Qiskit, mettez ceci à True et adaptez le code.
+    # Pour l'instant, on se concentre sur le fallback.
 except ImportError:
     QISKIT_AVAILABLE = False
     warnings.warn("Qiskit non installé. Utilisation du mode simulation simplifié.")
 
 class QuantumNode:
     """
-    Représente un nœud quantique avec un qubit associé, gérant la décohérence
-    et la mesure d'entropie, avec un fallback si Qiskit n'est pas disponible.
+    Simule un nœud quantique (qubit) avec un état de superposition et de la décohérence.
     """
     def __init__(self, node_id: int):
         self.node_id = node_id
-        self.qubit: Optional[QuantumCircuit] = None
-        self.state: Optional[np.ndarray] = None # Pour le mode fallback
+        # Représente l'état du qubit comme une superposition simple |alpha|^2 + |beta|^2 = 1
+        # Pour une simulation simplifiée, on peut utiliser un nombre réel
+        self.alpha_squared = random.random() # Probabilité d'être dans l'état |0>
+        self.beta_squared = 1.0 - self.alpha_squared # Probabilité d'être dans l'état |1>
+        self.coherence = 1.0 # Représente la cohérence, diminue avec la décohérence
 
-        if QISKIT_AVAILABLE:
-            self.qubit = QuantumCircuit(1)
-        else:
-            self.state = np.array([1+0j, 0+0j], dtype=complex) 
-
-    def apply_decoherence(self, chaos_param: float):
-        if chaos_param <= 0:
-            chaos_param = 0.1
-        theta = np.pi * np.random.weibull(chaos_param)
-        if QISKIT_AVAILABLE:
-            if self.qubit:
-                self.qubit.h(0)
-                self.qubit.rx(theta, 0)
+    def apply_decoherence(self, chaos_factor: float):
+        """
+        Applique un facteur de décohérence au nœud quantique.
+        Un chaos_factor élevé réduit la cohérence et rend l'état plus "classique".
+        """
+        self.coherence = max(0, self.coherence - chaos_factor * random.random())
+        # Quand la cohérence est faible, l'état tend vers un état mesuré (0 ou 1)
+        if self.coherence < 0.1:
+            if random.random() < self.alpha_squared:
+                self.alpha_squared = 1.0
+                self.beta_squared = 0.0
             else:
-                warnings.warn(f"Qubit non initialisé pour le nœud {self.node_id} en mode Qiskit.")
-        else:
-            if self.state is not None:
-                rotation_matrix_rx = np.array([
-                    [np.cos(theta/2), -1j*np.sin(theta/2)],
-                    [-1j*np.sin(theta/2), np.cos(theta/2)]
-                ], dtype=complex)
-                self.state = rotation_matrix_rx @ self.state
-            else:
-                warnings.warn(f"État non initialisé pour le nœud {self.node_id} en mode fallback.")
+                self.alpha_squared = 0.0
+                self.beta_squared = 1.0
 
     def measure_entropy(self) -> float:
-        probs: np.ndarray
-        if QISKIT_AVAILABLE:
-            if self.qubit:
-                backend = Aer.get_backend('statevector_simulator')
-                job = execute(self.qubit, backend)
-                result = job.result()
-                state = result.get_statevector()
-                probs = np.abs(state)**2
-            else:
-                probs = np.array([1.0, 0.0])
-        else:
-            probs = np.abs(self.state)**2 if self.state is not None else np.array([1.0, 0.0])
-        probs = probs[probs > 0]
-        return -np.sum(probs * np.log2(probs)) if len(probs) > 0 else 0.0
+        """
+        Mesure l'entropie de Shannon de l'état du qubit.
+        L'entropie est maximale quand alpha_squared est proche de 0.5 (superposition pure)
+        et minimale (0) quand c'est 0 ou 1 (état classique).
+        """
+        if self.alpha_squared == 0 or self.alpha_squared == 1:
+            return 0.0 # Entropie nulle pour un état pur
+        
+        # Entropie de Shannon: -p*log2(p) - (1-p)*log2(1-p)
+        entropy_shannon = -self.alpha_squared * math.log2(self.alpha_squared) \
+                          - self.beta_squared * math.log2(self.beta_squared)
+        return entropy_shannon
 
-# --- Fonction exportée pour import externe ---
-def get_quantum_entropy(node_count: int = 1, chaos_param: float = 1.0) -> float:
+# --- Fonction get_quantum_entropy ---
+# Cette fonction est maintenant définie ici et exportée.
+def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optional[float]:
     """
-    Calcule l'entropie moyenne de node_count nœuds quantiques.
-    Args:
-        node_count: Nombre de nœuds quantiques à générer
-        chaos_param: Paramètre influençant la décohérence
-    Returns:
-        Entropie moyenne (en bits)
+    Récupère un nombre aléatoire quantique normalisé [0,1]
+    ou retourne une valeur du PRNG de secours.
     """
-    nodes = [QuantumNode(i) for i in range(node_count)]
-    for node in nodes:
-        node.apply_decoherence(chaos_param)
-    entropies = [node.measure_entropy() for node in nodes]
-    return float(np.mean(entropies))
+    if QISKIT_AVAILABLE:
+        # Logique Qiskit (si Qiskit est installé et fonctionne)
+        # Actuellement désactivé pour la stabilité
+        warnings.warn("Qiskit est disponible mais la logique est désactivée pour la stabilité.")
+        pass # Laisser la logique Qiskit ici pour une activation future
+        
+    # Logique de fallback (PRNG de secours)
+    warnings.warn("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
+    fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
+    random.seed(hashlib.sha256(fallback_seed).hexdigest())
+    return random.random() # Retourne une valeur du PRNG de secours
+
+
+if __name__ == "__main__":
+    # Test simple des nœuds quantiques
+    print("--- Test des nœuds quantiques ---")
+    node1 = QuantumNode(1)
+    print(f"Initial Node 1: alpha_squared={node1.alpha_squared:.2f}, coherence={node1.coherence:.2f}, entropy={node1.measure_entropy():.2f}")
+    
+    node1.apply_decoherence(0.5) # Applique une décohérence
+    print(f"After decoherence (0.5): alpha_squared={node1.alpha_squared:.2f}, coherence={node1.coherence:.2f}, entropy={node1.measure_entropy():.2f}")
+
+    node2 = QuantumNode(2)
+    node2.apply_decoherence(0.9) # Forte décohérence
+    print(f"After strong decoherence (0.9): alpha_squared={node2.alpha_squared:.2f}, coherence={node2.coherence:.2f}, entropy={node2.measure_entropy():.2f}")
+
+    # Test de get_quantum_entropy
+    print("\n--- Test get_quantum_entropy ---")
+    entropy_val = get_quantum_entropy()
+    print(f"Entropie quantique (simulée): {entropy_val}")

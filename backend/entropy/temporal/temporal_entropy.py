@@ -1,108 +1,72 @@
-# backend/temporal_entropy.py
-
-import pytz
-from datetime import datetime
+import pytz # Bibliothèque pour les fuseaux horaires
+from datetime import datetime, timezone
 import random
-from typing import List, Dict, Tuple, Any
+import hashlib
+from typing import List, Dict, Any
+
+# Les fonctions de logging seront gérées par le logger principal via entropy_oracle.py
+# ou définies localement si nécessaire. Pour l'instant, on n'importe pas logger directement.
+
+# Liste des fuseaux horaires pertinents pour l'entropie mondiale
+# Cette liste peut être étendue ou configurée.
+WORLD_TIMEZONES = [
+    'America/New_York', 'Europe/London', 'Asia/Tokyo', 'Australia/Sydney',
+    'Africa/Johannesburg', 'America/Sao_Paulo', 'Asia/Dubai', 'Europe/Paris',
+    'America/Los_Angeles', 'Asia/Shanghai', 'Asia/Kolkata', 'Europe/Moscow'
+]
 
 def get_world_timestamps() -> List[str]:
     """
-    Récupère les heures et dates actuelles de plusieurs fuseaux horaires mondiaux.
-    Utilise pytz et datetime pour une récupération locale sans API externe.
-
-    Returns:
-        Une liste de chaînes de caractères, chaque chaîne représentant
-        l'horodatage complet (YYYY-MM-DD HH:MM:SS.ffffff) d'un fuseau horaire.
+    Récupère les horodatages UTC actuels pour une sélection de fuseaux horaires mondiaux.
     """
-    # Liste de fuseaux horaires majeurs (représentatifs des différents continents/régions)
-    # Cette liste peut être étendue ou configurée selon les besoins.
-    timezones = [
-        'UTC',
-        'Europe/Paris',          # Europe
-        'America/New_York',      # Amérique du Nord (Est)
-        'America/Los_Angeles',   # Amérique du Nord (Ouest)
-        'America/Sao_Paulo',     # Amérique du Sud
-        'Africa/Johannesburg',   # Afrique
-        'Asia/Tokyo',            # Asie (Est)
-        'Asia/Dubai',            # Asie (Moyen-Orient)
-        'Australia/Sydney',      # Australie
-        'Pacific/Auckland'       # Océanie (Nouvelle-Zélande)
-    ]
-    
     timestamps = []
-    for tz_name in timezones:
+    for tz_name in WORLD_TIMEZONES:
         try:
             tz = pytz.timezone(tz_name)
             now = datetime.now(tz)
-            timestamps.append(now.strftime('%Y-%m-%d %H:%M:%S.%f'))
+            timestamps.append(now.isoformat()) # Format ISO pour une représentation standard
         except pytz.UnknownTimeZoneError:
-            print(f"Fuseau horaire inconnu: {tz_name}") # Pour le débogage si un nom est incorrect
+            # Gérer les fuseaux horaires inconnus (si la liste est modifiée manuellement)
+            print(f"WARNING: Fuseau horaire inconnu: {tz_name}")
+            continue
         except Exception as e:
-            print(f"Erreur lors de la récupération de l'heure pour {tz_name}: {e}")
-            
+            print(f"ERROR: Erreur lors de la récupération du timestamp pour {tz_name}: {e}")
+            continue
     return timestamps
 
-def mix_timestamps(timestamps: List[str], mode: str = 'random') -> str:
+def mix_timestamps(timestamps: List[str], mode: str = 'hybrid') -> str:
     """
-    Mélange une liste d'horodatages selon un mode spécifié.
-
-    Args:
-        timestamps: Liste des horodatages sous forme de chaînes.
-        mode: Le mode de mélange ('random', 'shuffle', 'hybrid', 'custom').
-
-    Returns:
-        Une chaîne de caractères représentant l'entropie mélangée.
+    Mélange une liste d'horodatages pour produire une chaîne d'entropie.
+    Mode 'hybrid' : Combine hachage et mélange des bits/caractères.
     """
-    mixed_timestamps = list(timestamps) # Créer une copie pour ne pas modifier l'original
+    if not timestamps:
+        return ""
 
-    if not mixed_timestamps:
-        return "" # Retourne une chaîne vide si pas de timestamps
+    combined_string = "".join(timestamps)
+    
+    if mode == 'hybrid':
+        # Hachage initial pour un mélange cryptographique
+        initial_hash = hashlib.sha256(combined_string.encode()).hexdigest()
 
-    if mode == 'shuffle':
-        random.shuffle(mixed_timestamps)
-    elif mode == 'random':
-        # Crée une nouvelle liste en choisissant aléatoirement parmi les timestamps existants
-        mixed_timestamps = [random.choice(mixed_timestamps) for _ in range(len(mixed_timestamps))]
-    elif mode == 'hybrid':
-        # Combinaison de shuffle et de sélection aléatoire
-        random.shuffle(mixed_timestamps) # Mélange l'ordre
-        # Puis, sélectionne aléatoirement quelques-uns pour les répéter ou les omettre
-        num_to_select = random.randint(len(mixed_timestamps) // 2, len(mixed_timestamps))
-        mixed_timestamps = [random.choice(mixed_timestamps) for _ in range(num_to_select)]
-        random.shuffle(mixed_timestamps) # Re-mélange après sélection
-    elif mode == 'custom':
-        # Ici, vous pourriez intégrer l'influence de votre géométrie dynamique ou des qubits simulés.
-        # Par exemple, utiliser une valeur de l'icosaèdre pour déterminer la permutation ou la pondération.
-        # Pour l'instant, c'est un placeholder.
-        random.shuffle(mixed_timestamps) # Placeholder pour le mode custom
-    else:
-        # Mode par défaut ou inconnu
-        random.shuffle(mixed_timestamps) 
+        # Mélange et recombinaison de bits/caractères du hash pour l'aléa
+        # Pour une entropie plus fine, on peut manipuler les bits.
+        # Pour cet exemple, on mélange la chaîne hexadécimale.
+        shuffled_chars = list(initial_hash)
+        random.shuffle(shuffled_chars) # random.shuffle utilise SystemRandom si disponible
         
-    return ''.join(mixed_timestamps)
+        return "".join(shuffled_chars)
+    else: # mode simple (par défaut ou si mode inconnu)
+        return hashlib.sha256(combined_string.encode()).hexdigest()
 
-if __name__ == '__main__':
-    # Exemple d'utilisation et de test
-    print("--- Test de get_world_timestamps ---")
-    ts_list = get_world_timestamps()
-    print("Timestamps bruts :")
-    for ts in ts_list:
-        print(f" - {ts}")
+if __name__ == "__main__":
+    # Test unitaire simple
+    print("--- Test d'entropie temporelle ---")
+    timestamps = get_world_timestamps()
+    print(f"Timestamps collectés: {len(timestamps)}")
     
-    print("\n--- Test de mix_timestamps ---")
+    mixed_entropy = mix_timestamps(timestamps, mode='hybrid')
+    print(f"Entropie temporelle mélangée (hex): {mixed_entropy}")
+    print(f"Longueur de l'entropie: {len(mixed_entropy)}")
     
-    print("\nMode 'shuffle' :")
-    mixed_shuffled = mix_timestamps(ts_list, mode='shuffle')
-    print(f"Chaîne mélangée : {mixed_shuffled[:100]}...") # Affiche une partie pour ne pas surcharger
-
-    print("\nMode 'random' :")
-    mixed_random = mix_timestamps(ts_list, mode='random')
-    print(f"Chaîne mélangée : {mixed_random[:100]}...")
-
-    print("\nMode 'hybrid' :")
-    mixed_hybrid = mix_timestamps(ts_list, mode='hybrid')
-    print(f"Chaîne mélangée : {mixed_hybrid[:100]}...")
-    
-    print("\nMode 'custom' (placeholder) :")
-    mixed_custom = mix_timestamps(ts_list, mode='custom')
-    print(f"Chaîne mélangée : {mixed_custom[:100]}...")
+    # Vérifier si l'entropie est toujours la même avec la même graine (non, car time.time_ns)
+    # C'est une source d'aléa, pas un PRNG reproductible avec une graine fixe.

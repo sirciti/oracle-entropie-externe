@@ -1,29 +1,27 @@
-# backend/geometry_api.py
-
 from flask import Blueprint, jsonify, request
 import numpy as np
-from typing import Optional, List
+from typing import Tuple, Optional, List, Dict, Any
 import json
 
-# --- IMPORTS DES MODULES DE GÉOMÉTRIE 
+# --- IMPORTS DES MODULES DE GÉOMÉTRIE (CORRECTION DES CHEMINS ABSOLUS) ---
 # Icosaèdre
-from .geometry.icosahedron.generator import generate_icosahedron
-from .geometry.icosahedron.dynamics import update_icosahedron_dynamics
+from backend.geometry.icosahedron.generator import generate_icosahedron # <-- Correction
+from backend.geometry.icosahedron.dynamics import update_icosahedron_dynamics # <-- Correction
 
 # Pyramides
-from .geometry.pyramids.generator import generate_pyramids_system
-from .geometry.pyramids.dynamics import update_pyramids_dynamics
+from backend.geometry.pyramids.generator import generate_pyramids_system # <-- Correction
+from backend.geometry.pyramids.dynamics import update_pyramids_dynamics # <-- Correction
 
 # Cubes
-from .geometry.cubes.generator import CubeGenerator
-from .geometry.cubes.dynamics import update_cubes_dynamics
+from backend.geometry.cubes.generator import CubeGenerator # <-- Correction
+from backend.geometry.cubes.dynamics import update_cubes_dynamics # <-- Correction
 
-# Commun
-from .geometry.common import subdivide_faces, rotation_matrix
-
+# --- IMPORTS DES FONCTIONS GÉOMÉTRIQUES COMMUNES ---
+from backend.geometry.common import subdivide_faces, rotation_matrix, compute_vertex_neighbors # <-- Correction
 
 geometry_api = Blueprint('geometry_api', __name__)
 
+# Paramètres par défaut pour la dynamique (partagés par les géométries si applicable)
 DEFAULT_PARAMS = {
     'sigma': 10.0,
     'epsilon': 0.3,
@@ -35,7 +33,19 @@ DEFAULT_PARAMS = {
     'noise_level': 0.1
 }
 
+# Paramètres par défaut pour les cubes (devrait être dans une config plus globale ou utils.py)
+DEFAULT_CUBES_CONFIG = {
+    'num_cubes': 3,
+    'cube_size': 8.0,
+    'num_balls_per_cube': 3,
+    'space_bounds': 30.0,
+    'dt': 0.016, # Pas de temps pour l'animation des cubes
+    'steps': 80 # Nombre de pas pour l'animation initiale des cubes
+}
+
+
 def parse_float_list(s: str) -> Optional[List[float]]:
+    """Tente d'analyser une chaîne en une liste de floats."""
     try:
         data = json.loads(s)
         if isinstance(data, list) and all(isinstance(x, (int, float)) for x in data):
@@ -44,10 +54,15 @@ def parse_float_list(s: str) -> Optional[List[float]]:
     except (json.JSONDecodeError, TypeError):
         return None
 
-# ------------------ ICOSAEDRE ------------------
+# ----------------------------------------------------------------------
+# ROUTES POUR L'ICOSAÈDRE
+# ----------------------------------------------------------------------
 
 @geometry_api.route('/icosahedron/initial', methods=['GET'])
 def get_initial_icosahedron():
+    """
+    Génère et renvoie les données de l'icosaèdre initial.
+    """
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
     rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
@@ -72,8 +87,12 @@ def get_initial_icosahedron():
     except Exception as e:
         return jsonify({'error': f'Erreur lors de la génération de l\'icosaèdre : {e}'}), 500
 
+
 @geometry_api.route('/icosahedron/subdivide', methods=['GET'])
 def get_subdivided_icosahedron():
+    """
+    Subdivise l'icosaèdre et renvoie les nouvelles données.
+    """
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
     rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
@@ -99,8 +118,12 @@ def get_subdivided_icosahedron():
     except Exception as e:
         return jsonify({'error': f'Erreur lors de la subdivision de l\'icosaèdre : {e}'}), 500
 
+
 @geometry_api.route('/icosahedron/animate', methods=['GET'])
 def animate_icosahedron():
+    """
+    Simule la dynamique temporelle sur l’icosaèdre.
+    """
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
     rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
@@ -134,15 +157,15 @@ def animate_icosahedron():
                 'vertices': vertices.tolist(),
                 'faces': faces.tolist()
             })
-        # Correction : vérifier que frames n'est pas vide
-        if not frames:
-            return jsonify({'error': "Aucune frame générée"}), 500
         return jsonify({'frames': frames})
     except Exception as e:
         return jsonify({'error': f'Erreur lors de l\'animation de l\'icosaèdre : {e}'}), 500
 
 def get_icosahedron_animate(steps=10, radius=1.0, position=None, rotation_axis=None, rotation_angle=0.0,
                             dt=0.01, sigma=10.0, epsilon=0.3, rho=28.0, zeta=2.1):
+    """
+    Fonction utilitaire pour générer les frames d'animation de l'icosaèdre (sans passer par Flask).
+    """
     if position is None:
         position = np.zeros(3)
     if rotation_axis is None:
@@ -159,13 +182,19 @@ def get_icosahedron_animate(steps=10, radius=1.0, position=None, rotation_axis=N
         })
     return frames
 
-# ------------------ PYRAMIDES ------------------
+# ----------------------------------------------------------------------
+# ROUTES POUR LES PYRAMIDES (NOUVELLES)
+# ----------------------------------------------------------------------
 
 @geometry_api.route('/pyramids/initial', methods=['GET'])
 def get_initial_pyramids():
+    """
+    Génère et renvoie les données du système de pyramides initial.
+    """
     base_size = float(request.args.get('base_size', 5.0))
     num_layers = int(request.args.get('num_layers', 3))
     brick_size = float(request.args.get('brick_size', 1.0))
+    
     try:
         pyramids_system = generate_pyramids_system(base_size, num_layers, brick_size)
         return jsonify(pyramids_system)
@@ -174,6 +203,9 @@ def get_initial_pyramids():
 
 @geometry_api.route('/pyramids/animate', methods=['GET'])
 def animate_pyramids():
+    """
+    Simule la dynamique temporelle sur le système de pyramides.
+    """
     base_size = float(request.args.get('base_size', 5.0))
     num_layers = int(request.args.get('num_layers', 3))
     brick_size = float(request.args.get('brick_size', 1.0))
@@ -187,7 +219,7 @@ def animate_pyramids():
         frames = []
         current_system_state = pyramids_system
         for _ in range(steps):
-            current_system_state = update_pyramids_dynamics(current_system_state, time_step, chaos_factor, noise_level)
+            current_system_state = update_pyramids_dynamics(current_system_state, time_step, chaos_factor=chaos_factor, noise_level=noise_level)
             frame_data = {
                 "pyramids": []
             }
@@ -195,88 +227,82 @@ def animate_pyramids():
                 pyramid_frame = {
                     "id": p["id"],
                     "bricks_positions": [b["position"] for b in p["bricks"]],
-                    "brick_size": brick_size
+                    "brick_size": brick_size,
+                    "balls": [b["position"] for b in p["balls"]]
                 }
                 frame_data["pyramids"].append(pyramid_frame)
             frames.append(frame_data)
-        # Correction : vérifier que frames n'est pas vide
-        if not frames:
-            return jsonify({'error': "Aucune frame générée"}), 500
         return jsonify({'frames': frames})
     except Exception as e:
         return jsonify({'error': f'Erreur lors de l\'animation des pyramides : {e}'}), 500
 
-# ------------------ CUBES ------------------
+# ----------------------------------------------------------------------
+# ROUTES POUR LES CUBES (NOUVELLES)
+# ----------------------------------------------------------------------
 
 @geometry_api.route('/cubes/initial', methods=['GET'])
-def cubes_initial():
+def get_initial_cubes():
+    """
+    Génère et renvoie les données du système de cubes initial.
+    """
+    num_cubes = int(request.args.get('num_cubes', DEFAULT_CUBES_CONFIG['num_cubes']))
+    cube_size = float(request.args.get('cube_size', DEFAULT_CUBES_CONFIG['cube_size']))
+    num_balls_per_cube = int(request.args.get('num_balls_per_cube', DEFAULT_CUBES_CONFIG['num_balls_per_cube']))
+    space_bounds = float(request.args.get('space_bounds', DEFAULT_CUBES_CONFIG['space_bounds']))
+
     try:
-        num_cubes = int(request.args.get('num_cubes', 3))
-        cube_size = float(request.args.get('cube_size', 8.0))
-        num_balls_per_cube = int(request.args.get('num_balls_per_cube', 3))
-        space_bounds = float(request.args.get('space_bounds', 30.0))
-        generator = CubeGenerator()
-        cubes_system = generator.generate_cubes_system(
-            num_cubes=num_cubes,
-            cube_size=cube_size,
-            num_balls_per_cube=num_balls_per_cube,
-            space_bounds=space_bounds
-        )
-        return jsonify({
-            'cubes': cubes_system,
-            'metadata': {
-                'num_cubes': num_cubes,
-                'cube_size': cube_size,
-                'num_balls_per_cube': num_balls_per_cube,
-                'space_bounds': space_bounds
-            }
-        })
+        cube_generator = CubeGenerator()
+        cubes_system = cube_generator.generate_cubes_system(num_cubes=num_cubes, cube_size=cube_size, num_balls_per_cube=num_balls_per_cube, space_bounds=space_bounds)
+        return jsonify(cubes_system)
     except Exception as e:
         return jsonify({'error': f'Erreur lors de la génération des cubes : {e}'}), 500
 
 @geometry_api.route('/cubes/animate', methods=['GET'])
 def animate_cubes():
+    """
+    Simule la dynamique temporelle sur le système de cubes.
+    """
+    num_cubes = int(request.args.get('num_cubes', DEFAULT_CUBES_CONFIG['num_cubes']))
+    cube_size = float(request.args.get('cube_size', DEFAULT_CUBES_CONFIG['cube_size']))
+    num_balls_per_cube = int(request.args.get('num_balls_per_cube', DEFAULT_CUBES_CONFIG['num_balls_per_cube']))
+    space_bounds = float(request.args.get('space_bounds', DEFAULT_CUBES_CONFIG['space_bounds']))
+    
+    steps = int(request.args.get('steps', DEFAULT_CUBES_CONFIG['steps']))
+    time_step = float(request.args.get('dt', DEFAULT_CUBES_CONFIG['dt']))
+    gravity = float(request.args.get('gravity', -9.81 * 0.05))
+    bounce_factor = float(request.args.get('bounce_factor', 0.85))
+
     try:
-        num_cubes = int(request.args.get('num_cubes', 3))
-        cube_size = float(request.args.get('cube_size', 8.0))
-        num_balls_per_cube = int(request.args.get('num_balls_per_cube', 3))
-        confinement_size = float(request.args.get('space_bounds', 30.0))
-        steps = int(request.args.get('steps', 150))
-        dt = float(request.args.get('dt', 0.03))
-        chaos = float(request.args.get('chaos', 0.7))
-
-        generator = CubeGenerator()
-        cubes_system = generator.generate_cubes_system(
-            num_cubes=num_cubes,
-            cube_size=cube_size,
-            num_balls_per_cube=num_balls_per_cube,
-            space_bounds=confinement_size
-        )
-
+        cube_generator = CubeGenerator()
+        cubes_system = cube_generator.generate_cubes_system(num_cubes=num_cubes, cube_size=cube_size, num_balls_per_cube=num_balls_per_cube, space_bounds=space_bounds)
+        
         frames = []
-        current_system = cubes_system
+        current_system_state = cubes_system
+        
         for _ in range(steps):
-            current_system = update_cubes_dynamics(
-                current_system, delta_time=dt, confinement_size=confinement_size, chaos=chaos
+            current_system_state = update_cubes_dynamics(
+                current_system_state,
+                delta_time=time_step,
+                gravity=gravity,
+                bounce_factor=bounce_factor,
+                confinement_size=space_bounds
             )
+            
             frame_data = {
-                "cubes": [
-                    {
-                        "id": cube["id"],
-                        "position": cube["position"],
-                        "size": cube["size"],
-                        "rotation": cube["rotation"],
-                        "balls_positions": [ball["position"] for ball in cube["balls"]],
-                        "ball_radius": cube["balls"][0]["radius"] if cube["balls"] else cube_size / 8.0
-                    }
-                    for cube in current_system
-                ]
+                "cubes": []
             }
+            for c in current_system_state["cubes"]:
+                cube_frame = {
+                    "id": c["id"],
+                    "position": c["position"],
+                    "rotation": c["rotation"],
+                    "size": c["size"],
+                    "balls_positions": [b["position"] for b in c["balls"]],
+                    "ball_radius": c["balls"][0]["radius"] if c["balls"] else 0.0
+                }
+                frame_data["cubes"].append(cube_frame)
             frames.append(frame_data)
+            
         return jsonify({'frames': frames})
     except Exception as e:
         return jsonify({'error': f'Erreur lors de l\'animation des cubes : {e}'}), 500
-    
-@geometry_api.route('/test', methods=['GET'])
-def test_route():
-    return jsonify({"message": "Blueprint geometry_api fonctionne"})

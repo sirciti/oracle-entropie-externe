@@ -6,18 +6,15 @@ import hashlib
 import time
 import random
 from typing import List, Dict, Optional, Any, Tuple
-# from sentry_sdk.transport import Transport # Non utilisé ici directement
-# from .quantum import generate_quantum_entropy # <-- Ligne à supprimer
 
-# --- CORRECTION DE L'IMPORTATION ---
-# Importer directement depuis backend.quantum_nodes
-from .quantum_nodes import get_quantum_entropy # Assurez-vous que get_quantum_entropy est bien une fonction exportée par quantum_nodes.py
+# --- IMPORT CORRIGÉ POUR QUANTUM_NODES ---
+# get_quantum_entropy sera importé d'ici dans entropy_oracle.py
+from backend.entropy.quantum.quantum_nodes import get_quantum_entropy
 
 logger = logging.getLogger("entropy_generator")
 
-# Ces constantes étaient déjà définies dans app.py ou config.json,
-# mais si utils.py les utilise, elles peuvent être définies ici.
-# Elles ne doivent pas être redondantes avec app.py si app.py importe utils.load_config().
+# Ces constantes sont définies ici car elles sont utilisées par les fonctions utilitaires.
+# Elles seront accessibles via le module utils.
 DEFAULT_LAT = 48.85
 DEFAULT_LON = 2.35
 DEFAULT_COORDINATES = [
@@ -32,9 +29,13 @@ FALLBACK_PRNG_SEED_LENGTH = 256
 
 
 def load_config() -> Dict[str, Any]:
+    """Charge la configuration depuis config.json et/ou les variables d'environnement."""
     config = {}
     try:
-        with open('config.json', 'r') as f:
+        # Le chemin d'accès à config.json est relatif à la racine du conteneur (/app)
+        # où le répertoire 'backend' est monté. config.json est à la racine du projet hôte.
+        # Donc, depuis /app (qui est backend/), il faut remonter d'un niveau.
+        with open('/app/config.json', 'r') as f: # CORRECTION DE CHEMIN DANS DOCKER
             config = json.load(f)
         logger.info("Configuration chargée depuis config.json")
     except FileNotFoundError:
@@ -43,6 +44,7 @@ def load_config() -> Dict[str, Any]:
         logger.error(f"Erreur de décodage JSON dans config.json : {e}")
     except Exception as e:
         logger.error(f"Erreur inattendue lors du chargement de config.json : {e}")
+
     try:
         config['latitude'] = float(os.getenv('OPEN_METEO_LAT', config.get('latitude', DEFAULT_LAT)))
         config['longitude'] = float(os.getenv('OPEN_METEO_LON', config.get('longitude', DEFAULT_LON)))
@@ -59,7 +61,12 @@ def load_config() -> Dict[str, Any]:
         logger.error(f"Erreur inattendue lors de la surcharge de la configuration : {e}")
     return config
 
+# L'objet config global est chargé une fois lors de l'importation de ce module
+config = load_config()
+
+
 def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]:
+    """Récupère les données météo actuelles pour une paire de coordonnées."""
     try:
         url = (
             f"https://api.open-meteo.com/v1/forecast?"
@@ -92,6 +99,7 @@ def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]
         return None
 
 def get_area_weather_data(coordinates: List[Tuple[float, float]]) -> List[Optional[Dict[str, Any]]]:
+    """Récupère les données météo pour une liste de coordonnées."""
     all_data = []
     for lat, lon in coordinates:
         data = get_current_weather_data(lat, lon)
@@ -100,6 +108,7 @@ def get_area_weather_data(coordinates: List[Tuple[float, float]]) -> List[Option
     return all_data
 
 def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[Dict[str, Any]]:
+    """Combine les données météo de plusieurs points."""
     if not all_data:
         logger.error("Aucune donnée météo à combiner.")
         return None
@@ -131,8 +140,6 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
         logger.error(f"Erreur lors de la combinaison des données météo : {e}")
         return None
 
-def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optional[float]:
-    logger.warning("L'API ANU QRNG est désactivée/instable. Utilisation du PRNG de secours.")
-    fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
-    random.seed(hashlib.sha256(fallback_seed).hexdigest())
-    return random.random()
+# La fonction get_quantum_entropy sera celle importée de quantum_nodes.py
+# Elle ne sera plus définie ici, mais directement importée dans entropy_oracle.py
+# from backend.quantum_nodes import get_quantum_entropy # <-- Déplacé ici pour la visibilité

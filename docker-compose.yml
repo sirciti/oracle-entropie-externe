@@ -1,8 +1,8 @@
 services:
   backend:
     build:
-      context: . # Contexte de construction est la racine du projet
-      dockerfile: backend/docker/Dockerfile # <-- CORRECTION ICI
+      context: ./backend # Le contexte de build est le dossier 'backend'
+      dockerfile: docker/Dockerfile # <-- CORRECTION ICI : Chemin relatif au contexte de build
     ports:
       - "5000:5000"
     volumes:
@@ -10,4 +10,4 @@ services:
     environment:
       - FLASK_ENV=development
       - SENTRY_DSN=${SENTRY_DSN}
-    command: ["python", "-m", "backend.core.app"] # <-- CORRECTION ICI (nouveau chemin de app.py)
+    command: ["python", "-m", "backend.core.app"]
