@@ -1,41 +1,38 @@
 // frontend/vite.config.js
 import { defineConfig } from "vite";
-// Pour une intégration avancée de Sentry, ajoute si besoin :
-// import { sentryVitePlugin } from "@sentry/vite-plugin";
+// import { sentryVitePlugin } from "@sentry/vite-plugin"; // optionnel
 
 export default defineConfig({
   server: {
+    host: true,
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5000",
+        target: "http://backend:5000", // <--- le nom du service Docker Compose !
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
-    // Pour afficher les erreurs dans un overlay en développement
     hmr: {
       overlay: true,
     },
-    // Si tu veux désactiver totalement le hot reload, remplace la ligne ci-dessus par :
-    // hmr: false,
+    // hmr: false, // pour désactiver le hot reload
   },
   root: "./",
   build: {
-    outDir: "../dist",
+    outDir: "dist",
     emptyOutDir: true,
   },
   resolve: {
     alias: {
       "@sentry/browser": "@sentry/browser",
       // Ajoute d’autres alias personnalisés ici si besoin
-      // Exemple : "@": "/src",
+      // Exemple : "@": "/src",
     },
   },
   optimizeDeps: {
     include: ["three"],
   },
-  // Pour une intégration avancée de Sentry (optionnel) :
   // plugins: [
   //   sentryVitePlugin({
   //     org: "TON_ORG",

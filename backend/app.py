@@ -1,17 +1,28 @@
 import os
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, request, send_from_directory, jsonify
+frontend_build_folder = os.path.join(os.path.dirname(__file__), 'frontend', 'build')
+
 from logging.handlers import RotatingFileHandler
 import logging
 import sentry_sdk
 from typing import List, Optional
 from flask_cors import CORS
 from sentry_sdk.integrations.flask import FlaskIntegration
-from token_stream import TokenStreamGenerator
-from entropy_oracle import generate_quantum_geometric_entropy, get_cubes_entropy, get_pyramids_entropy
-from geometry_api import geometry_api, get_icosahedron_animate
-from utils import load_config, get_area_weather_data, combine_weather_data, get_quantum_entropy
+
+# Import absolus de package (PRO)
+from backend.token_stream import TokenStreamGenerator
+from backend.entropy_oracle import generate_quantum_geometric_entropy, get_cubes_entropy, get_pyramids_entropy
+from backend.geometry_api import geometry_api, get_icosahedron_animate
+from backend.utils import load_config, combine_weather_data, get_quantum_entropy
+
+from dotenv import load_dotenv
+import requests
+import numpy as np
+from blake3 import blake3
+from hashlib import sha3_256
 
 # -------------------- INITIALISATION SENTRY --------------------
+load_dotenv()
 sentry_sdk.init(
     dsn=os.environ.get("SENTRY_DSN"),
     integrations=[FlaskIntegration()],
@@ -49,6 +60,42 @@ def log_info(message: str) -> None:
 
 config = load_config()
 
+# -------------------- FONCTIONS D'ENTROPIE --------------------
+def get_weather_entropy():
+    try:
+        response = requests.get(
+            os.getenv("WEATHER_API_URL"),
+            params={
+                "latitude": config["latitude"],
+                "longitude": config["longitude"],
+                "current_weather": True,
+                "hourly": "temperature_2m,pressure_msl,relative_humidity_2m"
+            }
+        )
+        response.raise_for_status()
+        data = response.json()
+        temperature = str(data.get("current_weather", {}).get("temperature", ""))
+        hourly = data.get("hourly", {})
+        pressure = str(hourly.get("pressure_msl", [None])[-1] or "")
+        humidity = str(hourly.get("relative_humidity_2m", [None])[-1] or "")
+        return temperature + pressure + humidity
+    except Exception as e:
+        logger.error(f"Erreur API météo : {e}")
+        return str(np.random.normal(0, 1, 1000))
+
+def generate_token_from_entropy(frames, length=32):
+    weather_seed = get_weather_entropy()
+    positions = [pos for frame in frames for pyramid in frame["pyramids"] for pos in pyramid["bricks_positions"]]
+    billes = [b["position"] for frame in frames for b in frame.get("billes", [])]
+    entropy_data = str(positions) + str(billes)
+    if weather_seed:
+        entropy_data += weather_seed
+    else:
+        entropy_data += str(np.random.normal(0, 1, 1000)) + os.urandom(16).hex()
+    blake_hash = blake3(entropy_data.encode()).digest(length=32)
+    final_token = sha3_256(blake_hash).hexdigest()[:length * 2]
+    return final_token
+
 # -------------------- FONCTIONS D'ENTROPIE FINALE --------------------
 def get_final_entropy(
     geometries: List[str],
@@ -58,12 +105,9 @@ def get_final_entropy(
     use_local_noise: bool = True
 ) -> Optional[bytes]:
     try:
-        from temporal_entropy import get_world_timestamps, mix_timestamps
+        from backend.temporal_entropy import get_world_timestamps, mix_timestamps
         import json
         import time
-        import os
-        import hashlib
-        seed_string = str(time.time_ns())
         valid_geometries = {"cubes", "icosahedron", "pyramids"}
 
         quantum_geo_entropy = generate_quantum_geometric_entropy(
@@ -75,42 +119,25 @@ def get_final_entropy(
             use_cubes="cubes" in geometries,
             use_pyramids="pyramids" in geometries
         )
+        seed_string = str(time.time_ns())
         if quantum_geo_entropy:
             seed_string += quantum_geo_entropy.hex()
 
         if use_weather and not quantum_geo_entropy:
-            all_weather_data_raw = get_area_weather_data(config['coordinates'])
-            weather_data_processed = combine_weather_data(all_weather_data_raw)
-            if weather_data_processed:
-                seed_string += json.dumps(weather_data_processed, sort_keys=True)
-            else:
-                log_warning("API météo indisponible, utilisation des géométries comme fallback")
-                for geometry in geometries:
-                    if geometry not in valid_geometries:
-                        continue
-                    if geometry == "cubes":
-                        entropy = get_cubes_entropy()
-                        if entropy:
-                            seed_string += entropy.hex()
-                    elif geometry == "icosahedron":
-                        frames = get_icosahedron_animate(steps=10)
-                        seed_string += json.dumps({"frames": frames}, sort_keys=True)
-                    elif geometry == "pyramids":
-                        entropy = get_pyramids_entropy()
-                        if entropy:
-                            seed_string += entropy.hex()
+            weather_seed = get_weather_entropy()
+            seed_string += weather_seed
 
         for geometry in geometries:
             if geometry not in valid_geometries:
                 continue
-            if geometry == "cubes" and not use_weather and not quantum_geo_entropy:
+            if geometry == "cubes":
                 entropy = get_cubes_entropy()
                 if entropy:
                     seed_string += entropy.hex()
-            elif geometry == "icosahedron" and not use_weather and not quantum_geo_entropy:
+            elif geometry == "icosahedron":
                 frames = get_icosahedron_animate(steps=10)
                 seed_string += json.dumps({"frames": frames}, sort_keys=True)
-            elif geometry == "pyramids" and not use_weather and not quantum_geo_entropy:
+            elif geometry == "pyramids":
                 entropy = get_pyramids_entropy()
                 if entropy:
                     seed_string += entropy.hex()
@@ -135,8 +162,8 @@ def get_final_entropy(
             log_error("Aucune source d'entropie n'a contribué")
             return None
 
-        hasher = hashlib.blake2b(seed_string.encode(), digest_size=32)
-        hashed_entropy = hasher.digest()
+        blake_hash = blake3(seed_string.encode()).digest(length=32)
+        hashed_entropy = sha3_256(blake_hash).digest()
         log_info("Entropie finale générée avec succès.")
         return hashed_entropy
     except Exception as e:
@@ -166,12 +193,8 @@ def generate_random():
 @app.route('/entropy', methods=['GET'])
 def entropy_route():
     try:
-        all_weather_data = get_area_weather_data(config['coordinates'])
-        combined_weather = combine_weather_data(all_weather_data)
-        if combined_weather:
-            return jsonify(combined_weather)
-        else:
-            return jsonify({"error": "Failed to retrieve combined weather data"}), 500
+        weather_seed = get_weather_entropy()
+        return jsonify({"weather_entropy": weather_seed}), 200
     except Exception as e:
         log_error(f"Erreur lors de la récupération de l'entropie météo : {e}")
         return jsonify({"error": str(e)}), 500
@@ -194,10 +217,10 @@ def final_entropy():
         log_error(f"Erreur lors de la génération de l'entropie finale : {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route("/generate_token", methods=["POST"])
+@app.route("/generate_token", methods=['POST'])
 def generate_token():
     try:
-        data = request.get_json()
+        data = request.get_json (silent=True) or {}
         length = data.get("length", 32)
         char_options = data.get('char_options', {
             "lowercase": True,
@@ -211,14 +234,16 @@ def generate_token():
             use_weather=weather_enabled,
             use_quantum=True,
             use_timestamps=True,
-            use_local_noise=True,
+            use_local_noise=True
         )
+        if not entropy_bytes:
+            return jsonify({"token": "your_generated_token"}), 500
         generator = TokenStreamGenerator(hash_algo="blake3", seed=entropy_bytes, char_options=char_options)
         token = generator.generate_token(length)
         if token:
-            return jsonify({"token": token, "entropy_seed": entropy_bytes.hex() if entropy_bytes else None})
+            return jsonify({"token": token, "entropy_seed": entropy_bytes.hex()})
         else:
-            return jsonify({"error": "Failed to generate token"})
+            return jsonify({"error": "Failed to generate token"}), 500
     except Exception as e:
         log_error(f"Error generating token: {e}")
         return jsonify({"error": str(e)}), 400
@@ -243,11 +268,13 @@ def stream_tokens():
             use_timestamps=True,
             use_local_noise=True
         )
+        if not entropy_bytes:
+            return jsonify({"error": "Failed to generate entropy"}), 500
         generator = TokenStreamGenerator(hash_algo="blake3", seed=entropy_bytes, char_options=char_options)
         tokens = generator.generate_token_stream(num_tokens, length)
         if not tokens:
             return jsonify({"error": "Échec de génération des tokens"}), 400
-        return jsonify({"tokens": tokens, "entropy_seed": entropy_bytes.hex() if entropy_bytes else None}), 200
+        return jsonify({"tokens": tokens, "entropy_seed": entropy_bytes.hex()}), 200
     except ValueError as e:
         log_error(f"Error generating token stream: {e}")
         return jsonify({"error": str(e)}), 400
@@ -255,26 +282,32 @@ def stream_tokens():
         log_error(f"Error generating token stream: {e}")
         return jsonify({"error": str(e)}), 400
 
-@app.route("/")
-def serve_index():
+@app.route('/')
+def index():
     try:
-        return send_from_directory('frontend', 'index.html')
+        chemin_index = os.path.join(frontend_build_folder, 'index.html')
+        print("Chemin utilisé pour index.html :", chemin_index)
+        return send_from_directory(frontend_build_folder, 'index.html')
     except Exception as e:
-        logger.error(f"Error serving index.html: {e}")
+        print(f"Error serving index.html: {e}")
         return jsonify({"error": "Failed to serve index.html"}), 404
 
-@app.route('/<path:filename>')
-def serve_static(filename):
+# (optionnel) Pour servir les fichiers statiques du build
+@app.route('/<path:path>')
+def static_proxy(path):
     try:
-        return send_from_directory('frontend', filename)
+        return send_from_directory(frontend_build_folder, path)
     except Exception as e:
-        logger.error(f"Erreur lors du service du fichier statique {filename}: {e}")
-        return jsonify({"error": f"File {filename} not found"}), 404
+        print(f"Error serving static file {path}: {e}")
+        return jsonify({"error": f"File {path} not found"}), 404
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
 
 @app.route('/test-sentry')
 def test_sentry():
     if app.config.get('ENV') == 'development' or app.config.get('TESTING', False):
-        # Provoque une division par zéro pour tester Sentry uniquement en dev/test
         return 1 / 0
     else:
         return "Sentry test endpoint is disabled in production", 403

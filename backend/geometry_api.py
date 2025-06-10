@@ -5,21 +5,22 @@ import numpy as np
 from typing import Optional, List
 import json
 
-# --- IMPORTS DES MODULES DE GÉOMÉTRIE (NOUVELLE ARBORESCENCE) ---
+# --- IMPORTS DES MODULES DE GÉOMÉTRIE 
 # Icosaèdre
-from geometry.icosahedron.generator import generate_icosahedron
-from geometry.icosahedron.dynamics import update_icosahedron_dynamics
+from .geometry.icosahedron.generator import generate_icosahedron
+from .geometry.icosahedron.dynamics import update_icosahedron_dynamics
 
 # Pyramides
-from geometry.pyramids.generator import generate_pyramids_system
-from geometry.pyramids.dynamics import update_pyramids_dynamics
+from .geometry.pyramids.generator import generate_pyramids_system
+from .geometry.pyramids.dynamics import update_pyramids_dynamics
 
 # Cubes
-from geometry.cubes.generator import CubeGenerator
-from geometry.cubes.dynamics import update_cubes_dynamics
+from .geometry.cubes.generator import CubeGenerator
+from .geometry.cubes.dynamics import update_cubes_dynamics
 
 # Commun
-from geometry.common import subdivide_faces, rotation_matrix
+from .geometry.common import subdivide_faces, rotation_matrix
+
 
 geometry_api = Blueprint('geometry_api', __name__)
 

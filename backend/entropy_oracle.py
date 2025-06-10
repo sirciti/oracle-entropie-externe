@@ -12,12 +12,12 @@ except ImportError:
     BLAKE3_AVAILABLE = False
 
 # Imports absolus
-from geometry.icosahedron.generator import generate_klee_penrose_polyhedron
-from geometry.pyramids.generator import generate_pyramids_system
-from geometry.pyramids.dynamics import update_pyramids_dynamics
-from geometry.cubes.generator import CubeGenerator
-from geometry.cubes.dynamics import update_cubes_dynamics
-from utils import get_area_weather_data, combine_weather_data, get_quantum_entropy, load_config
+from .geometry.icosahedron.generator import generate_klee_penrose_polyhedron
+from .geometry.pyramids.generator import generate_pyramids_system
+from .geometry.pyramids.dynamics import update_pyramids_dynamics
+from .geometry.cubes.generator import CubeGenerator
+from .geometry.cubes.dynamics import update_cubes_dynamics
+from .utils import get_area_weather_data, combine_weather_data, get_quantum_entropy, load_config
 
 logger = logging.getLogger("entropy_oracle")
 config = load_config()

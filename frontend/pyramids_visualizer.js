@@ -3,31 +3,318 @@ import { THREE } from "./three_utils.js";
 let scene = null;
 let camera = null;
 let renderer = null;
-let pyramidsGroup = null;
+let shapesGroup = null;
 let frames = [];
 let currentFrame = 0;
 let animationId = null;
+let lastTime = 0;
+const frameInterval = 1000 / 30; // 30 FPS
+let frameProgress = 0;
+const frameDuration = 100; // ms
+let shapesData = [];
+let torusMesh = null;
+let knotMesh = null;
+let miniShapes = [];
+let isAnimatingFlag = false;
+
+function createFractalShape({ type, position, size, color, velocity = null, fusionCount = 1 }) {
+    let geometry, material, mesh;
+    switch (type) {
+        case "tetrahedron":
+            geometry = new THREE.TetrahedronGeometry(size);
+            break;
+        case "sphere":
+            geometry = new THREE.SphereGeometry(size, 16, 16);
+            break;
+        default:
+            geometry = new THREE.TetrahedronGeometry(size);
+    }
+    material = new THREE.MeshPhongMaterial({ color, flatShading: true, transparent: true, opacity: 0.8 });
+    mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(position);
+    mesh.scale.set(Math.cbrt(fusionCount), Math.cbrt(fusionCount), Math.cbrt(fusionCount));
+
+    return {
+        mesh,
+        type,
+        position: new THREE.Vector2(position.x, position.y),
+        velocity: velocity || new THREE.Vector2((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2),
+        size: size * Math.cbrt(fusionCount),
+        baseSize: size,
+        color,
+        fusionCount,
+        boundingBox: new THREE.Box3().setFromObject(mesh)
+    };
+}
+
+function updateBoundingBox(shape) {
+    shape.boundingBox.setFromObject(shape.mesh);
+}
+
+function animateShapes(time) {
+    if (!isAnimatingFlag) return;
+    animationId = requestAnimationFrame(animateShapes);
+
+    const delta = time - lastTime;
+    if (delta < frameInterval) return;
+    lastTime = time - (delta % frameInterval);
+
+    // Interpolation des frames
+    if (frames.length > 0) {
+        frameProgress += delta;
+        if (frameProgress >= frameDuration) {
+            currentFrame = (currentFrame + 1) % frames.length;
+            frameProgress -= frameDuration;
+        }
+        const t = frameProgress / frameDuration;
+        const nextFrame = (currentFrame + 1) % frames.length;
+        updateShapesGeometry(frames[currentFrame], frames[nextFrame], t);
+    }
+
+    // Physique
+    shapesData.forEach(shape => {
+        shape.position.x += shape.velocity.x * (delta / 1000);
+        shape.position.y += shape.velocity.y * (delta / 1000);
+
+        // Rebonds (±20)
+        ["x", "y"].forEach(axis => {
+            if (shape.position[axis] > 20 || shape.position[axis] < -20) {
+                shape.velocity[axis] *= -0.9;
+                shape.position[axis] = Math.max(-20, Math.min(20, shape.position[axis]));
+            }
+        });
+
+        shape.mesh.rotation.x += 0.01 * (delta / frameInterval);
+        shape.mesh.rotation.y += 0.012 * (delta / frameInterval);
+        shape.mesh.position.set(shape.position.x, shape.position.y, shape.mesh.position.z);
+        updateBoundingBox(shape);
+    });
+
+    // Collisions, fusion, division
+    handleCollisions();
+
+    // Animation toroïdale
+    if (shapesGroup) {
+        shapesGroup.rotation.y += 0.003 * (delta / frameInterval);
+        shapesGroup.rotation.x += 0.002 * (delta / frameInterval);
+    }
+    if (knotMesh) knotMesh.rotation.z += 0.012 * (delta / frameInterval);
+    miniShapes.forEach(shape => {
+        shape.rotation.x += 0.008 * (delta / frameInterval);
+        shape.rotation.y += 0.006 * (delta / frameInterval);
+    });
+
+    if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+    }
+}
+
+function handleCollisions() {
+    for (let i = 0; i < shapesData.length; i++) {
+        for (let j = i + 1; j < shapesData.length; j++) {
+            const a = shapesData[i];
+            const b = shapesData[j];
+            if (a.boundingBox.intersectsBox(b.boundingBox)) {
+                const dx = a.position.x - b.position.x;
+                const dy = a.position.y - b.position.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+                const minDist = (a.size + b.size) / 2;
+
+                // Fusion si même couleur
+                if (a.color === b.color) {
+                    a.fusionCount += b.fusionCount;
+                    const scale = Math.cbrt(a.fusionCount);
+                    a.mesh.scale.set(scale, scale, scale);
+                    a.size = a.baseSize * scale;
+                    shapesGroup.remove(b.mesh);
+                    shapesData.splice(j, 1);
+                    j--;
+                    updateBoundingBox(a);
+                    continue;
+                }
+
+                // Division si couleurs différentes et fusionné
+                if ((a.fusionCount > 1 || b.fusionCount > 1) && a.color !== b.color) {
+                    const toDivide = a.fusionCount > 1 ? a : b;
+                    const idxToRemove = a.fusionCount > 1 ? i : j;
+                    const numNew = Math.min(3, toDivide.fusionCount, Math.floor(Math.random() * 3) + 1);
+                    for (let k = 0; k < numNew; k++) {
+                        const newShape = createFractalShape({
+                            type: toDivide.type,
+                            position: new THREE.Vector3(
+                                toDivide.position.x + (Math.random() - 0.5) * 2,
+                                toDivide.position.y + (Math.random() - 0.5) * 2,
+                                toDivide.mesh.position.z
+                            ),
+                            size: toDivide.baseSize,
+                            color: toDivide.color
+                        });
+                        shapesGroup.add(newShape.mesh);
+                        shapesData.push(newShape);
+                    }
+                    shapesGroup.remove(toDivide.mesh);
+                    shapesData.splice(idxToRemove, 1);
+                    i = -1;
+                    break;
+                }
+
+                // Collision élastique
+                const overlap = minDist - dist;
+                const nx = dx / dist;
+                const ny = dy / dist;
+                a.position.x += (nx * overlap) / 2;
+                a.position.y += (ny * overlap) / 2;
+                b.position.x -= (nx * overlap) / 2;
+                b.position.y -= (ny * overlap) / 2;
+                a.mesh.position.set(a.position.x, a.position.y, a.mesh.position.z);
+                b.mesh.position.set(b.position.x, b.position.y, b.mesh.position.z);
+
+                const dvx = a.velocity.x - b.velocity.x;
+                const dvy = a.velocity.y - b.velocity.y;
+                const impact = dvx * nx + dvy * ny;
+                if (impact < 0) {
+                    a.velocity.x -= impact * nx;
+                    a.velocity.y -= impact * ny;
+                    b.velocity.x += impact * nx;
+                    b.velocity.y += impact * ny;
+                }
+                updateBoundingBox(a);
+                updateBoundingBox(b);
+            }
+        }
+    }
+}
+
+function stopAnimation() {
+    if (isAnimatingFlag) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+        isAnimatingFlag = false;
+    }
+}
+
+function initializeShapes(frame) {
+    shapesData = [];
+    miniShapes = [];
+    if (torusMesh) shapesGroup.remove(torusMesh);
+    if (knotMesh) shapesGroup.remove(knotMesh);
+    miniShapes.forEach(shape => shapesGroup.remove(shape));
+    const debugScaleFactor = 5;
+
+    // Tore principal
+    torusMesh = new THREE.Mesh(
+        new THREE.TorusGeometry(15, 3, 64, 256),
+        new THREE.MeshPhongMaterial({ color: 0x1e90ff, shininess: 60, flatShading: true, transparent: true, opacity: 0.6 })
+    );
+    shapesGroup.add(torusMesh);
+
+    // Spirale fractale (TorusKnot)
+    knotMesh = new THREE.Mesh(
+        new THREE.TorusKnotGeometry(13, 1.2, 400, 32, 7, 4),
+        new THREE.MeshPhongMaterial({ color: 0xff0055, shininess: 100, flatShading: true, transparent: true, opacity: 0.9 })
+    );
+    shapesGroup.add(knotMesh);
+
+    // Mini-shapes fractales
+    for (let i = 0; i < 36; i++) {
+        const angle = (i / 36) * Math.PI * 2;
+        const r = 15 + 3 * Math.cos(angle * 7);
+        const x = r * Math.cos(angle);
+        const y = r * Math.sin(angle);
+        const z = 3 * Math.sin(angle * 3);
+        const miniTorus = new THREE.Mesh(
+            new THREE.TorusGeometry(1.2, 0.25, 8, 32),
+            new THREE.MeshPhongMaterial({ color: 0xffc300 + i * 0x2000, flatShading: true, transparent: true, opacity: 0.8 })
+        );
+        miniTorus.position.set(x, y, z);
+        shapesGroup.add(miniTorus);
+        miniShapes.push(miniTorus);
+        const miniSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.7 + Math.random() * 0.7, 8, 8),
+            new THREE.MeshPhongMaterial({ color: 0x00fff0 + i * 0x1000, flatShading: true })
+        );
+        miniSphere.position.set(x + Math.cos(angle) * 2, y + Math.sin(angle) * 2, z + Math.sin(angle * 2) * 2);
+        shapesGroup.add(miniSphere);
+        miniShapes.push(miniSphere);
+    }
+
+    // Shapes dynamiques
+    if (!frame || !frame.pyramids || !Array.isArray(frame.pyramids)) {
+        for (let i = 0; i < 15; i++) {
+            const shape = createFractalShape({
+                type: ["tetrahedron", "sphere"][i % 2],
+                position: new THREE.Vector3((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 30, 0),
+                size: 2 + Math.random() * 2,
+                color: i % 2 === 0 ? 0xff0000 : 0x0000ff
+            });
+            shapesGroup.add(shape.mesh);
+            shapesData.push(shape);
+        }
+        return;
+    }
+
+    frame.pyramids.forEach(pyramidData => {
+        if (!pyramidData.bricks_positions || !Array.isArray(pyramidData.bricks_positions)) return;
+        const brickSize = pyramidData.brick_size || 1.0;
+        pyramidData.bricks_positions.forEach(pos => {
+            const shape = createFractalShape({
+                type: pyramidData.id % 2 === 0 ? "tetrahedron" : "sphere",
+                position: new THREE.Vector3(pos[0] * debugScaleFactor, pos[1] * debugScaleFactor, pos[2] * debugScaleFactor),
+                size: brickSize,
+                color: pyramidData.id % 2 === 0 ? 0xff0000 : 0x0000ff
+            });
+            shapesGroup.add(shape.mesh);
+            shapesData.push(shape);
+        });
+    });
+}
+
+function updateShapesGeometry(currentFrame, nextFrame, t) {
+    if (!shapesData.length || !currentFrame || !nextFrame || !currentFrame.pyramids || !nextFrame.pyramids) return;
+
+    const debugScaleFactor = 5;
+    let shapeIndex = 0;
+
+    currentFrame.pyramids.forEach((pyramidData, i) => {
+        const nextPyramid = nextFrame.pyramids[i] || pyramidData;
+        if (!pyramidData.bricks_positions || !nextPyramid.bricks_positions) return;
+        pyramidData.bricks_positions.forEach((pos, j) => {
+            if (shapeIndex >= shapesData.length) return;
+            const nextPos = nextPyramid.bricks_positions[j] || pos;
+            const interpZ = pos[2] + (nextPos[2] - pos[2]) * t;
+            const shape = shapesData[shapeIndex];
+            shape.mesh.position.z = interpZ * debugScaleFactor;
+            shape.mesh.material = new THREE.MeshPhongMaterial({
+                color: pyramidData.id % 2 === 0 ? 0xff0000 : 0x0000ff,
+                flatShading: true,
+                transparent: true,
+                opacity: 0.8
+            });
+            shape.color = pyramidData.id % 2 === 0 ? 0xff0000 : 0x0000ff;
+            shape.mesh.visible = true;
+            shapeIndex++;
+        });
+    });
+
+    while (shapeIndex < shapesData.length) {
+        shapesData[shapeIndex].mesh.visible = false;
+        shapeIndex++;
+    }
+}
 
 export function initPyramidsVisualizer(containerId) {
-    console.log("INIT PYRA: 1. initPyramidsVisualizer appelé avec containerId:", containerId);
     const container = document.getElementById(containerId);
     if (!container) {
-        console.error(`INIT PYRA ERROR: 2. Conteneur #${containerId} non trouvé.`);
+        console.error(`INIT PYRA ERROR: Conteneur #${containerId} non trouvé.`);
         return { start: () => {}, stop: () => {}, resize: () => {}, isRunning: () => false };
     }
-    console.log("INIT PYRA: 2.1 Conteneur trouvé. ClientWidth:", container.clientWidth, "clientHeight:", container.clientHeight);
 
-    // Nettoyage
     if (animationId) {
         cancelAnimationFrame(animationId);
         animationId = null;
-        console.log("INIT PYRA: 3. Animation précédente annulée.");
+        isAnimatingFlag = false;
     }
-
-    while (container.firstChild) {
-        container.removeChild(container.firstChild);
-    }
-    console.log("INIT PYRA: 4. Conteneur HTML nettoyé.");
+    while (container.firstChild) container.removeChild(container.firstChild);
 
     if (scene) {
         scene.traverse(function(object) {
@@ -42,9 +329,7 @@ export function initPyramidsVisualizer(containerId) {
                 }
             }
         });
-        while (scene.children.length > 0) {
-            scene.remove(scene.children[0]);
-        }
+        while (scene.children.length > 0) scene.remove(scene.children[0]);
     }
     if (renderer) {
         renderer.dispose();
@@ -52,19 +337,15 @@ export function initPyramidsVisualizer(containerId) {
     }
     scene = null;
     camera = null;
-    pyramidsGroup = null;
-    frames = [];
-    currentFrame = 0;
-    console.log("INIT PYRA: 5. Variables Three.js globales réinitialisées.");
-
-    // Recréation
-    const newCanvas = document.createElement("canvas");
-    container.appendChild(newCanvas);
-    console.log("INIT PYRA: 6. Nouveau canvas créé et ajouté:", newCanvas);
+    shapesGroup = null;
+    shapesData = [];
+    torusMesh = null;
+    knotMesh = null;
+    miniShapes = [];
+    isAnimatingFlag = false;
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x181818);
-    console.log("INIT PYRA: 7. Scène créée avec fond.");
 
     camera = new THREE.PerspectiveCamera(
         60,
@@ -72,28 +353,51 @@ export function initPyramidsVisualizer(containerId) {
         0.1,
         1000
     );
-    camera.position.set(0, 0, 40);
+    camera.position.set(0, 0, 60);
     camera.lookAt(0, 0, 0);
-    console.log("INIT PYRA: 8. Caméra créée et positionnée:", camera.position);
 
-    renderer = new THREE.WebGLRenderer({ canvas: newCanvas, antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight, false);
-    console.log(`INIT PYRA: 9. Renderer créé et dimensionné ${renderer.domElement.width}x${renderer.domElement.height}`);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
-    console.log("INIT PYRA: 10. Lumières ajoutées.");
 
-    pyramidsGroup = new THREE.Group();
-    scene.add(pyramidsGroup);
-    console.log("INIT PYRA: 11. pyramidsGroup créé et ajouté à la scène.");
+    shapesGroup = new THREE.Group();
+    scene.add(shapesGroup);
 
-    let isRunning = false;
+    // Charger les données
+    fetch("http://127.0.0.1:5000/geometry/pyramids/animate?steps=80&base_size=10&num_layers=5&brick_size=2")
+        .then(response => {
+            if (!response.ok) throw new Error(`Erreur HTTP! Statut: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            frames = data.frames;
+            if (frames.length > 0) {
+                initializeShapes(frames[0]);
+                if (renderer && scene && camera) {
+                    renderer.render(scene, camera);
+                }
+            } else {
+                initializeShapes(null);
+                if (renderer && scene && camera) {
+                    renderer.render(scene, camera);
+                }
+            }
+        })
+        .catch(error => {
+            console.error("FETCH PYRA ERROR:", error);
+            container.innerHTML = "<p style='color: red; text-align: center;'>Erreur de chargement 3D.</p>";
+            initializeShapes(null);
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        });
 
-    // Gestion du redimensionnement
     const onWindowResize = () => {
         if (container && renderer && camera) {
             const width = container.clientWidth;
@@ -104,136 +408,26 @@ export function initPyramidsVisualizer(containerId) {
             }
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
-            renderer.setSize(width, height, false);
+            renderer.setSize(width, height);
             renderer.render(scene, camera);
-            console.log(`RESIZE PYRA: Renderer.render appelé avec taille ${width}x${height}`);
         }
     };
+
     window.addEventListener("resize", onWindowResize);
     onWindowResize();
-    console.log("INIT PYRA: 12. Listener de resize configuré.");
-
-    // Charger les données d'animation
-    fetch("http://127.0.0.1:5000/geometry/pyramids/animate?steps=80&base_size=10&num_layers=5&brick_size=2")
-        .then(response => {
-            if (!response.ok) throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            console.log("FETCH PYRA SUCCESS: 13. Données reçues:", data);
-            frames = data.frames;
-            if (frames.length > 0) {
-                updatePyramidsGeometry(frames[0]);
-                if (renderer && scene && camera) {
-                    renderer.render(scene, camera);
-                    console.log("FETCH PYRA SUCCESS: 14. Rendu initial effectué.");
-                }
-            } else {
-                console.warn("FETCH PYRA WARN: 15. Aucune frame reçue.");
-            }
-        })
-        .catch(error => {
-            console.error("FETCH PYRA ERROR:", error);
-            container.innerHTML = "<p style='color: red; text-align: center;'>Erreur de chargement 3D.</p>";
-        });
-
-    // Animation
-    function animatePyramids() {
-        if (!isRunning) {
-            console.log("ANIMATE PYRA: Arrêté par isRunning=false.");
-            return;
-        }
-        animationId = requestAnimationFrame(animatePyramids);
-
-        if (frames.length > 0) {
-            if (currentFrame < frames.length) {
-                updatePyramidsGeometry(frames[currentFrame]);
-                currentFrame++;
-            } else {
-                currentFrame = 0;
-            }
-        }
-
-        if (pyramidsGroup) {
-            pyramidsGroup.rotation.x += 0.005;
-            pyramidsGroup.rotation.y += 0.007;
-        }
-
-        if (renderer && scene && camera) {
-            renderer.render(scene, camera);
-        }
-    }
 
     return {
         start: () => {
-            console.log("START PYRA: Animation démarrée.");
-            isRunning = true;
-            animatePyramids();
+            if (!isAnimatingFlag) {
+                isAnimatingFlag = true;
+                lastTime = performance.now();
+                animateShapes(lastTime);
+            }
         },
         stop: () => {
-            console.log("STOP PYRA: Animation arrêtée.");
-            isRunning = false;
-            cancelAnimationFrame(animationId);
-            animationId = null;
+            stopAnimation();
         },
         resize: onWindowResize,
-        isRunning: () => isRunning
+        isRunning: () => isAnimatingFlag
     };
-}
-
-function updatePyramidsGeometry(frame) {
-    console.log("UPDATE PYRA: 23. updatePyramidsGeometry appelée.");
-    if (!pyramidsGroup) {
-        console.error("UPDATE PYRA ERROR: 24. pyramidsGroup non initialisé.");
-        return;
-    }
-    console.log("UPDATE PYRA: 25. pyramidsGroup contient", pyramidsGroup.children.length, "enfants avant nettoyage.");
-
-    while (pyramidsGroup.children.length > 0) {
-        const child = pyramidsGroup.children[0];
-        if (child instanceof THREE.Mesh) {
-            child.geometry.dispose();
-            if (Array.isArray(child.material)) {
-                child.material.forEach(material => material.dispose());
-            } else {
-                child.material.dispose();
-            }
-        }
-        pyramidsGroup.remove(child);
-    }
-    console.log("UPDATE PYRA: 26. pyramidsGroup nettoyé. Contient", pyramidsGroup.children.length, "enfants.");
-
-    if (!frame || !frame.pyramids || !Array.isArray(frame.pyramids)) {
-        console.error("UPDATE PYRA ERROR: 27. Format de frame invalide:", frame);
-        return;
-    }
-
-    const actualBrickSize = (frame.pyramids[0] && frame.pyramids[0].brick_size !== undefined) ? frame.pyramids[0].brick_size : 1.0;
-    console.log("UPDATE PYRA: 28. actualBrickSize:", actualBrickSize);
-
-    const debugScaleFactor = 5;
-    const pyramidColors = [0xff0000, 0x0000ff];
-
-    let bricksAddedCount = 0;
-    frame.pyramids.forEach(pyramidData => {
-        if (!pyramidData || !pyramidData.bricks_positions || !Array.isArray(pyramidData.bricks_positions)) {
-            console.warn("UPDATE PYRA WARN: 30. Données de pyramide invalides:", pyramidData);
-            return;
-        }
-
-        const pyramidColor = pyramidColors[pyramidData.id % pyramidColors.length];
-        pyramidData.bricks_positions.forEach(pos => {
-            const brickGeometry = new THREE.BoxGeometry(actualBrickSize, actualBrickSize, actualBrickSize);
-            const brickMaterial = new THREE.MeshPhongMaterial({ color: pyramidColor });
-            const brick = new THREE.Mesh(brickGeometry, brickMaterial);
-            brick.position.set(pos[0] * debugScaleFactor, pos[1] * debugScaleFactor, pos[2] * debugScaleFactor);
-            pyramidsGroup.add(brick);
-            bricksAddedCount++;
-        });
-    });
-    console.log("UPDATE PYRA: 31. Total briques ajoutées:", bricksAddedCount);
-
-    pyramidsGroup.position.set(0, 0, 0);
-    const box = new THREE.Box3().setFromObject(pyramidsGroup);
-    console.log("UPDATE PYRA: 32. Bounding Box:", box);
 }

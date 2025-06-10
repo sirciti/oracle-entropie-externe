@@ -1,5 +1,3 @@
-import pytest
-import requests_mock
 import requests
 import json
 import os
@@ -8,10 +6,18 @@ import hashlib
 import time
 import random
 from typing import List, Dict, Optional, Any, Tuple
-from sentry_sdk.transport import Transport
+# from sentry_sdk.transport import Transport # Non utilisé ici directement
+# from .quantum import generate_quantum_entropy # <-- Ligne à supprimer
+
+# --- CORRECTION DE L'IMPORTATION ---
+# Importer directement depuis backend.quantum_nodes
+from .quantum_nodes import get_quantum_entropy # Assurez-vous que get_quantum_entropy est bien une fonction exportée par quantum_nodes.py
 
 logger = logging.getLogger("entropy_generator")
 
+# Ces constantes étaient déjà définies dans app.py ou config.json,
+# mais si utils.py les utilise, elles peuvent être définies ici.
+# Elles ne doivent pas être redondantes avec app.py si app.py importe utils.load_config().
 DEFAULT_LAT = 48.85
 DEFAULT_LON = 2.35
 DEFAULT_COORDINATES = [
@@ -23,6 +29,7 @@ DEFAULT_COORDINATES = [
 
 ANU_QRNG_API_URL = os.getenv("ANU_QRNG_API_URL", "https://qrng.anu.edu.au/API/jsonI.php?length=1&type=uint8")
 FALLBACK_PRNG_SEED_LENGTH = 256
+
 
 def load_config() -> Dict[str, Any]:
     config = {}
@@ -36,7 +43,6 @@ def load_config() -> Dict[str, Any]:
         logger.error(f"Erreur de décodage JSON dans config.json : {e}")
     except Exception as e:
         logger.error(f"Erreur inattendue lors du chargement de config.json : {e}")
-
     try:
         config['latitude'] = float(os.getenv('OPEN_METEO_LAT', config.get('latitude', DEFAULT_LAT)))
         config['longitude'] = float(os.getenv('OPEN_METEO_LON', config.get('longitude', DEFAULT_LON)))
@@ -51,7 +57,6 @@ def load_config() -> Dict[str, Any]:
         config['coordinates'] = DEFAULT_COORDINATES
     except Exception as e:
         logger.error(f"Erreur inattendue lors de la surcharge de la configuration : {e}")
-
     return config
 
 def get_current_weather_data(lat: float, lon: float) -> Optional[Dict[str, Any]]:
@@ -106,7 +111,6 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
     wind_gusts = [d.get("wind_gust") for d in all_data if isinstance(d.get("wind_gust"), (int, float))]
     clouds = [d.get("clouds") for d in all_data if isinstance(d.get("clouds"), (int, float))]
     precipitations = [d.get("precipitation") for d in all_data if isinstance(d.get("precipitation"), (int, float))]
-
     try:
         if temperatures:
             combined_data["avg_temperature"] = sum(temperatures) / len(temperatures)
@@ -132,11 +136,3 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
     fallback_seed = os.urandom(FALLBACK_PRNG_SEED_LENGTH // 8) + str(time.time_ns()).encode()
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random()
-
-class SentryTestTransport(Transport):
-    def __init__(self):
-        super().__init__(None)
-        self.envelopes = []
-
-    def capture_envelope(self, envelope):
-        self.envelopes.append(envelope)
