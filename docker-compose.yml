@@ -1,16 +1,13 @@
 services:
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: . # Contexte de construction est la racine du projet
+      dockerfile: backend/docker/Dockerfile # <-- CORRECTION ICI
     ports:
       - "5000:5000"
     volumes:
-      - ./backend:/app/backend
-      - ./frontend:/app/frontend
+      - ./backend:/app # Monte le dossier 'backend' du système hôte vers '/app' dans le conteneur.
     environment:
       - FLASK_ENV=development
       - SENTRY_DSN=${SENTRY_DSN}
-      - PYTHONPATH=/app
-    command: ["python", "-m", "backend.app"]
-
+    command: ["python", "-m", "backend.core.app"] # <-- CORRECTION ICI (nouveau chemin de app.py)
