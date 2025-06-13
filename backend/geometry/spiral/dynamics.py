@@ -1,6 +1,7 @@
 import numpy as np
 from typing import List, Dict, Any
 import logging
+import time
 
 logger = logging.getLogger("spiral_dynamics")
 
@@ -36,3 +37,6 @@ def update_spiral_dynamics(
     except Exception as e:
         logger.error(f"Erreur dans update_spiral_dynamics : {e}")
         return spiral_data
+
+# Alias pour compatibilité API
+animate_spiral_simple = update_spiral_dynamics

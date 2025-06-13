@@ -24,3 +24,6 @@ def generate_spiral(
     except Exception as e:
         logger.error(f"Erreur dans generate_spiral : {e}")
         return {"error": str(e)}
+
+def generate_spiral_simple_initial(*args, **kwargs):
+    return generate_spiral(*args, **kwargs)

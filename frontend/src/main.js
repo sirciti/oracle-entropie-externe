@@ -3,7 +3,7 @@
 import { initClassicGenerator } from './views/classic_generator.js';
 import { initInternalTool } from './views/internal_tool.js';
 import { initIcosahedronVisualizer } from './visualizers/icosahedron.js';
-import { initPyramidsVisualizer } from './visualizers/pyramids_visualizer.js';
+import { initPyramidsVisualizer } from './visualizers/spiral_torus_visualizer.js';
 import { initCubesVisualizer } from './visualizers/cubes_visualizer.js';
 import { initStreamVisualizer } from './visualizers/stream_visualizer.js';
 import { initSpiralVisualizer } from './visualizers/spiral_visualizer.js';
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Boutons de navigation
     const navMainButton = document.getElementById('nav-main');
     const navIcosahedronButton = document.getElementById('nav-icosahedron');
-    const navPyramidsButton = document.getElementById('nav-pyramids');
+    const navPyramidsButton = document.getElementById('nav-spiral_torus');
     const navCubesButton = document.getElementById('nav-cubes');
     const navStreamButton = document.getElementById('nav-stream');
     const navInternalToolButton = document.getElementById('nav-internal-tool');
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sections d'interface
     const mainInterfaceSection = document.getElementById('main-interface');
     const icosahedronInterfaceSection = document.getElementById('icosahedron-interface');
-    const pyramidsInterfaceSection = document.getElementById('pyramids-interface');
+    const spiral_torusInterfaceSection = document.getElementById('spiral_torus-interface');
     const cubesInterfaceSection = document.getElementById('cubes-interface');
     const streamInterfaceSection = document.getElementById('stream-interface');
     const internalToolInterfaceSection = document.getElementById('internal-tool-interface');
@@ -28,14 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Conteneurs 3D
     const icosahedron3DContainer = document.getElementById('icosahedron-3d');
-    const pyramids3DContainer = document.getElementById('icosahedron-3d-pyramids');
+    const spiral_torus3DContainer = document.getElementById('icosahedron-3d-spiral_torus');
     const cubes3DContainer = document.getElementById('icosahedron-3d-cubes');
     const streamVisualizer3DContainer = document.getElementById('stream-visualizer-3d');
     const spiral3DContainer = document.getElementById('spiral-3d'); // Nouveau conteneur pour la spirale
 
     // Instances des visualiseurs
     let icosahedronVisualizer = null;
-    let pyramidsVisualizer = null;
+    let spiral_torusVisualizer = null;
     let cubesVisualizer = null;
     let streamVisualizer = null;
     let spiralVisualizer = null; // Nouvelle instance pour la spirale
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Cacher toutes les sections
         if (mainInterfaceSection) mainInterfaceSection.classList.add('hidden');
         if (icosahedronInterfaceSection) icosahedronInterfaceSection.classList.add('hidden');
-        if (pyramidsInterfaceSection) pyramidsInterfaceSection.classList.add('hidden');
+        if (spiral_torusInterfaceSection) spiral_torusInterfaceSection.classList.add('hidden');
         if (cubesInterfaceSection) cubesInterfaceSection.classList.add('hidden');
         if (streamInterfaceSection) streamInterfaceSection.classList.add('hidden');
         if (internalToolInterfaceSection) internalToolInterfaceSection.classList.add('hidden');
@@ -53,14 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Arrêter toutes les animations 3D
         if (icosahedronVisualizer) icosahedronVisualizer.stop();
-        if (pyramidsVisualizer) pyramidsVisualizer.stop();
+        if (spiral_torusVisualizer) spiral_torusVisualizer.stop();
         if (cubesVisualizer) cubesVisualizer.stop();
         if (streamVisualizer) streamVisualizer.stop();
         if (spiralVisualizer) spiralVisualizer.stop();
 
         // Gérer la visibilité des conteneurs 3D
         if (icosahedron3DContainer) icosahedron3DContainer.style.display = 'none';
-        if (pyramids3DContainer) pyramids3DContainer.style.display = 'none';
+        if (spiral_torus3DContainer) spiral_torus3DContainer.style.display = 'none';
         if (cubes3DContainer) cubes3DContainer.style.display = 'none';
         if (streamVisualizer3DContainer) streamVisualizer3DContainer.style.display = 'none';
         if (spiral3DContainer) spiral3DContainer.style.display = 'none';
@@ -86,19 +86,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const toggleBtn = document.getElementById('toggle-icosahedron-animation');
                 if (toggleBtn) toggleBtn.textContent = icosahedronVisualizer.isRunning() ? "Stop Animation" : "Start Animation";
             }
-        } else if (sectionId === 'pyramids-interface') {
-            if (pyramids3DContainer) pyramids3DContainer.style.display = 'flex';
-            if (!pyramidsVisualizer) {
+        } else if (sectionId === 'spiral_torus-interface') {
+            if (spiral_torus3DContainer) spiral_torus3DContainer.style.display = 'flex';
+            if (!spiral_torusVisualizer) {
                 setTimeout(() => {
-                    pyramidsVisualizer = initPyramidsVisualizer('icosahedron-3d-pyramids');
-                    if (pyramidsVisualizer) pyramidsVisualizer.start();
-                    const toggleBtn = document.getElementById('toggle-pyramids-animation');
-                    if (toggleBtn) toggleBtn.textContent = pyramidsVisualizer.isRunning() ? "Stop Animation" : "Start Animation";
+                    spiral_torusVisualizer = initPyramidsVisualizer('icosahedron-3d-spiral_torus');
+                    if (spiral_torusVisualizer) spiral_torusVisualizer.start();
+                    const toggleBtn = document.getElementById('toggle-spiral_torus-animation');
+                    if (toggleBtn) toggleBtn.textContent = spiral_torusVisualizer.isRunning() ? "Stop Animation" : "Start Animation";
                 }, 50);
             } else {
-                if (pyramidsVisualizer) pyramidsVisualizer.start();
-                const toggleBtn = document.getElementById('toggle-pyramids-animation');
-                if (toggleBtn) toggleBtn.textContent = pyramidsVisualizer.isRunning() ? "Stop Animation" : "Start Animation";
+                if (spiral_torusVisualizer) spiral_torusVisualizer.start();
+                const toggleBtn = document.getElementById('toggle-spiral_torus-animation');
+                if (toggleBtn) toggleBtn.textContent = spiral_torusVisualizer.isRunning() ? "Stop Animation" : "Start Animation";
             }
         } else if (sectionId === 'cubes-interface') {
             if (cubes3DContainer) cubes3DContainer.style.display = 'flex';
@@ -151,8 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (navIcosahedronButton) navIcosahedronButton.addEventListener('click', () => showSection('icosahedron-interface'));
     else console.error("Bouton de navigation 'Icosaèdre Dynamique' (#nav-icosahedron) non trouvé.");
 
-    if (navPyramidsButton) navPyramidsButton.addEventListener('click', () => showSection('pyramids-interface'));
-    else console.error("Bouton de navigation 'Pyramides Dynamiques' (#nav-pyramids) non trouvé.");
+    if (navPyramidsButton) navPyramidsButton.addEventListener('click', () => showSection('spiral_torus-interface'));
+    else console.error("Bouton de navigation 'Spirale Toroïdale Dynamiques' (#nav-spiral_torus) non trouvé.");
 
     if (navCubesButton) navCubesButton.addEventListener('click', () => showSection('cubes-interface'));
     else console.error("Bouton de navigation 'Cubes Dynamiques' (#nav-cubes) non trouvé.");
@@ -192,17 +192,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Pyramides
-    const togglePyramidsAnimationButton = document.getElementById('toggle-pyramids-animation');
+    // Spirale Toroïdale
+    const togglePyramidsAnimationButton = document.getElementById('toggle-spiral_torus-animation');
     if (togglePyramidsAnimationButton) {
         togglePyramidsAnimationButton.addEventListener('click', () => {
-            if (pyramidsVisualizer) {
-                if (pyramidsVisualizer.isRunning()) {
-                    pyramidsVisualizer.stop();
+            if (spiral_torusVisualizer) {
+                if (spiral_torusVisualizer.isRunning()) {
+                    spiral_torusVisualizer.stop();
                 } else {
-                    pyramidsVisualizer.start();
+                    spiral_torusVisualizer.start();
                 }
-                togglePyramidsAnimationButton.textContent = pyramidsVisualizer.isRunning() ? "Stop Animation" : "Start Animation";
+                togglePyramidsAnimationButton.textContent = spiral_torusVisualizer.isRunning() ? "Stop Animation" : "Start Animation";
             } else {
                 console.warn("Pyramids visualizer not initialized for toggle button.");
             }
@@ -250,3 +250,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Afficher la section principale par défaut
     showSection('main-interface');
 });
+const navSpiralSimpleButton = document.getElementById('nav-spiral-simple');
+const spiralSimpleInterfaceSection = document.getElementById('spiral-simple-interface');
+if (navSpiralSimpleButton) {
+  navSpiralSimpleButton.addEventListener('click', () => showSection('spiral-simple-interface'));
+} else {
+  console.error("Bouton de navigation 'Spirale Simple' (#nav-spiral-simple) non trouvé.");
+}
+
+const toggleSpiralSimpleAnimationButton = document.getElementById('toggle-spiral-simple-animation');
+if (toggleSpiralSimpleAnimationButton) {
+  toggleSpiralSimpleAnimationButton.addEventListener('click', () => {
+    if (spiralSimpleVisualizer) {
+      if (spiralSimpleVisualizer.isRunning()) {
+        spiralSimpleVisualizer.stop();
+      } else {
+        spiralSimpleVisualizer.start();
+      }
+      toggleSpiralSimpleAnimationButton.textContent = spiralSimpleVisualizer.isRunning() ? "Stop Animation" : "Start Animation";
+    } else {
+      spiralSimpleVisualizer = initSpiralSimpleVisualizer('spiral-simple-3d');
+      if (spiralSimpleVisualizer) spiralSimpleVisualizer.start();
+      toggleSpiralSimpleAnimationButton.textContent = spiralSimpleVisualizer.isRunning() ? "Stop Animation" : "Start Animation";
+    }
+  });
+}

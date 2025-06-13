@@ -124,7 +124,7 @@ body, html {
 }
 
 #icosahedron-3d,
-#icosahedron-3d-pyramids,
+#spiral-torus-3d,
 #icosahedron-3d-cubes {
     width: 100%;
     height: 500px;
@@ -138,7 +138,7 @@ body, html {
 }
 
 #icosahedron-3d canvas,
-#icosahedron-3d-pyramids canvas,
+#spiral-torus-3d canvas,
 #icosahedron-3d-cubes canvas {
     display: block;
     max-width: 100%;

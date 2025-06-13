@@ -15,6 +15,8 @@ from entropy.quantum.entropy_oracle import (
     get_spiral_entropy
 )
 from streams.token_stream import TokenStreamGenerator
+from geometry.spiral.generator import generate_spiral_simple_initial
+from geometry.spiral.dynamics import animate_spiral_simple
 
 # -------------------- INITIALISATION SENTRY --------------------
 if not os.environ.get("DISABLE_SENTRY"):

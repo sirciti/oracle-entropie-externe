@@ -14,7 +14,8 @@ from geometry.spiral_torus.dynamics import update_toroidal_spiral_dynamics
 from geometry.spiral_torus.generator import generate_toroidal_spiral_system
 from geometry.cubes.generator import CubeGenerator
 from geometry.cubes.dynamics import update_cubes_dynamics
-from geometry.spiral.spiral import generate_spiral_initial, animate_spiral
+from geometry.spiral.generator import generate_spiral_simple_initial
+from geometry.spiral.dynamics import animate_spiral_simple
 
 
 geometry_api = Blueprint('geometry_api', __name__)
@@ -245,12 +246,12 @@ def animate_cubes():
 @geometry_api.route('/geometry/spiral/initial', methods=['GET'])
 def get_initial_spiral():
     try:
-        spiral = generate_spiral_initial()
+        spiral = generate_spiral_simple_initial()
         if "error" in spiral:
             return jsonify({"error": spiral["error"]}), 500
         return jsonify(spiral), 200
     except Exception as e:
-        logger.error(f"Erreur dans /geometry/spiral/initial : {e}")
+        logger.error(f"Erreur dans /geometry/spiral_simple/initial : {e}")
         return jsonify({"error": str(e)}), 500
 
 @geometry_api.route('/geometry/spiral/animate', methods=['GET'])
@@ -258,12 +259,41 @@ def animate_spiral_route():
     steps = int(request.args.get('steps', 10))
     delta_time = float(request.args.get('dt', 0.01))
     try:
-        animation = animate_spiral(steps, delta_time)
+        animation = animate_spiral_simple(steps, delta_time)
         if "error" in animation:
             return jsonify({"error": animation["error"]}), 500
         return jsonify(animation), 200
     except Exception as e:
-        logger.error(f"Erreur dans /geometry/spiral/animate : {e}")
+        logger.error(f"Erreur dans /geometry/spiral_simple/animate : {e}")
+        return jsonify({"error": str(e)}), 500
+
+@geometry_api.route('/geometry/spiral_simple/initial', methods=['GET'])
+def get_initial_spiral_simple():
+    try:
+        spiral = generate_spiral_simple_initial()
+        if "error" in spiral:
+            return jsonify({"error": spiral["error"]}), 500
+        return jsonify(spiral), 200
+    except Exception as e:
+        logger.error(f"Erreur dans /geometry/spiral_simple/initial : {e}")
+        return jsonify({"error": str(e)}), 500
+
+@geometry_api.route('/geometry/spiral_simple/animate', methods=['GET'])
+def animate_spiral_simple_route():
+    steps = int(request.args.get('steps', 5))
+    delta_time = float(request.args.get('dt', 0.01))
+    try:
+        # Génère l'état initial
+        spiral = generate_spiral_simple_initial()
+        if "error" in spiral:
+            return jsonify({"error": spiral["error"]}), 500
+        frames = [spiral]
+        for _ in range(steps - 1):
+            spiral = animate_spiral_simple(spiral, delta_time)
+            frames.append(spiral)
+        return jsonify({"frames": frames}), 200
+    except Exception as e:
+        logger.error(f"Erreur dans /geometry/spiral_simple/animate : {e}")
         return jsonify({"error": str(e)}), 500
 
 def subdivide_faces(vertices, faces):

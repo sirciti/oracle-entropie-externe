@@ -24,7 +24,7 @@ Call log:
 - navigation:
   - button "Générateur Aléatoire Classique"
   - button "Icosaèdre Dynamique"
-  - button "Pyramides Dynamiques"
+  - button "Spirale Toroïdale"
   - button "Cubes Dynamiques"
   - button "Outil Interne de Sécurité"
 - heading "Nombre Aléatoire Généré" [level=1]

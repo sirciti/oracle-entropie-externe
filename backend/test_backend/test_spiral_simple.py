@@ -8,9 +8,9 @@ def client():
     with app.test_client() as client:
         yield client
 
-def test_spiral_initial(client, mocker):
+def test_spiral_simple_initial(client, mocker):
     mocker.patch('core.utils.utils.get_entropy_data', return_value=0.123456789)
-    response = client.get('/geometry/spiral/initial')
+    response = client.get('/geometry/spiral_simple/initial')
     assert response.status_code == 200
     data = response.get_json()
     assert data['type'] == 'spiral'
@@ -20,9 +20,9 @@ def test_spiral_initial(client, mocker):
     assert len(data['positions']) == 100
     assert all(len(pos) == 3 for pos in data['positions'])
 
-def test_spiral_animate(client, mocker):
+def test_spiral_simple_animate(client, mocker):
     mocker.patch('core.utils.utils.get_entropy_data', return_value=0.123456789)
-    response = client.get('/geometry/spiral/animate?steps=5')
+    response = client.get('/geometry/spiral_simple/animate?steps=5')
     assert response.status_code == 200
     data = response.get_json()
     assert 'frames' in data
