@@ -57,7 +57,7 @@ def parse_float_list(s: str) -> Optional[List[float]]:
         return None
 
 # --- ROUTES POUR L'ICOSAÈDRE ---
-@geometry_api.route('/icosahedron/initial', methods=['GET'])
+@geometry_api.route('/geometry/icosahedron/initial', methods=['GET'])
 def get_initial_icosahedron():
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
@@ -84,7 +84,7 @@ def get_initial_icosahedron():
         logger.error(f"Erreur lors de la génération de l'icosaèdre : {e}")
         return jsonify({'error': f'Erreur lors de la génération de l\'icosaèdre : {e}'}), 500
 
-@geometry_api.route('/icosahedron/subdivide', methods=['GET'])
+@geometry_api.route('/geometry/icosahedron/subdivide', methods=['GET'])
 def subdivide_icosahedron():
     try:
         radius = float(request.args.get('radius', 1.0))
@@ -96,7 +96,7 @@ def subdivide_icosahedron():
         logger.error(f"Erreur lors de la subdivision de l'icosaèdre : {e}")
         return jsonify({'error': str(e)}), 500
 
-@geometry_api.route('/icosahedron/animate', methods=['GET'])
+@geometry_api.route('/geometry/icosahedron/animate', methods=['GET'])
 def animate_icosahedron():
     radius = float(request.args.get('radius', 1.0))
     position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
@@ -197,7 +197,7 @@ def animate_toroidal_spiral():
         return jsonify({'error': str(e)}), 500
 
 # --- ROUTES POUR LES CUBES ---
-@geometry_api.route('/cubes/initial', methods=['GET'])
+@geometry_api.route('/geometry/cubes/initial', methods=['GET'])
 def get_initial_cubes():
     num_cubes = int(request.args.get('num_cubes', DEFAULT_CUBES_CONFIG['num_cubes']))
     cube_size = float(request.args.get('cube_size', DEFAULT_CUBES_CONFIG['cube_size']))
@@ -224,7 +224,7 @@ def get_initial_cubes():
         logger.error(f"Erreur lors de la génération des cubes : {e}")
         return jsonify({'error': f'Erreur lors de la génération des cubes : {e}'}), 500
 
-@geometry_api.route('/cubes/animate', methods=['GET'])
+@geometry_api.route('/geometry/cubes/animate', methods=['GET'])
 def animate_cubes():
     try:
         steps = int(request.args.get('steps', 5))
@@ -242,7 +242,7 @@ def animate_cubes():
         return jsonify({'error': str(e)}), 500
 
 # --- ROUTE POUR LA SPIRALE ---
-@geometry_api.route('/spiral/initial', methods=['GET'])
+@geometry_api.route('/geometry/spiral/initial', methods=['GET'])
 def get_initial_spiral():
     try:
         spiral = generate_spiral_initial()
@@ -253,7 +253,7 @@ def get_initial_spiral():
         logger.error(f"Erreur dans /geometry/spiral/initial : {e}")
         return jsonify({"error": str(e)}), 500
 
-@geometry_api.route('/spiral/animate', methods=['GET'])
+@geometry_api.route('/geometry/spiral/animate', methods=['GET'])
 def animate_spiral_route():
     steps = int(request.args.get('steps', 10))
     delta_time = float(request.args.get('dt', 0.01))

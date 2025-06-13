@@ -1,4 +1,4 @@
-# backend/geometry/pyramids/dynamics.py
+# backend/geometry/spiral_torus/dynamics.py
 
 import numpy as np
 from scipy.spatial.transform import Rotation

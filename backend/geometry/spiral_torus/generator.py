@@ -10,7 +10,7 @@ def generate_toroidal_spiral_system(
 ) -> Dict[str, Any]:
     """
     Génère un système de spirale toroïdale avec des billes et cubes placés sur les points.
-    Remplace la logique des pyramides.
+    Génère la spirale toroïdale (remplace l’ancienne logique pyramids).
 
     Args:
         R (float): Rayon du tore.

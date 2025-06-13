@@ -71,7 +71,7 @@ def generate_random():
             use_timestamps=True,
             use_local_noise=True,
             use_cubes=True,
-            use_pyramids=True, # S'assurer que les pyramides sont activées
+            use_spiral_torus=True, # S'assurer que les pyramides sont activées
             # Passer les dépendances de entropy_oracle qui viennent de utils.py
             get_area_weather_data=get_area_weather_data,
             combine_weather_data=combine_weather_data,
@@ -125,7 +125,7 @@ def final_entropy():
             use_timestamps=True,
             use_local_noise=True,
             use_cubes=True,
-            use_pyramids=True,
+            use_spiral_torus=True,
             get_area_weather_data=get_area_weather_data,
             combine_weather_data=combine_weather_data,
             config=config,
@@ -162,7 +162,7 @@ def generate_token():
             use_timestamps=True,
             use_local_noise=True,
             use_cubes="cubes" in geometries,
-            use_pyramids="pyramids" in geometries,
+            use_spiral_torus="spiral_torus" in geometries,
             use_spiral="spiral" in geometries, 
             get_area_weather_data=get_area_weather_data,
             combine_weather_data=combine_weather_data,
