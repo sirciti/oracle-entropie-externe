@@ -7,9 +7,10 @@ import time
 import random
 from typing import List, Dict, Optional, Any, Tuple
 
+
 # --- IMPORT CORRIGÉ POUR QUANTUM_NODES ---
 # get_quantum_entropy sera importé d'ici dans entropy_oracle.py
-from backend.entropy.quantum.quantum_nodes import get_quantum_entropy
+from entropy.quantum.quantum_nodes import get_quantum_entropy
 
 logger = logging.getLogger("entropy_generator")
 
@@ -26,6 +27,10 @@ DEFAULT_COORDINATES = [
 
 ANU_QRNG_API_URL = os.getenv("ANU_QRNG_API_URL", "https://qrng.anu.edu.au/API/jsonI.php?length=1&type=uint8")
 FALLBACK_PRNG_SEED_LENGTH = 256
+
+def get_entropy_data():
+    import random
+    return random.random()
 
 
 def load_config() -> Dict[str, Any]:
@@ -143,3 +148,14 @@ def combine_weather_data(all_data: List[Optional[Dict[str, Any]]]) -> Optional[D
 # La fonction get_quantum_entropy sera celle importée de quantum_nodes.py
 # Elle ne sera plus définie ici, mais directement importée dans entropy_oracle.py
 # from backend.quantum_nodes import get_quantum_entropy # <-- Déplacé ici pour la visibilité
+
+# Pour le test direct de entropy_oracle.py, nous aurons besoin de mocks ou d'imports conditionnels.
+from streams.token_stream import get_final_entropy
+
+class SentryTestTransport:
+    def __init__(self):
+        self.envelopes = []
+
+    def capture_envelope(self, envelope):
+        self.envelopes.append(envelope)
+

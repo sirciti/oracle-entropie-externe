@@ -12,22 +12,22 @@ except ImportError:
     BLAKE3_AVAILABLE = False
 
 # --- IMPORTS DES MODULES GÉOMÉTRIQUES ---
-from backend.geometry.icosahedron.generator import generate_klee_penrose_polyhedron
-from backend.geometry.pyramids.generator import generate_pyramids_system
-from backend.geometry.pyramids.dynamics import update_pyramids_dynamics
-from backend.geometry.cubes.generator import CubeGenerator
-from backend.geometry.cubes.dynamics import update_cubes_dynamics
+from geometry.icosahedron.generator import generate_klee_penrose_polyhedron
+from geometry.pyramids.generator import generate_pyramids_system, generate_spiral_torus_system
+from geometry.pyramids.dynamics import update_pyramids_dynamics
+from geometry.cubes.generator import CubeGenerator
+from geometry.cubes.dynamics import update_cubes_dynamics
 
 # --- AUTRES SOURCES D'ENTROPIE ET UTILITAIRES ---
-from backend.geometry.fractal import FractalLSystem # <-- CORRECTION ICI : nouveau chemin et nom
-from backend.entropy.quantum.quantum_nodes import QuantumNode
-from backend.entropy.temporal.temporal_entropy import get_world_timestamps, mix_timestamps
+from geometry.fractal import FractalLSystem
+from entropy.quantum.quantum_nodes import QuantumNode
+from entropy.temporal.temporal_entropy import get_world_timestamps, mix_timestamps
 
-# Import des fonctions utilitaires depuis backend.core.utils.utils
+# Import des fonctions utilitaires depuis core.utils.utils
 # Ces fonctions sont passées en arguments depuis app.py pour éviter les imports circulaires
 # ou pour permettre une injection de dépendances.
 # Pour le test direct de entropy_oracle.py, nous aurons besoin de mocks ou d'imports conditionnels.
-# Pour l'exécution via app.py, ces imports sont gérés par app.py.
+from streams.token_stream import get_final_entropy
 
 logger = logging.getLogger("entropy_oracle")
 
@@ -51,9 +51,6 @@ def get_cubes_entropy(
     simulation_steps: int = 10,
     delta_time: float = 0.016
 ) -> Optional[bytes]:
-    """
-    Génère de l'entropie à partir de la dynamique simulée d'un système de cubes et de billes.
-    """
     try:
         cube_generator = CubeGenerator()
         cubes_system = cube_generator.generate_cubes_system(
@@ -68,9 +65,7 @@ def get_cubes_entropy(
             current_cubes_state = update_cubes_dynamics(
                 current_cubes_state, 
                 delta_time=delta_time,
-                gravity=-9.81 * 0.05,
-                bounce_factor=0.85,
-                confinement_size=space_bounds
+                chaos_factor=0.05  # Remplace gravity par chaos_factor
             )
         
         signature_data = []
@@ -108,14 +103,21 @@ def get_pyramids_entropy(
         pyramids_system = generate_pyramids_system(base_size=base_size, num_layers=num_layers, brick_size=brick_size)
         current_system_state = pyramids_system
         for _ in range(simulation_steps):
-            current_system_state = update_pyramids_dynamics(current_system_state, delta_time=delta_time, chaos_factor=chaos_factor, noise_level=noise_level)
+            current_system_state = update_pyramids_dynamics(
+                current_system_state, 
+                delta_time=delta_time, 
+                chaos_factor=chaos_factor, 
+                noise_level=noise_level
+            )
         
         signature_data = []
         for p in current_system_state["pyramids"]:
-            signature_data.extend(p["apex_position"])
+            apex = p.get("apex_position")
+            if apex:
+                signature_data.extend(apex)
             for b in p["bricks"]:
                 signature_data.extend(b["position"])
-            for ball in p["balls"]:
+            for ball in p.get("balls", []):  # Utilise .get() avec [] par défaut
                 signature_data.extend(ball["position"])
         
         signature_string = json.dumps(signature_data, sort_keys=True)
@@ -126,16 +128,74 @@ def get_pyramids_entropy(
     except Exception as e:
         logger.error(f"Erreur lors de la génération de l'entropie des pyramides : {e}", exc_info=True)
         return None
+    
+#CIRCULAIRES ENTROPIE SPIRAL
+def get_spiral_entropy(
+    config: Dict[str, Any],
+    steps: int = 1000,
+    radius: float = 1.0,
+    height: float = 2.0,
+    use_weather: bool = True,
+    use_quantum: bool = True,
+    get_area_weather_data=None,
+    combine_weather_data=None,
+    get_entropy_data=None  # <-- Ajout : fonction utilitaire passée en argument
+) -> List[Dict[str, Any]]:
+    """
+    Génère l'entropie pour une spirale 3D en combinant entropie quantique et météo.
+    La fonction get_entropy_data doit être passée en argument pour éviter les imports circulaires.
+    """
+    try:
+        if get_entropy_data is None:
+            raise ValueError("La fonction utilitaire get_entropy_data doit être fournie en argument.")
+        entropy = get_entropy_data()
+        import numpy as np
+        np.random.seed(int(entropy * 1000) % 2**32)
+        theta = np.linspace(0, 4 * np.pi, steps)
+        z = np.linspace(-height / 2, height / 2, steps)
+        r = radius * (1 + 0.1 * np.sin(theta))
+        x = r * np.cos(theta)
+        y = r * np.sin(theta)
+        points = np.vstack((x, y, z)).T.tolist()
+
+        weather_influence = 1.0
+        if use_weather and get_area_weather_data and combine_weather_data and config:
+            weather_data = get_area_weather_data(config.get('coordinates', {}))
+            processed_weather = combine_weather_data(weather_data)
+            if processed_weather:
+                temp = processed_weather.get('temperature', 20.0)
+                weather_influence = 1.0 + 0.01 * (temp - 20.0)
+                points = [[p[0] * weather_influence, p[1] * weather_influence, p[2]] for p in points]
+
+        entropy_data = {
+            "points": points,
+            "timestamp": time.time_ns(),
+            "weather_influence": weather_influence
+        }
+        entropy_string = json.dumps(entropy_data, sort_keys=True)
+        entropy_hash = hashlib.sha3_512(entropy_string.encode()).digest().hex()
+
+        frames = [{
+            "spiral_positions": points,
+            "entropy_hash": entropy_hash
+        }]
+        logger.info("Entropie spirale générée avec succès")
+        return frames
+    except Exception as e:
+        logger.error(f"Erreur dans get_spiral_entropy : {e}")
+        return []    
 
 # --- FONCTION PRINCIPALE D'ORCHESTRATION D'ENTROPIE ---
 def generate_quantum_geometric_entropy(
-    use_weather: bool = True, 
-    use_icosahedron: bool = True,
-    use_quantum: bool = True,
-    use_timestamps: bool = True,
-    use_local_noise: bool = True,
-    use_cubes: bool = True,
-    use_pyramids: bool = True,
+    length=32,  # Ajoute ce paramètre
+    use_weather=True,
+    use_icosahedron=True,
+    use_quantum=True,
+    use_timestamps=True,
+    use_local_noise=True,
+    use_cubes=True,
+    use_pyramids=True,
+    geometries=None,  # <-- Ajoute ce paramètre
     # Paramètres pour les différentes sources
     icosa_subdivisions: int = 1,
     pyramid_layers: int = 3,
@@ -174,7 +234,7 @@ def generate_quantum_geometric_entropy(
         if use_icosahedron:
             icosahedron_frames = generate_klee_penrose_polyhedron(subdivisions=icosa_subdivisions)
             if icosahedron_frames:
-                seed_string_parts.append(json.dumps({"vertices": icosahedron_frames[0].tolist()}, sort_keys=True))
+                seed_string_parts.append(json.dumps({"vertices": icosahedron_frames["vertices"]}, sort_keys=True))
             else:
                 logger.warning("Aucune donnée d'icosaèdre générée.")
 
@@ -231,14 +291,90 @@ def generate_quantum_geometric_entropy(
         
         # Hachage final : BLAKE3 prioritaire
         if BLAKE3_AVAILABLE:
-            seed = blake3.blake3(seed_string.encode()).digest()
+            seed = blake3.blake3(seed_string.encode()).digest(length)
         else:
             logger.warning("BLAKE3 non disponible, fallback vers SHA3-512.")
-            seed = hashlib.sha3_512(seed_string.encode()).digest()
+            seed = hashlib.sha3_512(seed_string.encode()).digest()[:length]
 
         logger.info("Entropie finale générée avec succès.")
         return seed
 
     except Exception as e:
         logger.error(f"Erreur inattendue dans generate_quantum_geometric_entropy: {e}", exc_info=True)
+        return None
+    
+def get_spiral_entropy(
+    config: Dict[str, Any],
+    steps: int = 1000,
+    radius: float = 1.0,
+    height: float = 2.0,
+    use_weather: bool = True,
+    use_quantum: bool = True,
+    get_area_weather_data=None,
+    combine_weather_data=None,
+    get_entropy_data=None  # <-- Ajout : fonction utilitaire passée en argument
+) -> List[Dict[str, Any]]:
+    """
+    Génère l'entropie pour une spirale 3D en combinant entropie quantique et météo.
+    La fonction get_entropy_data doit être passée en argument pour éviter les imports circulaires.
+    """
+    try:
+        if get_entropy_data is None:
+            raise ValueError("La fonction utilitaire get_entropy_data doit être fournie en argument.")
+        entropy = get_entropy_data()
+        import numpy as np
+        np.random.seed(int(entropy * 1000) % 2**32)
+        theta = np.linspace(0, 4 * np.pi, steps)
+        z = np.linspace(-height / 2, height / 2, steps)
+        r = radius * (1 + 0.1 * np.sin(theta))
+        x = r * np.cos(theta)
+        y = r * np.sin(theta)
+        points = np.vstack((x, y, z)).T.tolist()
+
+        weather_influence = 1.0
+        if use_weather and get_area_weather_data and combine_weather_data and config:
+            weather_data = get_area_weather_data(config.get('coordinates', {}))
+            processed_weather = combine_weather_data(weather_data)
+            if processed_weather:
+                temp = processed_weather.get('temperature', 20.0)
+                weather_influence = 1.0 + 0.01 * (temp - 20.0)
+                points = [[p[0] * weather_influence, p[1] * weather_influence, p[2]] for p in points]
+
+        entropy_data = {
+            "points": points,
+            "timestamp": time.time_ns(),
+            "weather_influence": weather_influence
+        }
+        entropy_string = json.dumps(entropy_data, sort_keys=True)
+        entropy_hash = hashlib.sha3_512(entropy_string.encode()).digest().hex()
+
+        frames = [{
+            "spiral_positions": points,
+            "entropy_hash": entropy_hash
+        }]
+        logger.info("Entropie spirale générée avec succès")
+        return frames
+    except Exception as e:
+        logger.error(f"Erreur dans get_spiral_entropy : {e}")
+        return []
+
+# --- FONCTION: OBTENIR L'ENTROPIE DES TORUS SPIRAUX ---
+def get_spiral_torus_entropy(
+    R=8, r=2, n_turns=3, n_points=24
+) -> Optional[bytes]:
+    try:
+        system = generate_spiral_torus_system(R, r, n_turns, n_points)
+        signature_data = []
+        for obj in system["objects"]:
+            signature_data.extend(obj["position"])
+            if obj["type"] == "sphere":
+                signature_data.append(obj["radius"])
+            elif obj["type"] == "cube":
+                signature_data.append(obj["size"])
+        import json, hashlib
+        signature_string = json.dumps(signature_data, sort_keys=True)
+        hashed_signature = hashlib.blake2b(signature_string.encode(), digest_size=32).digest()
+        return hashed_signature
+    except Exception as e:
+        logger.error(f"Erreur dans get_spiral_torus_entropy : {e}", exc_info=True)
         return None

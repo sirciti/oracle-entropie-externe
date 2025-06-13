@@ -79,6 +79,7 @@ def get_quantum_entropy(max_retries: int = 3, initial_delay: int = 1) -> Optiona
     random.seed(hashlib.sha256(fallback_seed).hexdigest())
     return random.random() # Retourne une valeur du PRNG de secours
 
+FALLBACK_PRNG_SEED_LENGTH = 256  # ou une valeur adaptée
 
 if __name__ == "__main__":
     # Test simple des nœuds quantiques

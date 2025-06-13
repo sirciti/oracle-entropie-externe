@@ -1,12 +1,15 @@
 import time
 import random
 import numpy as np
+import logging
 from typing import List, Dict, Any
 
 try:
     from .generator import CubeGenerator
 except ImportError:
     from backend.geometry.cubes.generator import CubeGenerator
+
+logger = logging.getLogger(__name__)
 
 def update_cubes_dynamics(
     cubes_system: List[Dict[str, Any]],
@@ -93,3 +96,14 @@ def update_cubes_dynamics(
                 cube2["velocity"] = (vel1 * 0.9 + vel2 * 0.1).tolist()
 
     return updated_cubes_system
+
+def update_cubes_dynamics(cubes, delta_time=0.016, chaos_factor=0.05):
+    try:
+        for cube in cubes:
+            cube['position'] = [p + np.random.uniform(-chaos_factor, chaos_factor) * delta_time for p in cube['position']]
+            for ball in cube.get('balls', []):
+                ball['position'] = [p + np.random.uniform(-chaos_factor, chaos_factor) * delta_time for p in ball['position']]
+        return cubes
+    except Exception as e:
+        logger.error(f"Erreur dans update_cubes_dynamics : {e}")
+        raise

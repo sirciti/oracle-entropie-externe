@@ -3,6 +3,7 @@ import logging
 import secrets
 import hashlib
 import os
+import random
 from typing import Optional, Dict, List, Any
 from blake3 import blake3
 import sentry_sdk
@@ -101,24 +102,20 @@ class TokenStreamGenerator:
 
     def _generate_bytes(self, num_bytes: int) -> bytes:
         """
-        Implémente le cœur de Hash_DRBG pour générer des octets pseudo-aléatoires.
+        Génère au moins num_bytes octets pseudo-aléatoires en concaténant plusieurs blocs si nécessaire.
         """
-        try:
+        output = bytearray()
+        while len(output) < num_bytes:
             data_to_hash = self.seed + self.counter.to_bytes(8, "big")
-            
             if self.hash_algo == "blake3":
                 hash_output = blake3(data_to_hash).digest()
             elif self.hash_algo == "sha3_512":
                 hash_output = hashlib.sha3_512(data_to_hash).digest()
             else:
                 raise ValueError("Algorithme de hachage Hash_DRBG non supporté.")
-            
             self.counter += 1
-            return hash_output[:num_bytes]
-        except Exception as e:
-            sentry_sdk.capture_exception(e)
-            logger.error(f"Erreur dans _generate_bytes (Hash_DRBG): {e}", exc_info=True)
-            raise
+            output.extend(hash_output)
+        return bytes(output[:num_bytes])
 
     def generate_token(self, length: int) -> Optional[str]:
         """
@@ -189,6 +186,27 @@ class TokenStreamGenerator:
             sentry_sdk.capture_exception(e)
             logger.error(f"Erreur dans generate_token_stream: {e}", exc_info=True)
             return []
+
+    def simple_generate_token(self, length):
+        """
+        Génère un token simple sans utiliser la graine d'entropie, basé uniquement sur les options de caractères.
+        Utilise secrets.choice pour chaque caractère.
+        """
+        if not isinstance(length, int) or length < 8 or length > 128:
+            raise ValueError("Longueur doit être entre 8 et 128.")
+        chars = ''
+        if self.char_options.get('lowercase', False):
+            chars += string.ascii_lowercase
+        if self.char_options.get('uppercase', False):
+            chars += string.ascii_uppercase
+        if self.char_options.get('numbers', False):
+            chars += string.digits
+        if self.char_options.get('symbols', False):
+            chars += string.punctuation
+        if not chars:
+            raise ValueError("Aucun jeu de caractères sélectionné.")
+        # Utilise secrets.choice pour chaque caractère
+        return ''.join(secrets.choice(chars) for _ in range(length))
 
 # Tests unitaires simples pour le module (pour exécution directe)
 if __name__ == "__main__":
@@ -263,5 +281,18 @@ if __name__ == "__main__":
             with self.assertRaises(ValueError):
                 TokenStreamGenerator(hash_algo="blake3", char_options=char_opts)
             print("Test 'aucun jeu de caractères' réussi.")
+
+        def test_simple_generate_token(self):
+            print("\n--- Test Simple Generate Token ---")
+            char_opts = {"lowercase": True, "uppercase": False, "numbers": True, "symbols": False}
+            generator = TokenStreamGenerator(char_options=char_opts)
+            token = generator.simple_generate_token(16)
+            self.assertIsNotNone(token)
+            self.assertEqual(len(token), 16)
+            self.assertTrue(any(c in string.ascii_lowercase for c in token))
+            self.assertTrue(any(c in string.digits for c in token))
+            self.assertFalse(any(c in string.ascii_uppercase for c in token))
+            self.assertFalse(any(c in string.punctuation for c in token))
+            print(f"Token simple (16, lower+digits): {token}")
 
     unittest.main(argv=[''], exit=False)

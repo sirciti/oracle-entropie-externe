@@ -6,5 +6,6 @@
     [48.7, 2.7],
     [48.4, 2.0],
     [48.8, 1.7]
-  ]
+  ],
+  "open_meteo_api_url": "https://api.open-meteo.com/v1/forecast"
 }

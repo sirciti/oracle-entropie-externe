@@ -1,13 +1,26 @@
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/docker/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
   backend:
     build:
-      context: ./backend # Le contexte de build est le dossier 'backend'
-      dockerfile: docker/Dockerfile # <-- CORRECTION ICI : Chemin relatif au contexte de build
+      context: .
+      dockerfile: backend/docker/Dockerfile
     ports:
       - "5000:5000"
     volumes:
-      - ./backend:/app # Monte le dossier 'backend' du système hôte vers '/app' dans le conteneur.
+      - ./backend:/app
     environment:
       - FLASK_ENV=development
-      - SENTRY_DSN=${SENTRY_DSN}
-    command: ["python", "-m", "backend.core.app"]
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge

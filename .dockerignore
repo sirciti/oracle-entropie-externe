@@ -1,12 +1,45 @@
+# .dockerignore
+
+# Fichiers Python générés
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.log
+*.log # Fichiers de logs
+
+# Git
 .git/
+.gitignore # Le .gitignore lui-même est ignoré, sauf si nécessaire pour certains builds
+
+# Environnements virtuels Python
 venv/
-test-results/
-node_modules
-frontend/node_modules
-frontend/package-lock.json
-!backend/config.json
+.venv/
+env/
+.env/
+
+# Rapports de tests
+test-results/ # Dossier Playwright et autres
+
+# Dépendances Node.js
+node_modules/
+frontend/node_modules/ # Important : ignoré pour le build frontend
+frontend/package-lock.json # Ignoré pour le build frontend
+
+# Fichiers de cache de Vite (pour le développement local, pas pour le build de prod)
+frontend/.vite/
+frontend/node_modules/.vite/deps/
+
+# Dossier du backend Docker lui-même
+backend/docker/
+
+# Ignorer tout le dossier frontend pour le build backend (car frontend a son propre build)
+# MAIS si backend Flask sert le frontend en dev, il faut le monter en volume.
+# Pour le Dockerfile frontend, il faut inclure seulement les fichiers frontend.
+# Donc, ce .dockerignore est pour la RACINE du projet.
+
+# Exclure tout le backend pour le build du frontend (si le contexte est la racine du projet)
+backend/
+
+# Fichiers de configuration spécifiques (s'ils ne doivent pas être dans l'image finale)
+# !backend/config.json # Exemple: Si vous voulez inclure config.json dans le build backend
+# Si config.json est à la racine du projet, il doit être copié si nécessaire.

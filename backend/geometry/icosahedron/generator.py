@@ -3,7 +3,10 @@
 import numpy as np
 from typing import Tuple, Optional, List, Set, Dict
 from math import sqrt
-from ..common import rotation_matrix, subdivide_faces # Importe les utilitaires partagés depuis common.py
+from ..common import rotation_matrix # Importe les utilitaires partagés depuis common.py
+import logging
+
+logger = logging.getLogger(__name__)
 
 def generate_icosahedron(
     radius: float = 1.0,
@@ -67,8 +70,50 @@ def generate_klee_penrose_polyhedron(
     """
     Génère une approximation du Polyèdre de Klee-Penrose par subdivision d'un icosaèdre.
     """
-    ico_vertices, ico_faces = generate_icosahedron(radius, position, rotation_axis, rotation_angle)
-    
-    subdivided_vertices, subdivided_faces = loop_subdivision(ico_vertices, ico_faces, subdivisions)
-    
-    return subdivided_vertices, subdivided_faces
+    try:
+        ico_vertices, ico_faces = generate_icosahedron(radius, position, rotation_axis, rotation_angle)
+        
+        subdivided_vertices, subdivided_faces = loop_subdivision(ico_vertices, ico_faces, subdivisions)
+        
+        if position is not None:
+            subdivided_vertices = subdivided_vertices + np.array(position)
+        return {
+            'vertices': subdivided_vertices.tolist(),
+            'faces': subdivided_faces.tolist()
+        }
+    except Exception as e:
+        logger.error(f"Erreur dans generate_klee_penrose_polyhedron : {e}")
+        raise
+
+def subdivide_faces(vertices, faces):
+    try:
+        new_vertices = vertices.tolist() if isinstance(vertices, np.ndarray) else list(vertices)
+        new_faces = []
+        for face in faces:
+            v1, v2, v3 = [new_vertices[i] for i in face]
+            mid1 = [(v1[i] + v2[i]) / 2 for i in range(3)]
+            mid2 = [(v2[i] + v3[i]) / 2 for i in range(3)]
+            mid3 = [(v3[i] + v1[i]) / 2 for i in range(3)]
+            new_vertices.extend([mid1, mid2, mid3])
+            idx = len(new_vertices)
+            new_faces.extend([
+                [face[0], idx-3, idx-1],
+                [face[1], idx-2, idx-3],
+                [face[2], idx-1, idx-2],
+                [idx-3, idx-2, idx-1]
+            ])
+        return np.array(new_vertices, dtype=np.float64), np.array(new_faces, dtype=np.int32)
+    except Exception as e:
+        logger.error(f"Erreur dans subdivide_faces : {e}")
+        raise
+
+def loop_subdivision(vertices, faces, subdivisions=1):
+    try:
+        current_vertices = np.array(vertices, dtype=np.float64)
+        current_faces = np.array(faces, dtype=np.int32)
+        for _ in range(subdivisions):
+            current_vertices, current_faces = subdivide_faces(current_vertices, current_faces)
+        return current_vertices, current_faces
+    except Exception as e:
+        logger.error(f"Erreur dans loop_subdivision : {e}")
+        raise

@@ -7,6 +7,7 @@ colorama==0.4.6
 Flask==3.0.3
 Flask-CORS==4.0.1
 geojson==2.5.0
+gunicorn==23.0.0
 idna==3.10
 itsdangerous==2.2.0
 Jinja2==3.1.4
@@ -22,6 +23,8 @@ setuptools==75.2.0
 urllib3==2.2.3
 Werkzeug==3.0.4
 pytest==8.3.0
+pytest-mock==3.14.0
 requests-mock==1.0.0
 python-dotenv==1.0.1
-sentry-sdk[flask]==2.13.0
+sentry-sdk[flask]==2.17.0
+python-multipart==0.0.12

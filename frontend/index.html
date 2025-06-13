@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <link rel="icon" type="image/png" href="/TriCore.png" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oracle d'Entropie</title>
-    <link rel="stylesheet" href="style.css">
+    <!-- CORRECTION : Le chemin vers style.css est correct car il est relatif à la racine du serveur / (qui est /app) -->
+    <link rel="stylesheet" href="/src/styles/style.css">
 </head>
 <body>
     <div class="app-container">
@@ -14,13 +14,14 @@
             <button id="nav-icosahedron" class="nav-button">Icosaèdre Dynamique</button>
             <button id="nav-pyramids" class="nav-button">Pyramides Dynamiques</button>
             <button id="nav-cubes" class="nav-button">Cubes Dynamiques</button>
+            <button id="nav-stream" class="nav-button">Flux de Tokens</button>
             <button id="nav-internal-tool" class="nav-button">Outil Interne de Sécurité</button>
         </nav>
 
-        <!-- Interface Générateur Aléatoire Classique -->
+        <!-- Première Interface: Générateur Aléatoire Classique (sans 3D) -->
         <div id="main-interface" class="interface-section">
             <div class="content-card">
-                <h1 class="title">Générateur Aléatoire Classique</h1>
+                <h1 class="title">Nombre Aléatoire Généré</h1>
                 <div class="input-group">
                     <label for="classic-token-length">Longueur du Token (8-128) :</label>
                     <input type="number" id="classic-token-length" value="32" min="8" max="128" />
@@ -41,7 +42,6 @@
                 <div class="output-group">
                     <label for="random-number">Token généré :</label>
                     <textarea id="random-number" class="random-token-box" readonly rows="2"></textarea>
-                    <button id="copy-classic-token" class="generate-button copy-button">Copier</button>
                 </div>
                 <button id="generate-button" class="generate-button">Générer</button>
                 <div id="feedback-classic" role="alert" aria-live="polite"></div>
@@ -49,7 +49,7 @@
             </div>
         </div>
 
-        <!-- Interface Icosaèdre -->
+        <!-- Deuxième Interface: Icosaèdre Dynamique -->
         <div id="icosahedron-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Icosaèdre Dynamique</h2>
@@ -58,7 +58,7 @@
             <div id="icosahedron-3d"></div>
         </div>
 
-        <!-- Interface Pyramides -->
+        <!-- Troisième Interface: Pyramides Dynamiques -->
         <div id="pyramids-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Pyramides Dynamiques</h2>
@@ -67,7 +67,7 @@
             <div id="icosahedron-3d-pyramids"></div>
         </div>
 
-        <!-- Interface Cubes -->
+        <!-- Quatrième Interface: Cubes Dynamiques -->
         <div id="cubes-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Cubes Dynamiques</h2>
@@ -76,7 +76,46 @@
             <div id="icosahedron-3d-cubes"></div>
         </div>
 
-        <!-- Interface Outil Interne -->
+        <!-- Cinquième Interface: Spirale Dynamique -->
+        <div id="spiral-interface" class="interface-section hidden">
+            <div class="content-card">
+                <h2 class="title">Spirale Dynamique</h2>
+                <button id="toggle-spiral-animation" class="generate-button">Stop Animation</button>
+            </div>
+            <div id="icosahedron-3d-spiral"></div>
+        </div>
+
+        <!-- Sixième Interface: Flux de Tokens -->
+        <div id="stream-interface" class="interface-section hidden">
+            <div class="content-card">
+                <h2 class="title">Flux de Tokens Robustes</h2>
+                <div class="input-group">
+                    <label for="stream-length">Longueur du Token (8-128) :</label>
+                    <input type="number" id="stream-length" value="32" min="8" max="128" />
+                </div>
+                <div class="input-group">
+                    <span class="group-label">Inclure :</span>
+                    <label><input type="checkbox" id="stream-lowercase" checked /> Minuscules</label>
+                    <label><input type="checkbox" id="stream-uppercase" checked /> Majuscules</label>
+                    <label><input type="checkbox" id="stream-numbers" checked /> Chiffres</label>
+                    <label><input type="checkbox" id="stream-symbols" checked /> Symboles</label>
+                </div>
+                <div class="input-group">
+                    <label for="stream-capacity">Capacité de Stockage (en Ko) :</label>
+                    <input type="number" id="stream-capacity" value="1024" min="1" max="102400" />
+                </div>
+                <button id="start-stream-button" class="generate-button">Démarrer Flux</button>
+                <div id="feedback-stream" role="alert" aria-live="polite"></div>
+            </div>
+            <div id="stream-visualizer-3d"></div>
+            <div class="output-group">
+                <label for="generated-stream-output">Flux de Tokens :</label>
+                <textarea id="generated-stream-output" class="stream-text-box" readonly rows="10"></textarea>
+                <button id="export-stream-button" class="generate-button">Exporter Flux (.txt)</button>
+            </div>
+        </div>
+
+        <!-- Septième Interface: Outil Interne de Sécurité Avancé -->
         <div id="internal-tool-interface" class="interface-section hidden">
             <div class="content-card internal-tool-container">
                 <h2 class="title">Générateur de Sécurité Interne</h2>
@@ -101,21 +140,17 @@
             </div>
         </div>
     </div>
-
-    <!-- Scripts JavaScript (ordre important si dépendances entre eux) -->
-    <script type="module" src="three_utils.js"></script>
-    <script type="module" src="icosahedron.js"></script>
-    <script type="module" src="pyramids_visualizer.js"></script>
-    <script type="module" src="cubes_visualizer.js"></script>
-    <script type="module" src="script.js"></script>
-    <script type="module" src="internal_tool.js"></script>
-    <script type="module" src="navigation.js"></script>
-    <script src="https://browser.sentry-cdn.com/7.116.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
-<script>
-  Sentry.init({
-    dsn: 'https://29f8b7efc9e08f8ab4f63a42a7947b7e@o4509440127008768.ingest.de.sentry.io/4509440193396816',
-    tracesSampleRate: 1.0
-  });
-</script>
+    
+    <!-- CORRECTION : Les chemins vers les scripts JS doivent être relatifs à la racine du serveur '/' -->
+    <!-- Le serveur Nginx servira /app comme racine, et les fichiers JS sont dans /app/src/ -->
+    <script type="module" src="/src/utils/three_utils.js"></script>
+    <script type="module" src="/src/visualizers/icosahedron.js"></script>
+    <script type="module" src="/src/visualizers/pyramids_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/cubes_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/spiral_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/stream_visualizer.js"></script> <!-- CORRECTION : stream_visualizer.js déplacé dans visualizers/ -->
+    <script type="module" src="/src/views/classic_generator.js"></script>
+    <script type="module" src="/src/views/internal_tool.js"></script>
+    <script type="module" src="/src/main.js"></script>
 </body>
 </html>

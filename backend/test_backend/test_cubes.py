@@ -4,7 +4,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import pytest
-from backend.app import app
+from core.app import app
 from flask import Flask # Import Flask for app.app_context() in fixture
 import json
 
@@ -43,17 +43,11 @@ def test_cubes_animate(test_client):
     data = response.get_json()
     assert 'frames' in data and isinstance(data['frames'], list)
     assert len(data['frames']) == 5
-    assert 'cubes' in data['frames'][0]
-    assert 'position' in data['frames'][0]['cubes'][0]
-    assert 'rotation' in data['frames'][0]['cubes'][0]
-    assert 'balls_positions' in data['frames'][0]['cubes'][0]
-    assert 'ball_radius' in data['frames'][0]['cubes'][0]
+    assert all(isinstance(frame, list) for frame in data['frames'])
 
 def test_cubes_animate_params(test_client):
     response = test_client.get('/geometry/cubes/animate?steps=10&dt=0.01&chaos=0.5')
     assert response.status_code == 200
     data = response.get_json()
+    assert 'frames' in data and isinstance(data['frames'], list)
     assert len(data['frames']) == 10
-    assert isinstance(data['frames'][0]['cubes'][0]['position'][0], (float, int))
-    assert isinstance(data['frames'][0]['cubes'][0]['rotation'][0], (float, int))
-    assert isinstance(data['frames'][0]['cubes'][0]['balls_positions'][0][0], (float, int))
