@@ -1,6 +1,5 @@
 // frontend/script.js
-
-document.addEventListener("DOMContentLoaded", () => {
+export function initClassicGenerator() {
     const generateButton = document.getElementById("generate-button");
     const randomNumberOutput = document.getElementById("random-number");
     const lengthInput = document.getElementById("classic-token-length");
@@ -78,4 +77,4 @@ document.addEventListener("DOMContentLoaded", () => {
             feedback.style.color = "#f44336";
         }
     });
-});
+};

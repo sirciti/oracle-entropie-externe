@@ -3,10 +3,10 @@
 import { initClassicGenerator } from './views/classic_generator.js';
 import { initInternalTool } from './views/internal_tool.js';
 import { initIcosahedronVisualizer } from './visualizers/icosahedron.js';
-import { initPyramidsVisualizer } from './visualizers/spiral_torus_visualizer.js';
+import { initSpiralTorusVisualizer } from './visualizers/spiral_torus_visualizer.js';
 import { initCubesVisualizer } from './visualizers/cubes_visualizer.js';
 import { initStreamVisualizer } from './visualizers/stream_visualizer.js';
-import { initSpiralVisualizer } from './visualizers/spiral_visualizer.js';
+import { initSpiralSimpleVisualizer } from './visualizers/spiral_simple_visualizer.js';
 document.addEventListener('DOMContentLoaded', () => {
     // Boutons de navigation
     const navMainButton = document.getElementById('nav-main');
@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let cubesVisualizer = null;
     let streamVisualizer = null;
     let spiralVisualizer = null; // Nouvelle instance pour la spirale
+    let spiralSimpleVisualizer = null;
 
     // Fonction pour afficher une section et cacher les autres
     function showSection(sectionId) {
@@ -90,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (spiral_torus3DContainer) spiral_torus3DContainer.style.display = 'flex';
             if (!spiral_torusVisualizer) {
                 setTimeout(() => {
-                    spiral_torusVisualizer = initPyramidsVisualizer('icosahedron-3d-spiral_torus');
+                    spiral_torusVisualizer = initSpiralTorusVisualizer('icosahedron-3d-spiral_torus');
                     if (spiral_torusVisualizer) spiral_torusVisualizer.start();
                     const toggleBtn = document.getElementById('toggle-spiral_torus-animation');
                     if (toggleBtn) toggleBtn.textContent = spiral_torusVisualizer.isRunning() ? "Stop Animation" : "Start Animation";

@@ -1,10 +1,8 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // Sélectionne la section de l'outil interne (qui contient tous les éléments)
-    const internalToolInterfaceSection = document.getElementById("internal-tool-interface");
+// frontend/src/views/internal_tool.js
 
-    // Vérifie si la section de l'outil interne existe
+export function initInternalTool() {
+    const internalToolInterfaceSection = document.getElementById("internal-tool-interface");
     if (internalToolInterfaceSection) {
-        // Sélectionne les éléments DANS la section de l'outil interne (maintenant dans index.html)
         const lengthInput = document.getElementById("token-length");
         const includeLower = document.getElementById("include-lowercase");
         const includeUpper = document.getElementById("include-uppercase");
@@ -15,12 +13,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const copyTokenButton = document.getElementById("copy-token-button");
         const feedback = document.getElementById("feedback-message");
 
-        // Vérifie que tous les éléments nécessaires pour cet outil sont présents
         if (lengthInput && includeLower && includeUpper && includeNumbers &&
             includeSymbols && generateSecureButton && generatedTokenDisplay &&
             copyTokenButton && feedback) {
 
-            // Fonction de validation de l'entrée utilisateur
             function validateInput() {
                 const length = parseInt(lengthInput.value, 10);
                 const charTypesSelected = [includeLower, includeUpper, includeNumbers, includeSymbols].filter(cb => cb.checked).length;
@@ -44,20 +40,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 return true;
             }
 
-            // Ajoute les écouteurs d'événements pour la validation en temps réel
             [lengthInput, includeLower, includeUpper, includeNumbers, includeSymbols].forEach(el =>
                 el.addEventListener("input", validateInput)
             );
 
-            // Validation initiale au chargement de l'interface
             validateInput();
 
-            // Gère le bouton de génération sécurisée
             generateSecureButton.addEventListener("click", async () => {
                 if (!validateInput()) return;
 
                 const length = parseInt(lengthInput.value, 10);
-                const geometries = ["cubes", "icosahedron", "pyramids"];
+                const geometries = ["cubes", "icosahedron", "spiral_simple", "spiral_torus"];
                 const weatherEnabled = true;
                 const charOptions = {
                     lowercase: includeLower.checked,
@@ -85,7 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-            // Gère le bouton de copie
             copyTokenButton.addEventListener("click", () => {
                 generatedTokenDisplay.select();
                 try {
@@ -99,17 +91,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-            // Le bouton "Retour à l'Accueil" est maintenant géré par navigation.js
-            // Donc, la logique ici est retirée.
         } else {
             console.error("Un ou plusieurs éléments nécessaires pour l'outil interne n'ont pas été trouvés dans le DOM. Assurez-vous que #internal-tool-interface est visible et contient tous les IDs.");
         }
     } else {
         console.error("La section 'Outil Interne de Sécurité' (#internal-tool-interface) n'a pas été trouvée.");
     }
-});
+}
 
-async function generateSecureToken(geometries = ["cubes", "icosahedron", "pyramids"], weatherEnabled = true, length = 32, charOptions = {}) {
+async function generateSecureToken(geometries = ["cubes", "icosahedron", "spiral_simple", "spiral_torus"], weatherEnabled = true, length = 32, charOptions = {}) {
     try {
         const response = await fetch("http://127.0.0.1:5000/generate_token", {
             method: "POST",

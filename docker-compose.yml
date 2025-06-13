@@ -1,26 +1,21 @@
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/docker/Dockerfile
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    networks:
-      - app-network
   backend:
     build:
-      context: .
-      dockerfile: backend/docker/Dockerfile
+      context: ./backend
+    container_name: oracle-entropie-externe-backend
     ports:
       - "5000:5000"
-    volumes:
-      - ./backend:/app
     environment:
-      - FLASK_ENV=development
-    networks:
-      - app-network
-networks:
-  app-network:
-    driver: bridge
+      - FLASK_ENV=production
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: docker/Dockerfile
+    container_name: oracle-entropie-externe-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

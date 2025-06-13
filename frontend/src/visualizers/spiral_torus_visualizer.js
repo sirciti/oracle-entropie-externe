@@ -1,5 +1,3 @@
-// frontend/src/visualizers/spiral_torus_visualizer.js
-
 import { THREE } from "../utils/three_utils.js"; // <-- CORRECTION ICI
 
 let scene = null; 
