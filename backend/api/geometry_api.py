@@ -10,8 +10,8 @@ from streams.token_stream import TokenStreamGenerator
 
 from geometry.icosahedron.generator import generate_icosahedron, subdivide_faces, generate_klee_penrose_polyhedron
 from geometry.icosahedron.dynamics import update_icosahedron_dynamics
-from geometry.pyramids.dynamics import update_pyramids_dynamics
-from geometry.pyramids.generator import generate_pyramids_system
+from geometry.spiral_torus.dynamics import update_toroidal_spiral_dynamics
+from geometry.spiral_torus.generator import generate_toroidal_spiral_system
 from geometry.cubes.generator import CubeGenerator
 from geometry.cubes.dynamics import update_cubes_dynamics
 from geometry.spiral.spiral import generate_spiral_initial, animate_spiral
@@ -154,49 +154,46 @@ def get_icosahedron_animate(steps=10, radius=1.0, position=None, rotation_axis=N
         })
     return frames
 
-# --- ROUTES POUR LES PYRAMIDES ---
-@geometry_api.route('/pyramids/initial', methods=['GET'])
-def get_initial_pyramids():
-    base_size = float(request.args.get('base_size', 5.0))
-    num_layers = int(request.args.get('num_layers', 3))
-    brick_size = float(request.args.get('brick_size', 1.0))
-    
+# --- ROUTES POUR LA SPIRALE TORIQUE ---
+@geometry_api.route('/geometry/toroidal_spiral/initial', methods=['GET'])
+def get_initial_toroidal_spiral():
+    R = float(request.args.get('R', 8.0))
+    r = float(request.args.get('r', 2.0))
+    n_turns = int(request.args.get('n_turns', 3))
+    n_points = int(request.args.get('n_points', 24))
     try:
-        pyramids_system = generate_pyramids_system(base_size, num_layers, brick_size)
-        return jsonify(pyramids_system)
+        spiral_system = generate_toroidal_spiral_system(R, r, n_turns, n_points)
+        return jsonify(spiral_system)
     except Exception as e:
-        logger.error(f"Erreur lors de la génération des pyramides : {e}")
-        return jsonify({'error': f'Erreur lors de la génération des pyramides : {e}'}), 500
+        logger.error(f"Erreur lors de la génération de la spirale toroïdale : {e}")
+        return jsonify({'error': f'Erreur lors de la génération de la spirale toroïdale : {e}'}), 500
 
-@geometry_api.route('/pyramids/animate', methods=['GET'])
-def animate_pyramids():
+@geometry_api.route('/geometry/toroidal_spiral/animate', methods=['GET'])
+def animate_toroidal_spiral():
     try:
         steps = int(request.args.get('steps', 80))
-        base_size = float(request.args.get('base_size', 10))
-        num_layers = int(request.args.get('num_layers', 5))
-        brick_size = float(request.args.get('brick_size', 2))
+        R = float(request.args.get('R', 8.0))
+        r = float(request.args.get('r', 2.0))
+        n_turns = int(request.args.get('n_turns', 3))
+        n_points = int(request.args.get('n_points', 24))
         chaos_factor = float(request.args.get('chaos_factor', 0.05))
         noise_level = float(request.args.get('noise_level', 0.1))
-        system = generate_pyramids_system(base_size, num_layers, brick_size)
+        system = generate_toroidal_spiral_system(R, r, n_turns, n_points)
         frames = []
         current_state = system
         for _ in range(steps):
-            current_state = update_pyramids_dynamics(
+            current_state = update_toroidal_spiral_dynamics(
                 current_state, chaos_factor=chaos_factor, noise_level=noise_level
             )
-            frame = {
-                'pyramids': [
-                    {
-                        'id': p['id'],
-                        'brick_size': p.get('brick_size', brick_size),
-                        'bricks_positions': p.get('positions', [])
-                    } for p in current_state['pyramids']
-                ]
-            }
-            frames.append(frame)
+            # Ajoute la structure attendue par le test
+            frames.append({
+                'spiral': {
+                    'points': current_state['spiral']['points']
+                }
+            })
         return jsonify({'frames': frames}), 200
     except Exception as e:
-        logger.error(f"Erreur lors de l'animation des pyramides : {e}")
+        logger.error(f"Erreur lors de l'animation de la spirale toroïdale : {e}")
         return jsonify({'error': str(e)}), 500
 
 # --- ROUTES POUR LES CUBES ---

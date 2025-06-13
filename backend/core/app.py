@@ -11,7 +11,7 @@ from api.geometry_api import geometry_api
 from entropy.quantum.entropy_oracle import (
     generate_quantum_geometric_entropy,
     get_cubes_entropy,
-    get_pyramids_entropy,
+    get_spiral_torus_entropy,
     get_spiral_entropy
 )
 from streams.token_stream import TokenStreamGenerator
@@ -29,7 +29,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Enregistrement du blueprint geometry_api avec son préfixe
-app.register_blueprint(geometry_api, url_prefix="/geometry")
+app.register_blueprint(geometry_api)
 
 # -------------------- CONFIGURATION DU LOGGER DE L'APPLICATION --------------------
 LOG_FILENAME = "app.log"

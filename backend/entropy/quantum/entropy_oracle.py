@@ -13,8 +13,8 @@ except ImportError:
 
 # --- IMPORTS DES MODULES GÉOMÉTRIQUES ---
 from geometry.icosahedron.generator import generate_klee_penrose_polyhedron
-from geometry.pyramids.generator import generate_pyramids_system, generate_spiral_torus_system
-from geometry.pyramids.dynamics import update_pyramids_dynamics
+from geometry.spiral_torus.generator import generate_toroidal_spiral_system, generate_toroidal_spiral_system
+from geometry.spiral_torus.dynamics import update_toroidal_spiral_dynamics
 from geometry.cubes.generator import CubeGenerator
 from geometry.cubes.dynamics import update_cubes_dynamics
 
@@ -87,7 +87,7 @@ def get_cubes_entropy(
         return None
 
 # --- FONCTION: OBTENIR L'ENTROPIE DES PYRAMIDES ---
-def get_pyramids_entropy(
+def get_spiral_torus_entropy(
     base_size: float = 5.0,
     num_layers: int = 3,
     brick_size: float = 1.0,
@@ -100,10 +100,10 @@ def get_pyramids_entropy(
     Génère de l'entropie à partir de la dynamique simulée d'un système de pyramides.
     """
     try:
-        pyramids_system = generate_pyramids_system(base_size=base_size, num_layers=num_layers, brick_size=brick_size)
+        pyramids_system = generate_toroidal_spiral_system(base_size=base_size, num_layers=num_layers, brick_size=brick_size)
         current_system_state = pyramids_system
         for _ in range(simulation_steps):
-            current_system_state = update_pyramids_dynamics(
+            current_system_state = update_toroidal_spiral_dynamics(
                 current_system_state, 
                 delta_time=delta_time, 
                 chaos_factor=chaos_factor, 
@@ -272,7 +272,7 @@ def generate_quantum_geometric_entropy(
 
         # Entropie Pyramides
         if use_pyramids:
-            pyramids_entropy_bytes = get_pyramids_entropy(
+            pyramids_entropy_bytes = get_spiral_torus_entropy(
                 base_size=pyramids_base_size,
                 num_layers=pyramids_num_layers,
                 brick_size=pyramids_brick_size,
@@ -363,7 +363,7 @@ def get_spiral_torus_entropy(
     R=8, r=2, n_turns=3, n_points=24
 ) -> Optional[bytes]:
     try:
-        system = generate_spiral_torus_system(R, r, n_turns, n_points)
+        system = generate_toroidal_spiral_system(R, r, n_turns, n_points)
         signature_data = []
         for obj in system["objects"]:
             signature_data.extend(obj["position"])
