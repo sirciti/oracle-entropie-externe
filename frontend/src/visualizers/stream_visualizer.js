@@ -1,6 +1,6 @@
+import * as THREE from "three";
 // frontend/src/visualizers/stream_visualizer.js
 
-import { THREE } from '../utils/three_utils.js'; // Import de Three.js via l'utilitaire partagé
 
 let scene = null;
 let camera = null;

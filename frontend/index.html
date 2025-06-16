@@ -4,23 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oracle d'Entropie</title>
-    <!-- CORRECTION : Le chemin vers style.css est correct car il est relatif à la racine du serveur / (qui est /app) -->
-    <link rel="stylesheet" href="/src/styles/style.css">
-    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/src/styles/style.css"> 
 </head>
 <body>
     <div class="app-container">
         <nav class="navigation">
             <button id="nav-main" class="nav-button active">Générateur Aléatoire Classique</button>
             <button id="nav-icosahedron" class="nav-button">Icosaèdre Dynamique</button>
-<button id="nav-spiral-simple" class="nav-button">Spirale Simple</button>
-            <button id="nav-spiral_torus" class="nav-button">Spirale Toroïdale</button>
+            <button id="nav-spiral-simple" class="nav-button">Spirale Simple</button>
             <button id="nav-cubes" class="nav-button">Cubes Dynamiques</button>
+            <button id="nav-spiral-torus" class="nav-button">Spirale Toroïdale</button>
             <button id="nav-stream" class="nav-button">Flux de Tokens</button>
             <button id="nav-internal-tool" class="nav-button">Outil Interne de Sécurité</button>
         </nav>
 
-        <!-- Première Interface: Générateur Aléatoire Classique (sans 3D) -->
+        <!-- Générateur Aléatoire Classique -->
         <div id="main-interface" class="interface-section">
             <div class="content-card">
                 <h1 class="title">Nombre Aléatoire Généré</h1>
@@ -51,7 +49,7 @@
             </div>
         </div>
 
-        <!-- Deuxième Interface: Icosaèdre Dynamique -->
+        <!-- Icosaèdre Dynamique -->
         <div id="icosahedron-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Icosaèdre Dynamique</h2>
@@ -60,24 +58,7 @@
             <div id="icosahedron-3d"></div>
         </div>
 
-        <!-- Troisième Interface: Spirale Toroïdale -->
-        <div id="spiral-simple-interface" class="interface-section hidden">
-            <div class="content">
-                <h2 class="title">Spirale Simple</h2>
-                <button id="toggle-spiral-simple-animation" class="generate-button">Start Animation</button>
-                <div class="controls"></div>
-            </div>
-            <div id="spiral-simple-3d"></div>
-        </div>
-        <div id="spiral_torus-interface" class="interface-section hidden">
-            <div class="content-card">
-                <h2 class="title">Spirale Toroïdale</h2>
-                <button id="toggle-spiral_torus-animation" class="generate-button">Stop Animation</button>
-            </div>
-            <div id="spiral-torus-3d"></div>
-        </div>
-
-        <!-- Quatrième Interface: Cubes Dynamiques -->
+        <!-- Cubes Dynamiques -->
         <div id="cubes-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Cubes Dynamiques</h2>
@@ -86,16 +67,25 @@
             <div id="icosahedron-3d-cubes"></div>
         </div>
 
-        <!-- Cinquième Interface: Spirale Dynamique -->
-        <div id="spiral-interface" class="interface-section hidden">
+        <!-- Spirale Simple -->
+        <div id="spiral-simple-interface" class="interface-section hidden">
             <div class="content-card">
-                <h2 class="title">Spirale Dynamique</h2>
-                <button id="toggle-spiral-animation" class="generate-button">Stop Animation</button>
+                <h2 class="title">Spirale Simple</h2>
+                <button id="toggle-spiral-simple-animation" class="generate-button">Stop Animation</button>
             </div>
-            <div id="icosahedron-3d-spiral"></div>
+            <div id="icosahedron-3d-spiral-simple"></div>
         </div>
 
-        <!-- Sixième Interface: Flux de Tokens -->
+        <!-- Spirale Toroïdale -->
+        <div id="spiral-torus-interface" class="interface-section hidden">
+            <div class="content-card">
+                <h2 class="title">Spirale Toroïdale</h2>
+                <button id="toggle-spiral-torus-animation" class="generate-button">Stop Animation</button>
+            </div>
+            <div id="icosahedron-3d-spiral-torus"></div>
+        </div>
+
+        <!-- Flux de Tokens -->
         <div id="stream-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Flux de Tokens Robustes</h2>
@@ -125,7 +115,7 @@
             </div>
         </div>
 
-        <!-- Septième Interface: Outil Interne de Sécurité Avancé -->
+        <!-- Outil Interne de Sécurité Avancé -->
         <div id="internal-tool-interface" class="interface-section hidden">
             <div class="content-card internal-tool-container">
                 <h2 class="title">Générateur de Sécurité Interne</h2>
@@ -151,14 +141,12 @@
         </div>
     </div>
     
-    <!-- CORRECTION : Les chemins vers les scripts JS doivent être relatifs à la racine du serveur '/' -->
-    <!-- Le serveur Nginx servira /app comme racine, et les fichiers JS sont dans /app/src/ -->
     <script type="module" src="/src/utils/three_utils.js"></script>
-    <script type="module" src="/src/visualizers/icosahedron.js"></script>
-    <script type="module" src="/src/visualizers/spiral_torus_visualizer.js"></script>
-    <script type="module" src="/src/visualizers/spiral_simple_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/icosahedron_visualizer.js"></script>
     <script type="module" src="/src/visualizers/cubes_visualizer.js"></script>
-    <script type="module" src="/src/visualizers/stream_visualizer.js"></script> <!-- CORRECTION : stream_visualizer.js déplacé dans visualizers/ -->
+    <script type="module" src="/src/visualizers/spiral_simple_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/spiral_torus_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/stream_visualizer.js"></script>
     <script type="module" src="/src/views/classic_generator.js"></script>
     <script type="module" src="/src/views/internal_tool.js"></script>
     <script type="module" src="/src/main.js"></script>

@@ -1,39 +1,14 @@
 import os
-from flask import Flask, jsonify, request, send_from_directory
-from logging.handlers import RotatingFileHandler
 import logging
-import sentry_sdk
-from typing import List, Dict, Optional, Tuple, Any
+from logging.handlers import RotatingFileHandler
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from sentry_sdk.integrations.flask import FlaskIntegration
-from core.utils.utils import load_config, get_area_weather_data, combine_weather_data, get_quantum_entropy
+import sentry_sdk
 from api.geometry_api import geometry_api
-from entropy.quantum.entropy_oracle import (
-    generate_quantum_geometric_entropy,
-    get_cubes_entropy,
-    get_spiral_torus_entropy,
-    get_spiral_entropy
-)
-from streams.token_stream import TokenStreamGenerator
-from geometry.spiral.generator import generate_spiral_simple_initial
-from geometry.spiral.dynamics import animate_spiral_simple
-
-# -------------------- INITIALISATION SENTRY --------------------
-if not os.environ.get("DISABLE_SENTRY"):
-    sentry_sdk.init(
-        dsn=os.environ.get("SENTRY_DSN"),
-        integrations=[FlaskIntegration()],
-        traces_sample_rate=1.0,
-        environment=os.getenv("FLASK_ENV", "dev")
-    )
-
-app = Flask(__name__)
-CORS(app)
-
-# Enregistrement du blueprint geometry_api avec son préfixe
-app.register_blueprint(geometry_api)
-
-# -------------------- CONFIGURATION DU LOGGER DE L'APPLICATION --------------------
+from core.utils import load_config, generate_quantum_geometric_entropy, get_area_weather_data, combine_weather_data, get_quantum_entropy, TokenStreamGenerator
+# Configuration du logger
+logger = logging.getLogger(__name__)
 LOG_FILENAME = "app.log"
 LOG_LEVEL = logging.INFO
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
@@ -42,10 +17,26 @@ LOG_BACKUP_COUNT = 5
 
 log_handler = RotatingFileHandler(LOG_FILENAME, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUP_COUNT)
 log_handler.setFormatter(logging.Formatter(LOG_FORMAT))
-logger = logging.getLogger("entropy_generator") # Utiliser le logger centralisé
 logger.addHandler(log_handler)
 logger.setLevel(LOG_LEVEL)
 
+# Initialisation de Sentry
+sentry_sdk.init(
+    dsn=os.environ.get("SENTRY_DSN"),
+    integrations=[FlaskIntegration()],
+    traces_sample_rate=1.0,
+    environment=os.getenv("FLASK_ENV", "dev")
+)
+logger.info("Sentry initialized with DSN: %s", os.environ.get("SENTRY_DSN"))
+
+# Initialisation de l'application Flask
+app = Flask(__name__)
+CORS(app)
+
+# Enregistrement du blueprint geometry_api
+app.register_blueprint(geometry_api, url_prefix='/api/geometry')
+
+# Fonctions utilitaires pour le logging
 def log_error(message: str) -> None:
     logger.error(message)
 
@@ -55,17 +46,13 @@ def log_warning(message: str) -> None:
 def log_info(message: str) -> None:
     logger.info(message)
 
-# Charge la configuration au démarrage de l'application
+# Charge la configuration
 config = load_config()
 
-# -------------------- ROUTES PRINCIPALES DE L'API --------------------
-
+# Routes principales de l'API
 @app.route('/generate_random', methods=['GET'])
 def generate_random():
-    """API endpoint to generate a random number with combined entropy."""
     try:
-        # Appelle la fonction d'orchestration de l'entropie finale
-        # Tous les paramètres sont passés pour la flexibilité des sources
         entropy_seed_bytes = generate_quantum_geometric_entropy(
             use_weather=True,
             use_icosahedron=True,
@@ -73,8 +60,8 @@ def generate_random():
             use_timestamps=True,
             use_local_noise=True,
             use_cubes=True,
-            use_spiral_torus=True, # S'assurer que les pyramides sont activées
-            # Passer les dépendances de entropy_oracle qui viennent de utils.py
+            use_spiral_torus=False,
+            use_spiral_simple=False,
             get_area_weather_data=get_area_weather_data,
             combine_weather_data=combine_weather_data,
             config=config,
@@ -84,27 +71,18 @@ def generate_random():
             logger.error("Échec de la récupération de l'entropie pour la génération de nombre aléatoire.")
             return jsonify({"error": "Failed to generate final entropy"}), 500
 
-        # Utilisation de TokenStreamGenerator pour un token robuste et traçable
-        # Initialisation du générateur avec la graine d'entropie finale
         token_generator_instance = TokenStreamGenerator(hash_algo="blake3", seed=entropy_seed_bytes)
-        
-        # Générer un token de longueur par défaut (32) avec toutes les options activées
-        # La composition est gérée par TokenStreamGenerator.generate_token
         token_result = token_generator_instance.generate_token(length=32)
 
         return jsonify({"random_number": token_result, "entropy_seed": entropy_seed_bytes.hex()})
     except Exception as e:
         logger.error(f"Erreur lors de la génération du nombre aléatoire : {e}", exc_info=True)
-        sentry_sdk.capture_exception(e) # Capture l'exception avec Sentry
+        sentry_sdk.capture_exception(e)
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/entropy', methods=['GET'])
 def entropy_route():
-    """API endpoint to get the combined weather data (for debugging or optional use)."""
     try:
-        # Cette route ne doit renvoyer que des données météo brutes ou combinées.
-        # Pas d'entropie finale complète ici.
         all_weather_data_from_get_area = get_area_weather_data(config['coordinates'])
         combined_weather = combine_weather_data(all_weather_data_from_get_area)
         if combined_weather:
@@ -118,7 +96,6 @@ def entropy_route():
 
 @app.route('/final_entropy', methods=['GET'])
 def final_entropy():
-    """API endpoint to get the final combined entropy."""
     try:
         final_entropy_bytes = generate_quantum_geometric_entropy(
             use_weather=True,
@@ -127,7 +104,8 @@ def final_entropy():
             use_timestamps=True,
             use_local_noise=True,
             use_cubes=True,
-            use_spiral_torus=True,
+            use_spiral_torus=False,
+            use_spiral_simple=False,
             get_area_weather_data=get_area_weather_data,
             combine_weather_data=combine_weather_data,
             config=config,
@@ -142,10 +120,8 @@ def final_entropy():
         sentry_sdk.capture_exception(e)
         return jsonify({"error": str(e)}), 500
 
-
-@app.route("/generate_token", methods=["POST"])
+@app.route("/api/generate_token", methods=["POST"])
 def generate_token():
-    """API endpoint to generate a secure token with user-defined composition."""
     try:
         data = request.get_json()
         length = data.get("length", 32)
@@ -155,7 +131,6 @@ def generate_token():
         weather_enabled = data.get("weather_enabled", True)
         geometries = data.get("geometries", [])
 
-        # Récupérer l'entropie finale du système
         entropy_bytes = generate_quantum_geometric_entropy(
             geometries=geometries,
             use_weather=weather_enabled,
@@ -165,7 +140,7 @@ def generate_token():
             use_local_noise=True,
             use_cubes="cubes" in geometries,
             use_spiral_torus="spiral_torus" in geometries,
-            use_spiral="spiral" in geometries, 
+            use_spiral_simple="spiral_simple" in geometries,
             get_area_weather_data=get_area_weather_data,
             combine_weather_data=combine_weather_data,
             config=config,
@@ -175,16 +150,15 @@ def generate_token():
             logger.error("Échec de la récupération de l'entropie pour la génération de token.")
             return jsonify({"error": "Failed to generate entropy"}), 500
 
-        # Utilisation du TokenStreamGenerator pour générer le token avec garantie de composition
         token_generator_instance = TokenStreamGenerator(
-            hash_algo="blake3", # Algorithme de hachage pour le CSPRNG
+            hash_algo="blake3",
             seed=entropy_bytes,
             char_options=char_options
         )
         token = token_generator_instance.generate_token(length)
 
         return jsonify({"token": token, "entropy_seed": entropy_bytes.hex() if entropy_bytes else None})
-    except ValueError as e: # Capturer les erreurs de validation (ex: longueur trop courte)
+    except ValueError as e:
         logger.error(f"Erreur de validation lors de la génération du token : {e}", exc_info=True)
         sentry_sdk.capture_exception(e)
         return jsonify({"error": str(e)}), 400
@@ -193,65 +167,63 @@ def generate_token():
         sentry_sdk.capture_exception(e)
         return jsonify({"error": str(e)}), 500
 
-
-logger = logging.getLogger(__name__)
-
-@app.route('/stream_tokens', methods=['POST'])
+@app.route("/stream_tokens", methods=["POST"])
 def stream_tokens():
-    """API endpoint to generate a stream of secure tokens."""
     try:
         data = request.get_json()
         num_tokens = data.get('num_tokens', 1)
         length = data.get('length', 32)
         char_options = data.get('char_options', {})
-        generator = TokenStreamGenerator(char_options=char_options)
-        tokens = []
-        for _ in range(num_tokens):
-            token = generator.generate_token(length)
-            if token is None:
-                return jsonify({'error': 'No character set selected'}), 400
-            tokens.append(token)
-        return jsonify({'tokens': tokens}), 200
-    except ValueError as ve:
-        logger.error(f"Erreur de validation : {ve}")
-        return jsonify({'error': str(ve)}), 400
-    except Exception as e:
-        logger.error(f"Erreur lors de la génération du flux de tokens : {e}")
-        return jsonify({'error': str(e)}), 500
 
-# -------------------- ROUTES POUR SERVIR LE FRONT-END (pour développement local SANS Vite proxy) --------------------
-# Ces routes sont actives si Flask est censé servir les fichiers front-end (ex: en développement sans Vite proxy)
-# Si vous utilisez Vite avec un proxy (recommandé), vous pouvez les commenter.
+        if not (8 <= length <= 128):
+            return jsonify({'error': 'Length must be between 8 and 128'}), 400
+
+        try:
+            generator = TokenStreamGenerator(char_options=char_options)
+            tokens = []
+            for _ in range(num_tokens):
+                token = generator.generate_token(length)
+                if token is None:
+                    return jsonify({'error': 'No character set selected'}), 400
+                tokens.append(token)
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+
+        return jsonify({'tokens': tokens}), 200
+    except Exception as e:
+        logger.error(f"Erreur lors de la génération du flux de tokens : {e}", exc_info=True)
+        sentry_sdk.capture_exception(e)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/token/stream", methods=["GET"])
+def token_stream():
+    from core.utils import TokenStreamGenerator
+    generator = TokenStreamGenerator()
+    token = generator.generate_token(32)
+    return jsonify({"token": token})
+
+# Routes pour servir le frontend (développement local sans Vite proxy)
 @app.route('/')
 def serve_index():
-    """Serves the main page (frontend)."""
     return send_from_directory('/usr/src/app/frontend', 'index.html')
-
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    """Serves static files (CSS, JS, etc.) from the frontend."""
     return send_from_directory('/usr/src/app/frontend', filename)
 
-@app.route('/test-sentry', methods=['GET'])
+@app.route('/test-sentry')
 def test_sentry():
-    """Endpoint de test pour Sentry qui génère une erreur."""
     try:
-        # Génère une erreur de division par zéro
-        result = 1 / 0
-        return jsonify({'result': result}), 200
-    except Exception as e:
-        # Capture l'exception avec Sentry et la relance
+        return 1 / 0
+    except ZeroDivisionError as e:
         sentry_sdk.capture_exception(e)
-        logger.error(f"Erreur dans /test-sentry : {e}", exc_info=True)
-        raise e  # Propage l'erreur pour obtenir un code 500
-
+        return jsonify({"error": "Sentry test triggered"}), 500
 
 if __name__ == '__main__':
     try:
         loaded_config = load_config()
-        print(f"Appel Open-Meteo pour latitude={loaded_config['latitude']}, longitude={loaded_config['longitude']}")
-        print(f"Coordonnées utilisées: {loaded_config['coordinates']}")
+        logger.info(f"Appel Open-Meteo pour latitude={loaded_config['latitude']}, longitude={loaded_config['longitude']}")
+        logger.info(f"Coordonnées utilisées: {loaded_config['coordinates']}")
         app.run(host='0.0.0.0', port=5000, debug=True)
     except Exception as e:
         logger.error(f"Erreur lors du démarrage de l'application Flask : {e}", exc_info=True)

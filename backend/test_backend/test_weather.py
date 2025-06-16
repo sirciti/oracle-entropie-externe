@@ -30,7 +30,8 @@ def test_entropy_endpoint(test_client):
                 f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,pressure_msl,cloudcover,precipitation,windgusts_10m&forecast_days=1&timezone=auto",
                 json=mock_weather_data
             )
-        response = test_client.get("/entropy")
+        client, _ = test_client
+        response = client.get("/entropy")
         assert response.status_code == 200
         data = response.get_json()
         # Adapte ici selon ce que ton endpoint retourne réellement

@@ -17,7 +17,7 @@ def test_client():
             yield client
 
 def test_cubes_initial(test_client):
-    response = test_client.get('/geometry/cubes/initial')
+    response = test_client.get('/api/geometry/cubes/initial')
     assert response.status_code == 200
     data = response.get_json()
     assert 'cubes' in data and isinstance(data['cubes'], list)
@@ -27,7 +27,7 @@ def test_cubes_initial(test_client):
     assert 'metadata' in data
 
 def test_cubes_initial_params(test_client):
-    response = test_client.get('/geometry/cubes/initial?num_cubes=1&cube_size=10&num_balls_per_cube=2&space_bounds=50')
+    response = test_client.get('/api/geometry/cubes/initial?num_cubes=1&cube_size=10&num_balls_per_cube=2&space_bounds=50')
     assert response.status_code == 200
     data = response.get_json()
     assert data['metadata']['num_cubes'] == 1
@@ -38,7 +38,7 @@ def test_cubes_initial_params(test_client):
     assert len(data['cubes'][0]['balls']) == 2
 
 def test_cubes_animate(test_client):
-    response = test_client.get('/geometry/cubes/animate?steps=5')
+    response = test_client.get('/api/geometry/cubes/animate?steps=5')
     assert response.status_code == 200
     data = response.get_json()
     assert 'frames' in data and isinstance(data['frames'], list)
@@ -46,7 +46,7 @@ def test_cubes_animate(test_client):
     assert all(isinstance(frame, list) for frame in data['frames'])
 
 def test_cubes_animate_params(test_client):
-    response = test_client.get('/geometry/cubes/animate?steps=10&dt=0.01&chaos=0.5')
+    response = test_client.get('/api/geometry/cubes/animate?steps=10&dt=0.01&chaos=0.5')
     assert response.status_code == 200
     data = response.get_json()
     assert 'frames' in data and isinstance(data['frames'], list)

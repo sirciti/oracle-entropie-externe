@@ -2,7 +2,7 @@
 // Importe les initialisations des vues non-3D
 import { initClassicGenerator } from './views/classic_generator.js';
 import { initInternalTool } from './views/internal_tool.js';
-import { initIcosahedronVisualizer } from './visualizers/icosahedron.js';
+import { initIcosahedronVisualizer } from './visualizers/icosahedron_visualizer.js';
 import { initSpiralTorusVisualizer } from './visualizers/spiral_torus_visualizer.js';
 import { initCubesVisualizer } from './visualizers/cubes_visualizer.js';
 import { initStreamVisualizer } from './visualizers/stream_visualizer.js';

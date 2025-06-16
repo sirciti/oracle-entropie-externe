@@ -159,3 +159,73 @@ class SentryTestTransport:
     def capture_envelope(self, envelope):
         self.envelopes.append(envelope)
 
+def generate_secure_token(geometries, weather_enabled=True, length=32):
+    """
+    Génère un token sécurisé basé sur les géométries et les données météo.
+    Le token est un hash SHA-256 des géométries et de l'entropie météo.
+    """
+    if not geometries:
+        raise ValueError("Aucune géométrie fournie pour générer le token.")
+
+    # Convertit les géométries en une chaîne JSON
+    geometries_str = json.dumps(geometries, sort_keys=True)
+
+    # Récupère l'entropie météo si activée
+    weather_entropy = ""
+    if weather_enabled:
+        weather_data = get_area_weather_data(config['coordinates'])
+        combined_weather = combine_weather_data(weather_data)
+        weather_entropy = json.dumps(combined_weather, sort_keys=True)
+
+    # Combine les géométries et l'entropie météo
+    combined_data = geometries_str + weather_entropy
+
+    # Génère le hash SHA-256 du résultat combiné
+    token = hashlib.sha256(combined_data.encode('utf-8')).hexdigest()
+
+    # Si la longueur demandée est différente, tronque ou étend le token
+    if length < len(token):
+        return token[:length]
+    elif length > len(token):
+        return (token * (length // len(token) + 1))[:length]
+
+    return token
+def generate_fallback_prng_seed(length=FALLBACK_PRNG_SEED_LENGTH) -> str:
+    """
+    Génère une graine PRNG de secours basée sur l'heure actuelle et un nombre aléatoire.
+    Utilisée si l'API ANU QRNG échoue.
+    """
+    current_time = int(time.time() * 1000)  # Temps en millisecondes
+    random_number = random.randint(0, 999999)
+    seed = f"{current_time}{random_number}"
+    return hashlib.sha256(seed.encode('utf-8')).hexdigest()[:length]
+def fetch_anu_qrng_data(length=1) -> Optional[List[int]]:
+    """
+    Récupère des données aléatoires de l'API ANU QRNG.
+    Si l'API échoue, utilise une graine PRNG de secours.
+    """
+    try:
+        response = requests.get(ANU_QRNG_API_URL, params={'length': length}, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        if 'data' in data and isinstance(data['data'], list):
+            return data['data']
+        else:
+            logger.error("Format de réponse inattendu de l'API ANU QRNG.")
+            return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Erreur lors de la récupération des données de l'API ANU QRNG : {e}")
+        return None
+    except json.JSONDecodeError as e:
+        logger.error(f"Erreur de décodage JSON dans la réponse de l'API ANU QRNG : {e}")
+        return None
+def get_entropy(length=1) -> List[int]:
+    """
+    Récupère de l'entropie à partir de l'API ANU QRNG ou, en cas d'échec, utilise une graine PRNG de secours.
+    """
+    entropy_data = fetch_anu_qrng_data(length)
+    if entropy_data is not None:
+        return entropy_data
+    else:
+        logger.warning("Utilisation de la graine PRNG de secours en raison de l'échec de l'API ANU QRNG.")
+        return [int(generate_fallback_prng_seed(length)) % 256 for _ in range(length)]

@@ -2,6 +2,7 @@
 
 import numpy as np
 from typing import Tuple, Optional, List, Set, Dict, Any
+from flask import jsonify
 
 # Importe les fonctions utilitaires nécessaires de common.py
 from ..common import compute_vertex_neighbors # compute_vertex_neighbors est dans common.py
@@ -80,3 +81,5 @@ def update_icosahedron_dynamics(
     neighbors = compute_vertex_neighbors(faces, len(vertices)) 
     psi_new, phi_new = rk4_step(vertices, phi, neighbors, dt, params)
     return psi_new, phi_new
+
+

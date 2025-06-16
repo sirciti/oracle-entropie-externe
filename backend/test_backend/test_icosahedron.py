@@ -35,8 +35,8 @@ def test_entropy_route(test_client):
     assert 'avg_temperature' in data or 'error' in data
 
 def test_icosahedron_initial(test_client):
-    """Test de la route /geometry/icosahedron/initial (génération d'icosaèdre)."""
-    response = test_client.get('/geometry/icosahedron/initial?radius=1.0&position=[0,0,0]')
+    """Test de la route /api/geometry/icosahedron/initial (génération d'icosaèdre)."""
+    response = test_client.get('/api/geometry/icosahedron/initial?radius=1.0&position=[0,0,0]')
     assert response.status_code == 200
     data = response.get_json()
     assert 'vertices' in data and 'faces' in data
@@ -46,20 +46,20 @@ def test_icosahedron_initial(test_client):
     assert len(data['faces']) > 0
 
 def test_icosahedron_subdivide(test_client):
-    """Test de la route /geometry/icosahedron/subdivide (subdivision d'icosaèdre)."""
-    response = test_client.get('/geometry/icosahedron/subdivide?radius=1.0&position=[0,0,0]')
+    """Test de la route /api/geometry/icosahedron/subdivide (subdivision d'icosaèdre)."""
+    response = test_client.get('/api/geometry/icosahedron/subdivide?radius=1.0&position=[0,0,0]')
     assert response.status_code == 200
     data = response.get_json()
     assert 'vertices' in data and 'faces' in data
     assert isinstance(data['vertices'], list)
     assert isinstance(data['faces'], list)
-    initial_response = test_client.get('/geometry/icosahedron/initial?radius=1.0&position=[0,0,0]')
+    initial_response = test_client.get('/api/geometry/icosahedron/initial?radius=1.0&position=[0,0,0]')
     initial_vertices_count = len(initial_response.get_json()['vertices'])
     assert len(data['vertices']) > initial_vertices_count
 
 def test_icosahedron_animate(test_client):
-    """Test de la route /geometry/icosahedron/animate (animation de l'icosaèdre)."""
-    response = test_client.get('/geometry/icosahedron/animate?steps=2&position=[0,0,0]')
+    """Test de la route /api/geometry/icosahedron/animate (animation de l'icosaèdre)."""
+    response = test_client.get('/api/geometry/icosahedron/animate?steps=2&position=[0,0,0]')
     assert response.status_code == 200
     data = response.get_json()
     assert 'frames' in data
@@ -67,16 +67,16 @@ def test_icosahedron_animate(test_client):
     assert len(data['frames']) == 2
 
 def test_icosahedron_animate_params(test_client):
-    """Test de la route /geometry/icosahedron/animate avec paramètres."""
-    response = test_client.get('/geometry/icosahedron/animate?radius=2&rotation_angle=0.785&steps=5&position=[0,0,0]')
+    """Test de la route /api/geometry/icosahedron/animate avec paramètres."""
+    response = test_client.get('/api/geometry/icosahedron/animate?radius=2&rotation_angle=0.785&steps=5&position=[0,0,0]')
     assert response.status_code == 200
     data = response.get_json()
     assert 'frames' in data
     assert len(data['frames']) == 5
 
 def test_icosahedron_animate_invalid_params(test_client):
-    """Test de la route /geometry/icosahedron/animate avec paramètres invalides."""
-    response = test_client.get('/geometry/icosahedron/animate?position=invalid')
+    """Test de la route /api/geometry/icosahedron/animate avec paramètres invalides."""
+    response = test_client.get('/api/geometry/icosahedron/animate?position=invalid')
     assert response.status_code == 400
     data = response.get_json()
     assert 'error' in data

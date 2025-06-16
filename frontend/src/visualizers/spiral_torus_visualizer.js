@@ -1,4 +1,4 @@
-import { THREE } from "../utils/three_utils.js"; // <-- CORRECTION ICI
+import * as THREE from "three";
 
 let scene = null; 
 let camera = null;
@@ -128,7 +128,7 @@ export function initSpiralTorusVisualizer(containerId) {
 
     // --- Charger les données d'animation des pyramides depuis le back-end ---
     // base_size=10, num_layers=5, brick_size=2 génère un système d'environ 10x8x10 unités.
-    fetch('http://backend:8000/geometry/spiral_torus/initial')
+    fetch("/api/geometry/spiral_torus/initial")
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);

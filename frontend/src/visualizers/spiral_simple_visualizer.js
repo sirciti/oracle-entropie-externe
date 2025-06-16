@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 
 let spiralGroup = null;
 let scene = null;
@@ -22,7 +22,7 @@ export function initSpiralSimpleVisualizer(containerId) {
 
   camera.position.z = 5;
 
-  fetch('/geometry/spiral_simple/animate?...')
+  fetch("/api/geometry/spiral_simple/animate?...")
     .then(res => res.json())
     .then(data => {
       updateSpiralGeometry(data);

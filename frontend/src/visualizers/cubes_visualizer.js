@@ -1,6 +1,6 @@
+import * as THREE from "three";
 // frontend/src/visualizers/cubes_visualizer.js
 
-import { THREE } from '../utils/three_utils.js'; // Import de Three.js via l'utilitaire partagé
 
 let scene = null; 
 let camera = null;
@@ -128,7 +128,7 @@ export function initCubesVisualizer(containerId) {
 
     // --- Charger les données d'animation des cubes depuis le back-end ---
     // Les paramètres doivent correspondre à ceux de backend/geometry/cubes/generator.py
-    fetch('http://backend:8000/geometry/cubes/initial') 
+    fetch("/api/geometry/cubes/initial") 
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);

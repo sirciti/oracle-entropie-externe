@@ -1,6 +1,7 @@
 // frontend/vite.config.js
 import { defineConfig } from "vite";
 // import { sentryVitePlugin } from "@sentry/vite-plugin"; // optionnel
+import { fileURLToPath, URL } from "url";
 
 export default defineConfig({
   server: {
@@ -8,7 +9,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://backend:5000", // <--- le nom du service Docker Compose !
+        target: "http://localhost:5000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
@@ -26,6 +27,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@sentry/browser": "@sentry/browser",
+      "three": fileURLToPath(new URL("./node_modules/three", import.meta.url)),
       // Ajoute d’autres alias personnalisés ici si besoin
       // Exemple : "@": "/src",
     },

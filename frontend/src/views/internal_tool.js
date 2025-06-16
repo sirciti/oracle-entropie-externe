@@ -101,7 +101,7 @@ export function initInternalTool() {
 
 async function generateSecureToken(geometries = ["cubes", "icosahedron", "spiral_simple", "spiral_torus"], weatherEnabled = true, length = 32, charOptions = {}) {
     try {
-        const response = await fetch("/generate_token", {
+        const response = await fetch("/api/generate_token", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ geometries, weather_enabled: weatherEnabled, length, char_options: charOptions })

@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Oracle d'Entropie Front-End", () => {
     // Exécuté avant chaque test pour s'assurer que la page est chargée et les éléments clés sont visibles
     test.beforeEach(async ({ page }) => {
-        await page.goto("http://localhost:5173/");
+        await page.goto("http://localhost:8080/");
         // Attendre que les éléments clés de l'interface soient visibles avant chaque test
         await page.waitForSelector("#random-number", { state: "visible", timeout: 15000 });
         await page.waitForSelector("#generate-button", { state: "visible", timeout: 15000 });
@@ -80,7 +80,7 @@ test.describe("Oracle d'Entropie Front-End", () => {
             route.fulfill({ status: 500, body: JSON.stringify({ error: "Erreur simulée" }) });
         });
 
-        await page.goto("http://localhost:5173/"); 
+        await page.goto("http://localhost:8080/"); 
         await page.click("#generate-button");
 
         // Vérifier que le message d'erreur "Erreur" est affiché

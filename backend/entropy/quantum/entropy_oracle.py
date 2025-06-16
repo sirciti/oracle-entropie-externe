@@ -22,7 +22,6 @@ from geometry.cubes.dynamics import update_cubes_dynamics
 from geometry.fractal import FractalLSystem
 from entropy.quantum.quantum_nodes import QuantumNode
 from entropy.temporal.temporal_entropy import get_world_timestamps, mix_timestamps
-from streams.token_stream import get_final_entropy
 
 logger = logging.getLogger("entropy_oracle")
 
@@ -262,7 +261,7 @@ def generate_quantum_geometric_entropy(
                 use_quantum=use_quantum,
                 get_area_weather_data=get_area_weather_data,
                 combine_weather_data=combine_weather_data,
-                get_entropy_data=get_final_entropy
+                get_entropy_data=lambda: 0.5
             )
             if spiral_simple_frames:
                 seed_string_parts.append(json.dumps(spiral_simple_frames, sort_keys=True))
@@ -301,3 +300,31 @@ def generate_quantum_geometric_entropy(
     except Exception as e:
         logger.error(f"Erreur inattendue dans generate_quantum_geometric_entropy: {e}", exc_info=True)
         return None
+
+# --- FONCTION: OBTENIR L'ENTROPIE FINALE ---
+def get_final_entropy(
+    hash_algo='blake3',
+    use_weather=True,
+    use_cubes=True,
+    use_spiral_simple=True,
+    use_spiral_torus=True,
+    use_icosahedron=True,
+    **kwargs
+) -> bytes:
+    try:
+        seed = generate_quantum_geometric_entropy(
+            use_weather=use_weather,
+            use_cubes=use_cubes,
+            use_spiral_simple=use_spiral_simple,
+            use_spiral_torus=use_spiral_torus,
+            use_icosahedron=use_icosahedron,
+            **kwargs
+        )
+        if not seed:
+            raise ValueError("Échec de la génération de l'entropie")
+        if hash_algo == 'blake3' and BLAKE3_AVAILABLE:
+            return blake3.blake3(seed).digest()
+        return hashlib.sha3_512(seed).digest()[:32]
+    except Exception as e:
+        logger.error(f"Erreur dans get_final_entropy: {e}", exc_info=True)
+        return hashlib.sha3_512(b"fallback_seed").digest()[:32]

@@ -1,6 +1,6 @@
-// frontend/src/visualizers/icosahedron.js
+import * as THREE from "three";
+// frontend/src/visualizer./icosahedron_visualizer.js
 
-import { THREE } from "../utils/three_utils.js"; // <-- CORRECTION ICI
 
 let scene = null;
 let camera = null;
@@ -122,7 +122,7 @@ export function initIcosahedronVisualizer(containerId) {
     console.log("INIT ICOSA: 12. Listeners de resize configurés et appel initial.");
 
     // --- Charger les données d'animation de l'icosaèdre depuis le back-end ---
-    fetch('http://backend:8000/geometry/icosahedron/initial') 
+    fetch("/api/geometry/icosahedron/initial")
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);
@@ -131,7 +131,7 @@ export function initIcosahedronVisualizer(containerId) {
         })
         .then(data => {
             console.log("FETCH ICOSA SUCCESS: 13. Données reçues:", data); 
-            frames = data.frames;
+            frames = [{ vertices: data.vertices, faces: data.faces }];
             currentFrame = 0; 
             if (frames.length > 0) {
                 updateIcosahedronGeometry(frames[0]); 

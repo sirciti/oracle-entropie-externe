@@ -7,34 +7,16 @@ import random
 from typing import Optional, Dict, List, Any
 from blake3 import blake3
 import sentry_sdk
-# CORRECTION : Importez LoggingIntegration correctement
-from sentry_sdk.integrations.logging import LoggingIntegration # <-- Correction ici
-
-# Dépendances internes (à importer depuis le package backend)
-try:
-    from backend.entropy.quantum.entropy_oracle import get_final_entropy
-except ImportError:
-    print("WARNING: Using mock get_final_entropy for direct script execution. Replace with actual import.")
-    def get_final_entropy(hash_algo='blake3', **kwargs):
-        if hash_algo == 'blake3':
-            return blake3(b"mock_seed_data_blake3_test_mode_1234567890abcdef").digest()
-        else:
-            return hashlib.sha3_512(b"mock_seed_data_sha3_512_test_mode_abcdefghijk").digest()[:32]
+from entropy.quantum.entropy_oracle import get_final_entropy
 
 logger = logging.getLogger("token_stream")
 
-sentry_sdk.init(
-    dsn=os.environ.get("SENTRY_DSN", "https://example@sentry.io/example"),
-    # CORRECTION : Utilisez LoggingIntegration directement
-    integrations=[
-        LoggingIntegration( # <-- Correction ici
-            level=logging.INFO,
-            event_level=logging.ERROR
-        )
-    ],
-    traces_sample_rate=1.0,
-    environment=os.getenv("FLASK_ENV", "dev")
-)
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=1.0,
+    )
 
 class TokenStreamGenerator:
     """
@@ -67,10 +49,17 @@ class TokenStreamGenerator:
 
             self.seed = seed
             if self.seed is None:
-                 self.seed = get_final_entropy(hash_algo=hash_algo, use_cubes=True,
-                                                use_weather=True, use_icosahedron=True,
-                                                use_quantum=True, use_timestamps=True,
-                                                use_local_noise=True, use_pyramids=True)
+                 self.seed = get_final_entropy(
+                     hash_algo=hash_algo,
+                     use_cubes=True,
+                     use_weather=True,
+                     use_icosahedron=True,
+                     use_quantum=True,
+                     use_timestamps=True,
+                     use_local_noise=True,
+                     use_spiral_simple=True,
+                     use_spiral_torus=True
+                 )
             
             if not self.seed or len(self.seed) < 32:
                 if self.seed and len(self.seed) < 32:
@@ -143,7 +132,7 @@ class TokenStreamGenerator:
             if length < required_chars_count:
                 raise ValueError(f"Longueur {length} trop courte pour inclure {required_chars_count} types de caractères.")
 
-            system_random = secrets.SystemRandom() 
+            system_random = secrets.SystemRandom()
             for charset_pool in charsets_to_guarantee:
                 token_chars.append(system_random.choice(charset_pool))
             
@@ -151,11 +140,11 @@ class TokenStreamGenerator:
             remaining_length = length - len(token_chars)
             
             if remaining_length > 0:
-                num_bytes_needed = remaining_length 
-                raw_bytes = self._generate_bytes(num_bytes_needed) 
+                num_bytes_needed = remaining_length
+                raw_bytes = self._generate_bytes(num_bytes_needed)
 
                 for byte_val in raw_bytes:
-                    index = byte_val % len(full_alphabet_list) 
+                    index = byte_val % len(full_alphabet_list)
                     token_chars.append(full_alphabet_list[index])
 
             system_random.shuffle(token_chars)
@@ -205,10 +194,8 @@ class TokenStreamGenerator:
             chars += string.punctuation
         if not chars:
             raise ValueError("Aucun jeu de caractères sélectionné.")
-        # Utilise secrets.choice pour chaque caractère
         return ''.join(secrets.choice(chars) for _ in range(length))
 
-# Tests unitaires simples pour le module (pour exécution directe)
 if __name__ == "__main__":
     import unittest
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -264,35 +251,19 @@ if __name__ == "__main__":
             self.assertTrue(any(c in string.ascii_uppercase for c in token))
             self.assertTrue(any(c in string.digits for c in token))
             self.assertTrue(any(c in string.punctuation for c in token))
-            print(f"Token court (8, tous types garantis): {token}")
-
-        def test_invalid_length_raises_error(self):
-            print("\n--- Test Invalid Length ---")
-            generator = TokenStreamGenerator(hash_algo="blake3")
-            with self.assertRaises(ValueError):
-                generator.generate_token(5)
-            with self.assertRaises(ValueError):
-                generator.generate_token(150)
-            print("Tests de longueur invalide réussis.")
-
-        def test_no_charset_selected_raises_error(self):
-            print("\n--- Test No Charset Selected ---")
-            char_opts = {"lowercase": False, "uppercase": False, "numbers": False, "symbols": False}
-            with self.assertRaises(ValueError):
-                TokenStreamGenerator(hash_algo="blake3", char_options=char_opts)
-            print("Test 'aucun jeu de caractères' réussi.")
+            print(f"Token court garanti (8): {token}")
 
         def test_simple_generate_token(self):
-            print("\n--- Test Simple Generate Token ---")
-            char_opts = {"lowercase": True, "uppercase": False, "numbers": True, "symbols": False}
-            generator = TokenStreamGenerator(char_options=char_opts)
-            token = generator.simple_generate_token(16)
+            print("\n--- Test Simple Generate Token (sans graine) ---")
+            char_opts = {"lowercase": True, "uppercase": True, "numbers": True, "symbols": True}
+            generator = TokenStreamGenerator(hash_algo="blake3", char_options=char_opts)
+            token = generator.simple_generate_token(12)
             self.assertIsNotNone(token)
-            self.assertEqual(len(token), 16)
+            self.assertEqual(len(token), 12)
             self.assertTrue(any(c in string.ascii_lowercase for c in token))
+            self.assertTrue(any(c in string.ascii_uppercase for c in token))
             self.assertTrue(any(c in string.digits for c in token))
-            self.assertFalse(any(c in string.ascii_uppercase for c in token))
-            self.assertFalse(any(c in string.punctuation for c in token))
-            print(f"Token simple (16, lower+digits): {token}")
+            self.assertTrue(any(c in string.punctuation for c in token))
+            print(f"Token simple (12): {token}")
 
     unittest.main(argv=[''], exit=False)

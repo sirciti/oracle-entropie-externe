@@ -5,7 +5,7 @@ app.config['TESTING'] = True
 client = app.test_client()
 
 def test_toroidal_spiral_structure():
-    response = client.get("/geometry/toroidal_spiral/animate?steps=80&R=8&r=2&n_turns=3&n_points=24")
+    response = client.get("/api/geometry/toroidal_spiral/animate?steps=80&R=8&r=2&n_turns=3&n_points=24")
     assert response.status_code == 200
     data = response.get_json()
 

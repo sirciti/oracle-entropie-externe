@@ -54,7 +54,7 @@ export function initClassicGenerator() {
         feedback.textContent = "";
 
         try {
-            const response = await fetch("/generate_token", {
+            const response = await fetch("/api/generate_token", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

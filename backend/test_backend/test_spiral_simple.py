@@ -10,7 +10,7 @@ def client():
 
 def test_spiral_simple_initial(client, mocker):
     mocker.patch('core.utils.utils.get_entropy_data', return_value=0.123456789)
-    response = client.get('/geometry/spiral_simple/initial')
+    response = client.get('/api/geometry/spiral_simple/initial')
     assert response.status_code == 200
     data = response.get_json()
     assert data['type'] == 'spiral'
@@ -22,7 +22,7 @@ def test_spiral_simple_initial(client, mocker):
 
 def test_spiral_simple_animate(client, mocker):
     mocker.patch('core.utils.utils.get_entropy_data', return_value=0.123456789)
-    response = client.get('/geometry/spiral_simple/animate?steps=5')
+    response = client.get('/api/geometry/spiral_simple/animate?steps=5')
     assert response.status_code == 200
     data = response.get_json()
     assert 'frames' in data
