@@ -183,3 +183,5 @@ test-results/ # Dossier de résultats de tests (Playwright, Pytest)
 frontend/node_modules/.vite/deps/_metadata.json
 requirements.txt
 frontend/node_modules/.vite/deps/
+# Playwright test results
+frontend/test-results/
