@@ -3,19 +3,19 @@ import * as THREE from "three";
 let scene = null; 
 let camera = null;
 let renderer = null;
-let spiral_torusGroup = null; // Groupe pour contenir les pyramides et les billes
+let spiral_torusGroup = null; // Groupe pour contenir les Spirale Toroïdale et les billes
 
 let frames = [];
 let currentFrame = 0;
 let animationId = null; // Pour stocker l'ID de requestAnimationFrame et pouvoir l'annuler
 let isAnimatingFlag = false; // Drapeau pour l'état de l'animation
 
-// Fonction d'initialisation de la scène Three.js pour les pyramides
+// Fonction d'initialisation de la scène Three.js pour les Spirale Toroïdale
 export function initSpiralTorusVisualizer(containerId) {
     console.log("INIT SPIRAL_TORUS: 1. initSpiralTorusVisualizer appelé avec containerId:", containerId);
     const container = document.getElementById(containerId);
     if (!container) {
-        console.error(`INIT SPIRAL_TORUS ERROR: 2. Conteneur #${containerId} non trouvé pour le visualiseur de pyramides.`);
+        console.error(`INIT SPIRAL_TORUS ERROR: 2. Conteneur #${containerId} non trouvé pour le visualiseur de Spirale Toroïdale.`);
         return { start: () => {}, stop: () => {}, resize: () => {}, isRunning: () => false };
     }
     console.log("INIT SPIRAL_TORUS: 2.1 Conteneur trouvé. ClientWidth:", container.clientWidth, "clientHeight:", container.clientHeight);
@@ -80,7 +80,7 @@ export function initSpiralTorusVisualizer(containerId) {
         0.1, // Near clipping plane
         1000 // Far clipping plane
     );
-    // Position de la caméra ajustée pour voir les pyramides qui sont centrées autour de (0,0,0)
+    // Position de la caméra ajustée pour voir les Spirale Toroïdale qui sont centrées autour de (0,0,0)
     // Le système généré (base_size=10, brick_size=2) est d'environ 10x8x10 unités.
     // Une position de 0, 0, 20-30 devrait être bonne.
     camera.position.set(0, 0, 40); // Assez loin sur Z pour englober tout le système
@@ -126,9 +126,9 @@ export function initSpiralTorusVisualizer(containerId) {
     onWindowResize(); // Appel initial pour s'assurer que la taille est correcte
     console.log("INIT SPIRAL_TORUS: 15. Listeners de resize configurés et appel initial.");
 
-    // --- Charger les données d'animation des pyramides depuis le back-end ---
+    // --- Charger les données d'animation des Spirale Toroïdale depuis le back-end ---
     // base_size=10, num_layers=5, brick_size=2 génère un système d'environ 10x8x10 unités.
-    fetch("/api/geometry/spiral_torus/initial")
+    fetch("/toroidal_spiral/initial")
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);
@@ -147,13 +147,13 @@ export function initSpiralTorusVisualizer(containerId) {
                     console.log("FETCH SPIRAL_TORUS SUCCESS: 18. Rendu forcé après updateSpiralTorusGeometry.");
                 }
             } else {
-                console.warn("FETCH SPIRAL_TORUS SUCCESS WARN: 19. Aucune frame d'animation reçue pour les pyramides.");
+                console.warn("FETCH SPIRAL_TORUS SUCCESS WARN: 19. Aucune frame d'animation reçue pour les Spirale Toroïdale.");
             }
         })
         .catch(error => {
-            console.error('FETCH SPIRAL_TORUS ERROR: Erreur lors de la récupération des données d\'animation des pyramides:', error);
+            console.error('FETCH SPIRAL_TORUS ERROR: Erreur lors de la récupération des données d\'animation des Spirale Toroïdale:', error);
             if (container) {
-                container.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement 3D des pyramides.</p>';
+                container.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement 3D des Spirale Toroïdale.</p>';
             }
         });
 
@@ -195,7 +195,7 @@ export function initSpiralTorusVisualizer(containerId) {
     };
 }
 
-// Fonction pour mettre à jour la géométrie des pyramides pour une frame donnée
+// Fonction pour mettre à jour la géométrie des Spirale Toroïdale pour une frame donnée
 function updateSpiralTorusGeometry(frame) {
     console.log("UPDATE SPIRAL_TORUS: 23. updateSpiralTorusGeometry appelée."); 
     if (!spiral_torusGroup) {
@@ -222,7 +222,7 @@ function updateSpiralTorusGeometry(frame) {
     console.log("UPDATE SPIRAL_TORUS: 26. spiral_torusGroup nettoyé. Contient", spiral_torusGroup.children.length, "enfants.");
 
     if (!frame || !frame.spiral_torus || !Array.isArray(frame.spiral_torus)) {
-        console.error("UPDATE SPIRAL_TORUS ERROR: 27. Format de frame invalide pour les pyramides:", frame);
+        console.error("UPDATE SPIRAL_TORUS ERROR: 27. Format de frame invalide pour les Spirale Toroïdale:", frame);
         return;
     }
 
@@ -232,7 +232,7 @@ function updateSpiralTorusGeometry(frame) {
     // Facteur d'échelle pour la visibilité
     const displayScaleFactor = 5; 
 
-    // Couleurs distinctes pour les deux pyramides
+    // Couleurs distinctes pour les deux Spirale Toroïdale
     const pyramidColors = [new THREE.Color(0xff0000), new THREE.Color(0x0000ff)]; // Rouge pour pyramide 0, Bleu pour pyramide 1
 
     // Matériau pour les billes (blanc)
@@ -290,7 +290,7 @@ function updateSpiralTorusGeometry(frame) {
     console.log("UPDATE SPIRAL_TORUS: Bounding Box du groupe (échelle appliquée):", box);
 }
 
-// Boucle d'animation pour les pyramides
+// Boucle d'animation pour les Spirale Toroïdale
 function animateSpiralTorus() { 
     animationId = requestAnimationFrame(animateSpiralTorus);
     isAnimatingFlag = true; // S'assurer que le drapeau est à true pendant l'animation

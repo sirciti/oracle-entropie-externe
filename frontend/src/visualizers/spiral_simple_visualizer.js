@@ -22,7 +22,7 @@ export function initSpiralSimpleVisualizer(containerId) {
 
   camera.position.z = 5;
 
-  fetch("/api/geometry/spiral_simple/animate?...")
+  fetch("/spiral_simple/animate?...") 
     .then(res => res.json())
     .then(data => {
       updateSpiralGeometry(data);

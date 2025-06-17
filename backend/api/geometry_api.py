@@ -53,32 +53,10 @@ def parse_float_list(s: str) -> Optional[List[float]]:
         return None
 
 # --- ROUTES POUR L'ICOSAÈDRE ---
-@geometry_api.route('/icosahedron/initial', methods=['GET'])
-def get_initial_icosahedron():
-    radius = float(request.args.get('radius', 1.0))
-    position_str = request.args.get('position', "[0.0, 0.0, 0.0]")
-    rotation_axis_str = request.args.get('rotation_axis', "[0.0, 1.0, 0.0]")
-    rotation_angle = float(request.args.get('rotation_angle', 0.0))
-
-    position = parse_float_list(position_str)
-    if position is None or len(position) != 3:
-        return jsonify({"error": "Invalid position format. Expected list of 3 numbers."}), 400
-    position = np.array(position, dtype=float)
-
-    rotation_axis = parse_float_list(rotation_axis_str)
-    if rotation_axis is not None and len(rotation_axis) != 3:
-        return jsonify({"error": "Invalid rotation_axis format. Expected list of 3 numbers."}), 400
-    rotation_axis = np.array(rotation_axis, dtype=float) if rotation_axis else None
-
-    try:
-        vertices, faces = generate_icosahedron(radius, position, rotation_axis, rotation_angle)
-        return jsonify({
-            'vertices': vertices.tolist(),
-            'faces': faces.tolist()
-        })
-    except Exception as e:
-        logger.error(f"Erreur lors de la génération de l'icosaèdre : {e}")
-        return jsonify({'error': f'Erreur lors de la génération de l\'icosaèdre : {e}'}), 500
+@geometry_api.route("/icosahedron/initial", methods=["GET"])
+def icosahedron_initial():
+    vertices, faces = generate_icosahedron(radius=1.0)
+    return jsonify({"vertices": vertices.tolist(), "faces": faces.tolist()}), 200
 
 @geometry_api.route('/icosahedron/subdivide', methods=['GET'])
 def subdivide_icosahedron():

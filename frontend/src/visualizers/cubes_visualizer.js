@@ -128,7 +128,7 @@ export function initCubesVisualizer(containerId) {
 
     // --- Charger les données d'animation des cubes depuis le back-end ---
     // Les paramètres doivent correspondre à ceux de backend/geometry/cubes/generator.py
-    fetch("/api/geometry/cubes/initial") 
+    fetch("/cubes/initial") 
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! Statut: ${response.status}`);
