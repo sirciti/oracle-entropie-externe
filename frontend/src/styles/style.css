@@ -1,4 +1,5 @@
-body, html {
+/* Réinitialisation et base */
+html, body {
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -9,40 +10,46 @@ body, html {
     width: 100%;
 }
 
+/* Conteneur principal de l'application */
 .app-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
     align-items: center;
     width: 100%;
+    height: 100vh;
+    max-width: 100vw;
     justify-content: flex-start;
     padding: 20px;
     box-sizing: border-box;
 }
 
+/* Barre de navigation */
 .navigation {
     display: flex;
-    gap: 10px;
-    padding: 10px;
-    background: #1e1e1e;
-    border-radius: 8px;
+    flex-wrap: wrap;
     margin-bottom: 20px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     width: 100%;
-    max-width: 800px;
+    max-width: 900px;
     justify-content: center;
+    gap: 10px;
 }
 
+/* Boutons de navigation */
 .nav-button {
-    padding: 10px 20px;
     background-color: #bb86fc;
     color: #121212;
     border: none;
+    padding: 10px 15px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9em;
-    margin: 0 5px;
+    flex-shrink: 0;
     transition: background-color 0.3s ease, color 0.3s ease;
+    white-space: nowrap;
 }
 
 .nav-button:hover {
@@ -56,12 +63,8 @@ body, html {
     font-weight: bold;
 }
 
-.interface-section,
-#icosahedron-interface,
-#cubes-interface,
-#stream-interface,
-#spiral-simple-interface,
-#spiral-torus-interface {
+/* Styles pour toutes les sections d'interface */
+.interface-section {
     width: 100%;
     max-width: 800px;
     background-color: #1e1e1e;
@@ -71,41 +74,45 @@ body, html {
     text-align: center;
     box-sizing: border-box;
     margin-bottom: 20px;
-    display: flex;
+    display: none; /* Cachées par défaut */
     flex-direction: column;
     align-items: center;
     flex-grow: 1;
     min-height: 0;
 }
 
-.interface-section.hidden {
-    display: none;
+/* Afficher la section active */
+.interface-section:not(.hidden) {
+    display: flex;
 }
 
+/* Cartes de contenu */
 .content-card {
-    background: #181818;
-    color: #e0e0e0;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    margin-bottom: 20px;
     width: 100%;
     max-width: 600px;
+    margin-bottom: 20px;
 }
 
+/* Titres des sections */
 .title {
     color: #bb86fc;
-    margin: 0 0 20px;
-    font-size: 24px;
+    margin-bottom: 20px;
 }
 
+/* Affichage du nombre aléatoire/token */
+.random-value {
+    font-size: 2em;
+    margin-bottom: 30px;
+    color: #03dac6;
+}
+
+/* Boutons généraux */
 .generate-button,
 .toggle-animation-button {
-    padding: 10px 20px;
     background-color: #bb86fc;
     color: #121212;
     border: none;
+    padding: 12px 24px;
     border-radius: 6px;
     cursor: pointer;
     font-size: 1em;
@@ -118,85 +125,18 @@ body, html {
     background-color: #6200ee;
 }
 
-.generate-button.copy-button {
-    margin-top: 10px;
-    background-color: #03dac6;
-    color: #121212;
-}
-
-.generate-button.copy-button:hover {
-    background-color: #018786;
-}
-
-#icosahedron-3d,
-#icosahedron-3d-cubes,
-#stream-visualizer-3d,
-#icosahedron-3d-spiral-simple,
-#icosahedron-3d-spiral-torus {
-    background-color: #181818;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    flex-grow: 1;
-    margin: 0 auto;
-    overflow: hidden;
-    min-height: 200px;
-    height: 400px;
-}
-
-#icosahedron-3d canvas,
-#spiral-torus-3d canvas,
-#icosahedron-3d-cubes canvas {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    margin: auto;
-    background: transparent;
-    border-radius: 8px;
-}
-
-.random-value {
-    font-size: 2em;
-    margin-bottom: 30px;
-    color: #03dac6;
-}
-
+/* Données d'entropie */
 .entropy-data {
     margin-top: 20px;
     font-size: 0.8em;
     color: #9e9e9e;
 }
 
-#feedback-message {
-    font-size: 0.9rem;
-    margin-top: 10px;
-    color: #f44336;
-}
-
-/* ----------- Spécifique outil interne de sécurité ----------- */
-.internal-tool-container {
-    background: #1e1e1e;
-    color: #e0e0e0;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    padding: 30px;
-    margin: 0 auto 20px auto;
-    max-width: 600px;
-    width: 100%;
-    text-align: left;
-}
-
-.internal-tool-container h2 {
-    color: #03dac6;
-    margin-bottom: 25px;
-}
-
+/* Groupes d'input/output */
 .input-group, .output-group {
     margin-bottom: 20px;
     text-align: left;
+    width: 100%;
 }
 
 .input-group label, .output-group label {
@@ -206,6 +146,15 @@ body, html {
     color: #bb86fc;
 }
 
+.input-group .group-label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    color: #bb86fc;
+    font-weight: bold;
+}
+
+/* Champs numériques et textareas */
 .input-group input[type="number"],
 .output-group textarea {
     width: calc(100% - 20px);
@@ -224,20 +173,54 @@ body, html {
     font-family: 'Courier New', Courier, monospace;
 }
 
-.random-token-box {
-    width: 100%;
-    min-height: 48px;
-    padding: 10px;
-    border: 1px solid #444;
-    border-radius: 4px;
-    background-color: #181818;
-    color: #03dac6;
-    font-size: 1.2em;
-    font-family: 'Courier New', Courier, monospace;
-    resize: none;
-    box-sizing: border-box;
-    text-align: center;
+/* Bouton de copie */
+.generate-button.copy-button {
+    margin-top: 10px;
+    background-color: #03dac6;
+    color: #121212;
 }
 
+.generate-button.copy-button:hover {
+    background-color: #018786;
+}
 
+/* Message de feedback */
+#feedback-message,
+#feedback-classic,
+#feedback-stream {
+    font-size: 0.9rem;
+    margin-top: 10px;
+    color: #f44336;
+}
 
+/* Conteneurs 3D */
+#icosahedron-3d,
+#icosahedron-3d-cubes,
+#stream-visualizer-3d,
+#icosahedron-3d-spiral-torus {
+    background-color: #181818;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex-grow: 1;
+    margin: 0 auto;
+    overflow: hidden;
+    min-height: 200px;
+    height: 400px;
+}
+
+/* Canvas Three.js */
+#icosahedron-3d canvas,
+#icosahedron-3d-cubes canvas,
+#stream-visualizer-3d canvas,
+#icosahedron-3d-spiral-torus canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    margin: auto;
+    background: transparent;
+    border-radius: 8px;
+}

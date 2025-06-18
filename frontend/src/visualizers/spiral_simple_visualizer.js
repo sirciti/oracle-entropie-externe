@@ -41,6 +41,7 @@ export function initSpiralSimpleVisualizer(containerId) {
 
     if (!frame || !frame.spiral_positions) {
       console.error('UPDATE SPIRAL_SIMPLE ERROR: Format de frame invalide:', frame);
+console.log("Données reçues:", JSON.stringify(frame, null, 2));
       return;
     }
 
