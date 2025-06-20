@@ -19,8 +19,6 @@ export default class CubesVisualizer {
             return;
         }
 
-        this.isAnimating = false;
-
         // Initialisation Three.js
         this.initThreeJS();
 
@@ -28,6 +26,11 @@ export default class CubesVisualizer {
         this.cubes = [];
         this.balls = [];
         this.animationFrameId = null;
+        this.isAnimating = false;
+
+        // NOUVEAU : Variables pour la luminescence
+        this.luminescenceIndex = 0;
+        this.luminescenceSpeed = 0.1;
 
         // Chargement des données
         this.loadData();
@@ -94,19 +97,14 @@ export default class CubesVisualizer {
     }
 
     createCubes(cubesData) {
-        // Création des cubes
         cubesData.forEach((cubeData, index) => {
-            // Groupe pour le cube et ses billes
             const cubeGroup = new THREE.Group();
-            
-            // Position initiale plus dispersée
             cubeGroup.position.set(
                 cubeData.position[0] * 0.3,
                 cubeData.position[1] * 0.3,
                 cubeData.position[2] * 0.3
             );
 
-            // Cube (filaire blanc)
             const cubeGeometry = new THREE.BoxGeometry(cubeData.size, cubeData.size, cubeData.size);
             const cubeMaterial = new THREE.MeshBasicMaterial({
                 color: 0xffffff,
@@ -115,29 +113,34 @@ export default class CubesVisualizer {
             const cubeMesh = new THREE.Mesh(cubeGeometry, cubeMaterial);
             cubeGroup.add(cubeMesh);
 
-            // Billes rouges
-            const ballMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
             const ballGroup = new THREE.Group();
 
-            cubeData.balls.forEach(ball => {
+            cubeData.balls.forEach((ball, ballIndex) => {
                 const ballRadius = cubeData.size / 8;
                 const ballGeometry = new THREE.SphereGeometry(ballRadius, 32, 32);
+                const ballMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xff0000,
+                    emissive: 0x000000,
+                    emissiveIntensity: 0
+                });
                 const ballMesh = new THREE.Mesh(ballGeometry, ballMaterial);
 
-                // Position initiale aléatoire à l'intérieur du cube
                 ballMesh.position.set(
                     (Math.random() - 0.5) * cubeData.size * 0.8,
                     (Math.random() - 0.5) * cubeData.size * 0.8,
                     (Math.random() - 0.5) * cubeData.size * 0.8
                 );
 
-                // Vitesse aléatoire
                 ballMesh.userData = {
                     velocity: new THREE.Vector3(
                         (Math.random() - 0.5) * 0.5,
                         (Math.random() - 0.5) * 0.5,
                         (Math.random() - 0.5) * 0.5
-                    )
+                    ),
+                    ballIndex: ballIndex,
+                    cubeIndex: index,
+                    originalColor: 0xff0000,
+                    isLuminous: false
                 };
 
                 ballGroup.add(ballMesh);
@@ -151,14 +154,14 @@ export default class CubesVisualizer {
                 ballGroup: ballGroup,
                 size: cubeData.size,
                 velocity: new THREE.Vector3(
-                    (Math.random() - 0.5) * 0.1,
-                    (Math.random() - 0.5) * 0.1,
-                    (Math.random() - 0.5) * 0.1
+                    (Math.random() - 0.5) * 0.3,
+                    (Math.random() - 0.5) * 0.3,
+                    (Math.random() - 0.5) * 0.3
                 ),
                 rotationVelocity: new THREE.Vector3(
-                    (Math.random() - 0.5) * 0.01,
-                    (Math.random() - 0.5) * 0.01,
-                    (Math.random() - 0.5) * 0.01
+                    (Math.random() - 0.5) * 0.02,
+                    (Math.random() - 0.5) * 0.02,
+                    (Math.random() - 0.5) * 0.02
                 )
             });
         });
@@ -170,25 +173,42 @@ export default class CubesVisualizer {
                 const cube1 = this.cubes[i];
                 const cube2 = this.cubes[j];
                 
-                // Créer les bounding boxes
-                const box1 = new THREE.Box3().setFromObject(cube1.group);
-                const box2 = new THREE.Box3().setFromObject(cube2.group);
+                // Calculer la distance entre les centres des cubes
+                const distance = cube1.group.position.distanceTo(cube2.group.position);
+                const minDistance = (cube1.size + cube2.size) / 2; // Somme des demi-tailles
                 
-                // Détecter la collision
-                if (box1.intersectsBox(box2)) {
+                // Détecter la collision par distance
+                if (distance < minDistance) {
                     // Calculer la direction de séparation
                     const direction = new THREE.Vector3()
                         .subVectors(cube2.group.position, cube1.group.position)
                         .normalize();
                     
-                    // Inverser et modifier les vitesses
-                    const tempVel = cube1.velocity.clone();
-                    cube1.velocity.copy(cube2.velocity).multiplyScalar(0.8);
-                    cube2.velocity.copy(tempVel).multiplyScalar(0.8);
+                    // Si les cubes sont exactement au même endroit, créer une direction aléatoire
+                    if (direction.length() === 0) {
+                        direction.set(
+                            (Math.random() - 0.5) * 2,
+                            (Math.random() - 0.5) * 2,
+                            (Math.random() - 0.5) * 2
+                        ).normalize();
+                    }
                     
-                    // Séparer légèrement les cubes pour éviter le collage
-                    cube1.group.position.add(direction.clone().multiplyScalar(-0.5));
-                    cube2.group.position.add(direction.clone().multiplyScalar(0.5));
+                    // Séparer immédiatement les cubes
+                    const overlap = minDistance - distance;
+                    const separation = direction.clone().multiplyScalar(overlap / 2 + 0.1);
+                    
+                    cube1.group.position.sub(separation);
+                    cube2.group.position.add(separation);
+                    
+                    // Échanger et inverser les vitesses avec amortissement
+                    const tempVel = cube1.velocity.clone();
+                    cube1.velocity.copy(cube2.velocity).multiplyScalar(0.9);
+                    cube2.velocity.copy(tempVel).multiplyScalar(0.9);
+                    
+                    // Ajouter une composante de rebond dans la direction de séparation
+                    const bounceForce = 0.1;
+                    cube1.velocity.add(direction.clone().multiplyScalar(-bounceForce));
+                    cube2.velocity.add(direction.clone().multiplyScalar(bounceForce));
                 }
             }
         }
@@ -197,29 +217,22 @@ export default class CubesVisualizer {
     animate() {
         if (!this.isAnimating) return;
 
-        // Rotation globale lente
         this.globalGroup.rotation.y += 0.001;
         this.globalGroup.rotation.x += 0.0005;
 
-        // Animation des cubes et billes
         this.cubes.forEach(cube => {
-            // Mouvement du cube
             cube.group.position.add(cube.velocity);
             cube.group.rotation.x += cube.rotationVelocity.x;
             cube.group.rotation.y += cube.rotationVelocity.y;
             cube.group.rotation.z += cube.rotationVelocity.z;
 
-            // Rebond des cubes aux limites (limites réduites)
             if (Math.abs(cube.group.position.x) > 15) cube.velocity.x *= -1;
             if (Math.abs(cube.group.position.y) > 10) cube.velocity.y *= -1;
             if (Math.abs(cube.group.position.z) > 10) cube.velocity.z *= -1;
 
-            // Animation des billes
             cube.ballGroup.children.forEach(ball => {
-                // Mise à jour position
                 ball.position.add(ball.userData.velocity);
 
-                // Rebond à l'intérieur du cube
                 const halfSize = cube.size / 2;
                 if (Math.abs(ball.position.x) > halfSize) {
                     ball.position.x = Math.sign(ball.position.x) * halfSize * 0.9;
@@ -236,11 +249,58 @@ export default class CubesVisualizer {
             });
         });
 
-        // Appel de la détection/correction des collisions entre cubes
         this.checkCubeCollisions();
+
+        // NOUVEAU : Gestion de la luminescence séquentielle
+        this.updateLuminescence();
 
         this.renderer.render(this.scene, this.camera);
         this.animationFrameId = requestAnimationFrame(() => this.animate());
+    }
+
+    // NOUVELLE méthode : Gestion de la luminescence
+    updateLuminescence() {
+        this.balls.forEach(ball => {
+            ball.material.emissive.setHex(0x000000);
+            ball.material.emissiveIntensity = 0;
+            ball.userData.isLuminous = false;
+        });
+
+        const totalBalls = this.balls.length;
+        if (totalBalls === 0) return;
+
+        this.luminescenceIndex += this.luminescenceSpeed;
+        const currentBallIndex = Math.floor(this.luminescenceIndex) % totalBalls;
+
+        const currentBall = this.balls[currentBallIndex];
+        if (currentBall) {
+            const velocity = currentBall.userData.velocity;
+            const speed = velocity.length();
+            const hue = (speed * 100) % 1;
+            const luminousColor = new THREE.Color().setHSL(hue, 1, 0.5);
+
+            currentBall.material.emissive.copy(luminousColor);
+            currentBall.material.emissiveIntensity = 0.8;
+            currentBall.userData.isLuminous = true;
+
+            this.generateEntropyFromLuminousBall(currentBall);
+        }
+    }
+
+    // NOUVELLE méthode : Génération d'entropie
+    generateEntropyFromLuminousBall(ball) {
+        const pos = ball.position;
+        const vel = ball.userData.velocity;
+
+        const entropyValue = (
+            Math.abs(pos.x * vel.x) +
+            Math.abs(pos.y * vel.y) +
+            Math.abs(pos.z * vel.z)
+        ) % 1;
+
+        // console.log(`Entropie générée par bille lumineuse: ${entropyValue}`);
+        // Ici tu peux envoyer cette valeur au backend si nécessaire
+        return entropyValue;
     }
 
     onWindowResize() {
