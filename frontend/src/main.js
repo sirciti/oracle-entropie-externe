@@ -167,16 +167,8 @@ function showSection(sectionId) {
 function cleanupVisualizer(visualizer) {
     if (visualizer) {
         visualizer.stop();
-        // Nettoyer le DOM si le visualiseur a une méthode cleanup
-        if (visualizer.cleanup) {
-            visualizer.cleanup();
-        }
-        // Forcer le garbage collection des objets Three.js
-        if (visualizer.renderer) {
-            visualizer.renderer.dispose();
-        }
-        if (visualizer.scene) {
-            visualizer.scene.clear();
+        if (typeof visualizer.cleanup === "function") {
+            visualizer.cleanup(); // Utilise la méthode cleanup spécifique
         }
     }
 }
