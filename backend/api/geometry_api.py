@@ -34,7 +34,7 @@ DEFAULT_PARAMS = {
 }
 
 DEFAULT_CUBES_CONFIG = {
-    'num_cubes': 3,
+    'num_cubes': 10,
     'cube_size': 8.0,
     'num_balls_per_cube': 3,
     'space_bounds': 30.0,
@@ -184,8 +184,25 @@ def get_initial_cubes():
             num_balls_per_cube=num_balls_per_cube,
             space_bounds=space_bounds
         )
+        
+        # Validation des propriétés pour chaque cube
+        validated_cubes = []
+        for cube in cubes_system:
+            validated_cube = {
+                'position': cube.get('position', [0, 0, 0]),
+                'rotation': cube.get('rotation', [0, 0, 0]),
+                'size': cube.get('size', cube_size),
+                'color': cube.get('color', '#3498db'),
+                'balls': cube.get('balls', [
+                    {'position': [0, 0, 0]},
+                    {'position': [1, 1, 1]},
+                    {'position': [-1, -1, -1]}
+                ])
+            }
+            validated_cubes.append(validated_cube)
+        
         return jsonify({
-            "cubes": cubes_system,
+            "cubes": validated_cubes,
             "metadata": {
                 "num_cubes": num_cubes,
                 "cube_size": cube_size,
@@ -199,17 +216,39 @@ def get_initial_cubes():
 
 @geometry_api.route('/cubes/animate', methods=['GET'])
 def animate_cubes():
+    steps = int(request.args.get('steps', 10))
+    generator = CubeGenerator()
+
     try:
-        steps = int(request.args.get('steps', 5))
-        dt = float(request.args.get('dt', 0.016))
-        chaos = float(request.args.get('chaos', 0.05))
-        cubes = CubeGenerator().generate_cubes_system()
-        frames = []
-        current_cubes = cubes
+        # Génération initiale avec validation
+        initial_data = []
+        for cube in generator.generate_cubes_system():
+            validated_cube = {
+                'position': cube.get('position', [0, 0, 0]),
+                'rotation': cube.get('rotation', [0, 0, 0]),
+                'size': cube.get('size', 8.0),
+                'color': cube.get('color', '#3498db')
+            }
+            initial_data.append(validated_cube)
+
+        frames = [{"cubes": initial_data}]
+
+        # Génération des frames suivantes
         for _ in range(steps):
-            current_cubes = update_cubes_dynamics(current_cubes, delta_time=dt, chaos_factor=chaos)
-            frames.append(current_cubes)
-        return jsonify({'frames': frames}), 200
+            updated_data = []
+            for cube in frames[-1]["cubes"]:
+                updated_cube = update_cubes_dynamics(cube)
+                # Garantir les propriétés manquantes
+                updated_cube.setdefault('position', cube.get('position', [0, 0, 0]))
+                updated_cube.setdefault('rotation', cube.get('rotation', [0, 0, 0]))
+                updated_cube.setdefault('size', cube.get('size', 8.0))
+                updated_cube.setdefault('color', cube.get('color', '#3498db'))
+                updated_data.append(updated_cube)
+            
+            frames.append({"cubes": updated_data})
+
+        return jsonify({'frames': frames})
+    
     except Exception as e:
         logger.error(f"Erreur lors de l'animation des cubes : {e}")
         return jsonify({'error': str(e)}), 500
@@ -288,4 +327,3 @@ def subdivide_faces(vertices, faces):
             [idx-3, idx-2, idx-1]
         ])
     return new_vertices, new_faces
-

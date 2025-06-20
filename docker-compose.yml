@@ -2,19 +2,31 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8080:5000"
+      - "5000:5000"
     environment:
       - FLASK_ENV=development
       - PYTHONPATH=/app
       - GUNICORN_CMD_ARGS=--timeout 120 --workers 3
     volumes:
       - ./backend:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   frontend:
     build: ./frontend
     ports:
       - "80:80"
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 networks:
   default:
     name: oracle-entropie-

@@ -1,6 +1,9 @@
 import numpy as np
 import random
+import logging # Ajouter le logging
 from typing import List, Dict, Any
+
+logger = logging.getLogger(__name__) # Logger pour ce module
 
 class CubeGenerator:
     """
@@ -8,23 +11,10 @@ class CubeGenerator:
     Crée des cubes avec des billes internes, avec positions et vitesses aléatoires.
     """
     def __init__(self):
-        # Paramètres par défaut (peuvent être surchargés)
-        self.max_velocity = 1.5  # Vitesse maximale initiale pour les billes
+        self.max_velocity = 1.5 
 
     def generate_cubes_system(self, num_cubes: int = 3, cube_size: float = 8.0, 
-                            num_balls_per_cube: int = 3, space_bounds: float = 30.0) -> List[Dict[str, Any]]:
-        """
-        Génère un système de cubes dynamiques, chacun contenant des billes.
-
-        Args:
-            num_cubes: Nombre de cubes à générer.
-            cube_size: Taille d'un côté du cube (en unités Three.js).
-            num_balls_per_cube: Nombre de billes par cube.
-            space_bounds: Taille du côté de la boîte de confinement des cubes.
-
-        Returns:
-            List[Dict]: Liste de dictionnaires représentant les cubes avec leurs propriétés et billes.
-        """
+                              num_balls_per_cube: int = 3, space_bounds: float = 30.0) -> List[Dict[str, Any]]:
         cubes = []
         cube_spawn_limit = space_bounds / 2 - cube_size / 2
 
@@ -55,14 +45,14 @@ class CubeGenerator:
                 "balls": []
             }
 
-            inner_cube_limit = (cube_size / 2.0) - (cube_size / 4.0)
+            half_cube_limit = (cube_size / 2.0) - (cube_size / 8.0) # Espace pour les billes à l'intérieur
             ball_radius = cube_size / 8.0
 
             for j in range(num_balls_per_cube):
                 ball_pos = [
-                    random.uniform(-inner_cube_limit, inner_cube_limit),
-                    random.uniform(-inner_cube_limit, inner_cube_limit),
-                    random.uniform(-inner_cube_limit, inner_cube_limit)
+                    random.uniform(-half_cube_limit, half_cube_limit),
+                    random.uniform(-half_cube_limit, half_cube_limit),
+                    random.uniform(-half_cube_limit, half_cube_limit)
                 ]
                 ball_vel = [
                     random.uniform(-self.max_velocity, self.max_velocity),
@@ -73,24 +63,47 @@ class CubeGenerator:
                     "id": j,
                     "position": ball_pos,
                     "radius": ball_radius,
-                    "color": [1.0, 1.0, 1.0],
+                    "color": [1.0, 0.0, 0.0], # <-- CORRECTION : Billes rouges
                     "velocity": ball_vel
                 })
             
             cubes.append(cube_data)
 
+        logger.info(f"Génération du système de {num_cubes} cubes avec {num_balls_per_cube} billes/cube terminée.")
+        return cubes
+
+    def generate_cubes_system_v2(self, num_cubes=3, cube_size=8.0, num_balls_per_cube=3, space_bounds=30.0):
+        cubes = []
+        for _ in range(num_cubes):
+            cube = {
+                'position': [
+                    np.random.uniform(-space_bounds, space_bounds),
+                    np.random.uniform(-space_bounds, space_bounds),
+                    np.random.uniform(-space_bounds, space_bounds)
+                ],
+                'rotation': [
+                    np.random.uniform(0, 2*np.pi),
+                    np.random.uniform(0, 2*np.pi),
+                    np.random.uniform(0, 2*np.pi)
+                ],
+                'size': cube_size,
+                'balls': []
+            }
+            # ... génération des balls ...
+            cubes.append(cube)
         return cubes
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     generator = CubeGenerator()
     cubes_system = generator.generate_cubes_system(num_cubes=3, cube_size=8.0, num_balls_per_cube=3, space_bounds=30.0)
     print(f"Système de cubes généré : {len(cubes_system)} cubes")
     for i, cube in enumerate(cubes_system):
         print(f"\nCube {i+1}:")
-        print(f"  Position: {cube['position']}")
-        print(f"  Taille: {cube['size']}")
-        print(f"  Vitesse: {cube['velocity']}")
-        print(f"  Vitesse angulaire: {cube['angular_velocity']}")
-        print(f"  {len(cube['balls'])} billes:")
+        print(f"   Position: {cube['position']}")
+        print(f"   Taille: {cube['size']}")
+        print(f"   Vitesse: {cube['velocity']}")
+        print(f"   Vitesse angulaire: {cube['angular_velocity']}")
+        print(f"   {len(cube['balls'])} billes:")
         for j, ball in enumerate(cube['balls']):
-            print(f"    Bille {j+1}: Position={ball['position']}, Vitesse={ball['velocity']}, Rayon={ball['radius']}")
+            print(f"     Bille {j+1}: Position={ball['position']}, Vitesse={ball['velocity']}, Rayon={ball['radius']}, Couleur={ball['color']}")

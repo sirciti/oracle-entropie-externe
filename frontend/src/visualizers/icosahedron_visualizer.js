@@ -121,31 +121,34 @@ export function initIcosahedronVisualizer(containerId) {
     onWindowResize(); // Appel initial pour s'assurer que la taille est correcte
     console.log("INIT ICOSA: 12. Listeners de resize configurés et appel initial.");
 
-    // --- Charger les données d'animation de l'icosaèdre depuis le back-end ---
-    fetch("/icosahedron/initial")
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP! Statut: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("FETCH ICOSA SUCCESS: 13. Données reçues:", data); 
-            frames = [{ vertices: data.vertices, faces: data.faces }];
-            currentFrame = 0; 
-            if (frames.length > 0) {
-                updateIcosahedronGeometry(frames[0]); 
-                // L'animation sera démarrée par .start()
-            } else {
-                console.warn("FETCH ICOSA WARN: 14. Aucune frame d'animation reçue pour l'icosaèdre.");
-            }
-        })
-        .catch(error => {
-            console.error('FETCH ICOSA ERROR: Erreur lors de la récupération des données d\'animation de l\'icosaèdre:', error);
-            if (container) {
-                container.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement 3D de l\'icosaèdre.</p>';
-            }
-        });
+// --- Charger les données d'animation de l'icosaèdre depuis le back-end ---
+Promise.all([
+    fetch("/api/geometry/icosahedron/initial"),
+    fetch("/api/geometry/icosahedron/animate?steps=10")
+])
+.then(([initialResponse, animateResponse]) => {
+    if (!initialResponse.ok || !animateResponse.ok) {
+        throw new Error(`Erreur HTTP! Statut initial: ${initialResponse.status}, animate: ${animateResponse.status}`);
+    }
+    return Promise.all([initialResponse.json(), animateResponse.json()]);
+})
+.then(([initialData, animateData]) => {
+    console.log("FETCH ICOSA SUCCESS: Données initiales reçues:", initialData);
+    console.log("FETCH ANIMATE SUCCESS: Données d'animation reçues:", animateData);
+    frames = [{ vertices: initialData.vertices, faces: initialData.faces }].concat(animateData.frames || []);
+    currentFrame = 0;
+    if (frames.length > 0) {
+        updateIcosahedronGeometry(frames[0]);
+    } else {
+        console.warn("FETCH WARN: Aucune frame d'animation ou données initiales reçues.");
+    }
+})
+.catch(error => {
+    console.error("FETCH ERROR: Erreur lors de la récupération des données:", error);
+    if (container) {
+        container.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement 3D de l\'icosaèdre.</p>';
+    }
+});
 
     return {
         start: () => { 

@@ -59,7 +59,7 @@ def get_cubes_entropy(
             current_cubes_state = update_cubes_dynamics(
                 current_cubes_state, 
                 delta_time=delta_time,
-                chaos_factor=0.05
+                chaos=0.05
             )
         
         signature_data = []
@@ -150,7 +150,7 @@ def get_spiral_torus_entropy(
             current_system = update_toroidal_spiral_dynamics(
                 current_system,
                 delta_time=delta_time,
-                chaos_factor=chaos_factor,
+                chaos=chaos_factor,
                 noise_level=noise_level
             )
         

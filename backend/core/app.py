@@ -34,7 +34,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Enregistrement du blueprint geometry_api
-app.register_blueprint(geometry_api)
+app.register_blueprint(geometry_api, url_prefix="/api/geometry")
 
 # Fonctions utilitaires pour le logging
 def log_error(message: str) -> None:
