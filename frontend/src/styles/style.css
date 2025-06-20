@@ -224,3 +224,41 @@ html, body {
     background: transparent;
     border-radius: 8px;
 }
+
+/* Conteneurs 3D pour les spirales */
+#spiral-simple-3d,
+#spiral-torus-3d {
+    background-color: #181818;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex-grow: 1;
+    margin: 0 auto;
+    overflow: hidden;
+    min-height: 200px;
+    height: 400px;
+}
+
+/* Canvas Three.js pour les spirales */
+#spiral-simple-3d canvas,
+#spiral-torus-3d canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    margin: auto;
+    background: transparent;
+    border-radius: 8px;
+}
+
+/* Forcer les dimensions même quand la section parent est cachée */
+.interface-section.hidden #spiral-simple-3d,
+.interface-section.hidden #spiral-torus-3d {
+    width: 800px;
+    height: 400px;
+    position: absolute;
+    top: -9999px;
+    visibility: hidden;
+}

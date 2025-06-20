@@ -139,7 +139,7 @@ function showSection(sectionId) {
     } else if (sectionId === 'cubes-interface') {
         initAndStartVisualizer('cubesVisualizer', initCubesVisualizer, 'icosahedron-3d-cubes', 'toggle-cubes-animation');
     } else if (sectionId === 'spiral-simple-interface') {
-        initAndStartVisualizer('spiralSimpleVisualizer', initSpiralSimpleVisualizer, 'icosahedron-3d-spiral-simple', 'toggle-spiral-simple-animation');
+        initAndStartVisualizer('spiralSimpleVisualizer', initSpiralSimpleVisualizer, 'spiral-simple-3d', 'toggle-spiral-simple-animation');
     } else if (sectionId === 'spiral-torus-interface') {
         initAndStartVisualizer('spiralTorusVisualizer', initSpiralTorusVisualizer, 'icosahedron-3d-spiral-torus', 'toggle-spiral-torus-animation');
     } else if (sectionId === 'stream-interface') {
