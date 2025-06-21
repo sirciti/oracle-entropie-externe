@@ -10,6 +10,14 @@ let currentFrame = 0;
 let animationId = null; // Pour stocker l'ID de requestAnimationFrame et pouvoir l'annuler
 let isAnimatingFlag = false; // Drapeau pour l'état de l'animation
 
+// Ajoute ces variables juste après la création de spiral_torusGroup :
+let spiralPosition = new THREE.Vector3(0, 0, 0);
+let spiralVelocity = new THREE.Vector3(0.02, 0.03, 0.01);
+let spiralRotation = new THREE.Vector3(0, 0, 0);
+let spiralRotationSpeed = new THREE.Vector3(0.005, 0.008, 0.012);
+let luminescenceIndex = 0;
+const luminescenceSpeed = 0.3;
+
 // Fonction d'initialisation de la scène Three.js pour les Spirale Toroïdale
 export function initSpiralTorusVisualizer(containerId) {
     console.log("INIT SPIRAL_TORUS: 1. initSpiralTorusVisualizer appelé avec containerId:", containerId);
@@ -83,7 +91,7 @@ export function initSpiralTorusVisualizer(containerId) {
     // Position de la caméra ajustée pour voir les Spirale Toroïdale qui sont centrées autour de (0,0,0)
     // Le système généré (base_size=10, brick_size=2) est d'environ 10x8x10 unités.
     // Une position de 0, 0, 20-30 devrait être bonne.
-    camera.position.set(0, 0, 20); // Plus proche
+    camera.position.set(0, 5, 25);
     camera.lookAt(0, 0, 0);
     console.log("SPIRAL_TORUS: Caméra positionnée pour un meilleur angle de vue:", camera.position);
 
@@ -187,7 +195,7 @@ function updateSpiralTorusGeometry(frame) {
         return;
     }
 
-    // Nettoyer le groupe
+    // Nettoyage du groupe
     while (spiral_torusGroup.children.length > 0) {
         const child = spiral_torusGroup.children[0];
         if (child instanceof THREE.Mesh || child instanceof THREE.LineSegments) {
@@ -211,7 +219,7 @@ function updateSpiralTorusGeometry(frame) {
     const points = frame.spiral.points;
     console.log("Points spirale torus à afficher:", points.length);
 
-    // ÉTAPE 1 : Calculer le centre et recentrer
+    // Calcul du centre
     let centerX = 0, centerY = 0, centerZ = 0;
     points.forEach(point => {
         centerX += point.position[0];
@@ -222,7 +230,7 @@ function updateSpiralTorusGeometry(frame) {
     centerY /= points.length;
     centerZ /= points.length;
 
-    // ÉTAPE 2 : Calculer l'échelle et l'espacement optimal
+    // Calcul de l'échelle et de l'espacement
     let maxDistance = 0;
     const centeredPositions = points.map(point => {
         const centered = [
@@ -235,51 +243,54 @@ function updateSpiralTorusGeometry(frame) {
         return { ...point, centeredPosition: centered };
     });
 
-    // Facteur d'échelle pour tenir dans un rayon de 10 unités
-    const scaleFactor = maxDistance > 0 ? 10 / maxDistance : 1;
-    
-    // ÉTAPE 3 : Facteur d'espacement pour éviter chevauchement
-    const spacingFactor = 1.8; // Augmenter l'espacement de 80%
+    // Facteurs optimisés
+    const scaleFactor = maxDistance > 0 ? 12 / maxDistance : 1;
+    const spacingFactor = 2.5;
 
-    console.log("SPIRAL_TORUS: Centre calculé:", [centerX, centerY, centerZ]);
-    console.log("SPIRAL_TORUS: Échelle finale:", scaleFactor * spacingFactor);
+    // Géométries plus petites
+    const cubeGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const sphereGeometry = new THREE.SphereGeometry(0.4, 16, 16);
 
-    // ÉTAPE 4 : Créer les objets avec positions optimisées
     centeredPositions.forEach((point, index) => {
-        let geometry;
-        if (point.type === "cube") {
-            geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-        } else {
-            geometry = new THREE.SphereGeometry(0.6, 16, 16);
-        }
-        
+        const geometry = point.type === "cube" ? cubeGeometry : sphereGeometry;
         const material = new THREE.MeshPhongMaterial({ 
             color: new THREE.Color(point.color[0], point.color[1], point.color[2]),
             emissive: 0x000000,
-            emissiveIntensity: 0
+            emissiveIntensity: 0,
+            shininess: 30
         });
-        
         const mesh = new THREE.Mesh(geometry, material);
-        
-        // Position finale : centrée + mise à l'échelle + espacement
         const finalScale = scaleFactor * spacingFactor;
         mesh.position.set(
             point.centeredPosition[0] * finalScale,
             point.centeredPosition[1] * finalScale,
             point.centeredPosition[2] * finalScale
         );
-        
         mesh.userData = { 
             originalColor: new THREE.Color(point.color[0], point.color[1], point.color[2]),
             pointIndex: index 
         };
-        
         spiral_torusGroup.add(mesh);
     });
 
-    console.log("SPIRAL_TORUS: Objets recentrés et redimensionnés. Total objets ajoutés:", points.length);
-    console.log("SPIRAL_TORUS: Premier objet position:", spiral_torusGroup.children[0]?.position);
-    console.log("SPIRAL_TORUS: Dernier objet position:", spiral_torusGroup.children[spiral_torusGroup.children.length-1]?.position);
+    // Centrage automatique dans la viewport
+    function centerGroupInViewport() {
+        if (spiral_torusGroup.children.length === 0) return;
+        const box = new THREE.Box3().setFromObject(spiral_torusGroup);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        console.log("SPIRAL_TORUS: Centrage - center:", center, "size:", size);
+        spiral_torusGroup.position.set(-center.x, -center.y, -center.z);
+        const maxDimension = Math.max(size.x, size.y, size.z);
+        if (maxDimension > 15) {
+            const scale = 15 / maxDimension;
+            spiral_torusGroup.scale.setScalar(scale);
+            console.log("SPIRAL_TORUS: Échelle appliquée:", scale);
+        }
+    }
+    centerGroupInViewport();
+
+    console.log("SPIRAL_TORUS: Objets optimisés et centrés. Total:", points.length);
 }
 
 // Boucle d'animation pour les Spirale Toroïdale
@@ -290,7 +301,7 @@ function animateSpiralTorus() {
     animationId = requestAnimationFrame(animateSpiralTorus);
 
     if (spiral_torusGroup) {
-        // Améliorations ajoutées
+        // NOUVELLES AMÉLIORATIONS au lieu de la rotation basique
         updateMovementAndLuminescence();
     }
 
@@ -299,63 +310,64 @@ function animateSpiralTorus() {
     }
 }
 
-// Luminescence
-let luminescenceIndex = 0;
-const luminescenceSpeed = 0.3;
-
-let spiralPosition = new THREE.Vector3(0, 0, 0);
-let spiralVelocity = new THREE.Vector3(0.02, 0.03, 0.01);
-let spiralRotation = new THREE.Vector3(0, 0, 0);
-let spiralRotationSpeed = new THREE.Vector3(0.005, 0.008, 0.012);
-
+// Mouvement et Luminescence
 function updateMovementAndLuminescence() {
-    // Rotation complexe sur 3 axes
+    if (!spiral_torusGroup) return;
+    
+    // ROTATION COMPLEXE sur 3 axes
     spiralRotation.add(spiralRotationSpeed);
     spiral_torusGroup.rotation.set(spiralRotation.x, spiralRotation.y, spiralRotation.z);
-
-    // Mouvement avec inertie
+    
+    // MOUVEMENT AVEC INERTIE
     spiralPosition.add(spiralVelocity);
     spiral_torusGroup.position.copy(spiralPosition);
-
-    // Rebonds aux limites
-    const containerLimits = { x: 20, y: 15, z: 15 };
+    
+    // REBONDS aux limites
+    const containerLimits = { x: 15, y: 12, z: 12 };
     if (Math.abs(spiralPosition.x) > containerLimits.x) {
-        spiralVelocity.x *= -1;
+        spiralVelocity.x *= -0.9;
         spiralPosition.x = Math.sign(spiralPosition.x) * containerLimits.x;
     }
     if (Math.abs(spiralPosition.y) > containerLimits.y) {
-        spiralVelocity.y *= -1;
+        spiralVelocity.y *= -0.9;
         spiralPosition.y = Math.sign(spiralPosition.y) * containerLimits.y;
     }
     if (Math.abs(spiralPosition.z) > containerLimits.z) {
-        spiralVelocity.z *= -1;
+        spiralVelocity.z *= -0.9;
         spiralPosition.z = Math.sign(spiralPosition.z) * containerLimits.z;
     }
-
-    // Luminescence séquentielle dorée
+    
+    // LUMINESCENCE SÉQUENTIELLE dorée
     const meshes = spiral_torusGroup.children;
+    
+    // Réinitialiser toutes les luminescences
     meshes.forEach(mesh => {
         if (mesh.material && mesh.material.emissive) {
             mesh.material.emissive.setHex(0x000000);
             mesh.material.emissiveIntensity = 0;
         }
     });
-
+    
+    // Activer la luminescence courante
     luminescenceIndex += luminescenceSpeed;
     const currentIndex = Math.floor(luminescenceIndex) % meshes.length;
     const currentMesh = meshes[currentIndex];
+    
     if (currentMesh && currentMesh.material && currentMesh.material.emissive) {
+        // Couleur dorée pour le torus
         currentMesh.material.emissive.setHex(0xffd700);
-        currentMesh.material.emissiveIntensity = 1.0;
-
-        // Effet de traînée
-        for (let i = 1; i <= 3; i++) {
+        currentMesh.material.emissiveIntensity = 1.2;
+        
+        // EFFET DE TRAÎNÉE sur 4 objets précédents
+        for (let i = 1; i <= 4; i++) {
             const trailIndex = (currentIndex - i + meshes.length) % meshes.length;
             const trailMesh = meshes[trailIndex];
             if (trailMesh && trailMesh.material && trailMesh.material.emissive) {
                 trailMesh.material.emissive.setHex(0x444444);
-                trailMesh.material.emissiveIntensity = 0.3 / i;
+                trailMesh.material.emissiveIntensity = 0.4 / i;
             }
         }
     }
+    
+    console.log("SPIRAL_TORUS: Animation frame avec luminescence index:", currentIndex);
 }
