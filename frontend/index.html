@@ -13,7 +13,8 @@
             <button id="nav-icosahedron" class="nav-button">Icosaèdre Dynamique</button>
             <button id="nav-cubes" class="nav-button">Cubes Dynamiques</button>
             <button id="nav-spiral-simple" class="nav-button">Spiral Dynamique</button>
-            <button id="nav-spiral-torus" class="nav-button">Spiral Torus View</button>
+            <button id="nav-spiral-torus" class="nav-button">Spiral Toroïdale</button>
+            <button id="nav-torus-spring" class="nav-button">Tore-Ressorts</button>
             <button id="nav-stream" class="nav-button">Flux de Tokens</button>
             <button id="nav-internal-tool" class="nav-button">Outil Interne de Sécurité</button>
         </nav>
@@ -85,6 +86,16 @@
             <div id="icosahedron-3d-spiral-torus"></div>
         </div>
 
+         <!-- Tore-Ressorts -->
+        <div id="torus-spring-interface" class="interface-section hidden">
+            <div class="content-card">
+                <h2 class="title">Système Tore-Ressorts-Sphères</h2>
+                <button id="toggle-torus-spring-animation" class="generate-button">Stop Animation</button>
+            </div>
+            <div id="torus-spring-3d"></div>
+        </div>
+    </div>
+
         <!-- Flux de Tokens -->
         <div id="stream-interface" class="interface-section hidden">
             <div class="content-card">
@@ -139,7 +150,8 @@
                 <div id="feedback-message" role="alert" aria-live="polite"></div>
             </div>
         </div>
-    </div>
+
+       
     
     <script type="module" src="/src/utils/three_utils.js"></script>
     <script type="module" src="/src/visualizers/icosahedron_visualizer.js"></script>

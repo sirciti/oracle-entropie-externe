@@ -8,6 +8,7 @@ import { initCubesVisualizer } from './visualizers/cubes_visualizer.js';
 import { initSpiralSimpleVisualizer } from './visualizers/spiral_simple_visualizer.js';
 import { initSpiralTorusVisualizer } from './visualizers/spiral_torus_visualizer.js';
 import { initStreamVisualizer } from './visualizers/stream_visualizer.js';
+import { initTorusSpringVisualizer } from './visualizers/torus_spring_visualizer.js';
 
 // Déclarer les variables globales en haut du fichier
 let icosahedronVisualizer = null;
@@ -15,6 +16,7 @@ let cubesVisualizer = null;
 let spiralSimpleVisualizer = null;
 let spiralTorusVisualizer = null;
 let streamVisualizer = null;
+let torusSpringVisualizer = null;
 
 // Fonction d'aide pour gérer le texte des boutons Start/Stop
 function updateToggleButtonText(buttonElement, visualizerInstance) {
@@ -33,12 +35,13 @@ function showSection(sectionId) {
     const spiralTorusInterfaceSection = document.getElementById('spiral-torus-interface');
     const streamInterfaceSection = document.getElementById('stream-interface');
     const internalToolInterfaceSection = document.getElementById('internal-tool-interface');
+    const torusSpringInterfaceSection = document.getElementById('torus-spring-interface');
 
     // 2. Cache toutes les sections et arrête les animations des visualiseurs
     const allSections = [
         mainInterfaceSection, icosahedronInterfaceSection, cubesInterfaceSection,
         spiralSimpleInterfaceSection, spiralTorusInterfaceSection,
-        streamInterfaceSection, internalToolInterfaceSection
+        streamInterfaceSection, internalToolInterfaceSection, torusSpringInterfaceSection
     ];
     allSections.forEach(section => {
         if (section) section.classList.add('hidden');
@@ -50,12 +53,14 @@ function showSection(sectionId) {
     cleanupVisualizer(spiralSimpleVisualizer);
     cleanupVisualizer(spiralTorusVisualizer);
     cleanupVisualizer(streamVisualizer);
+    cleanupVisualizer(torusSpringVisualizer);
 
     icosahedronVisualizer = null;
     cubesVisualizer = null;
     spiralSimpleVisualizer = null;
     spiralTorusVisualizer = null;
     streamVisualizer = null;
+    torusSpringVisualizer = null;
 
     // 3. Gère la visibilité des conteneurs 3D
     const icosahedron3DContainer = document.getElementById('icosahedron-3d');
@@ -63,10 +68,12 @@ function showSection(sectionId) {
     const spiralSimple3DContainer = document.getElementById('icosahedron-3d-spiral-simple');
     const spiralTorus3DContainer = document.getElementById('icosahedron-3d-spiral-torus');
     const streamVisualizer3DContainer = document.getElementById('stream-visualizer-3d');
+    const torusSpring3DContainer = document.getElementById('torus-spring-3d');
 
     const all3DContainers = [
         icosahedron3DContainer, cubes3DContainer,
-        spiralSimple3DContainer, spiralTorus3DContainer, streamVisualizer3DContainer
+        spiralSimple3DContainer, spiralTorus3DContainer, streamVisualizer3DContainer,
+        torusSpring3DContainer
     ];
     all3DContainers.forEach(container => {
         if (container) {
@@ -112,6 +119,10 @@ function showSection(sectionId) {
             streamVisualizer.stop();
             streamVisualizer = null;
         }
+        if (visualizerName === 'torusSpringVisualizer' && torusSpringVisualizer) {
+            torusSpringVisualizer.stop();
+            torusSpringVisualizer = null;
+        }
 
         setTimeout(() => {
             if (containerElement && containerElement.clientWidth > 0 && containerElement.clientHeight > 0) {
@@ -121,6 +132,7 @@ function showSection(sectionId) {
                 else if (visualizerName === 'spiralSimpleVisualizer') visualizerInstance = spiralSimpleVisualizer = initFunc(containerId);
                 else if (visualizerName === 'spiralTorusVisualizer') visualizerInstance = spiralTorusVisualizer = initFunc(containerId);
                 else if (visualizerName === 'streamVisualizer') visualizerInstance = streamVisualizer = initFunc(containerId);
+                else if (visualizerName === 'torusSpringVisualizer') visualizerInstance = torusSpringVisualizer = initFunc(containerId);
 
                 if (visualizerInstance && initFunc !== initStreamVisualizer) {
                     visualizerInstance.start();
@@ -144,6 +156,8 @@ function showSection(sectionId) {
         initAndStartVisualizer('spiralTorusVisualizer', initSpiralTorusVisualizer, 'icosahedron-3d-spiral-torus', 'toggle-spiral-torus-animation');
     } else if (sectionId === 'stream-interface') {
         initAndStartVisualizer('streamVisualizer', initStreamVisualizer, 'stream-visualizer-3d', 'start-stream-button');
+    } else if (sectionId === 'torus-spring-interface') {
+        initAndStartVisualizer('torusSpringVisualizer', initTorusSpringVisualizer, 'torus-spring-3d', 'toggle-torus-spring-animation');
     }
 
     // 6. Met à jour les classes 'active' des boutons de navigation
@@ -154,7 +168,8 @@ function showSection(sectionId) {
         document.getElementById('nav-spiral-simple'),
         document.getElementById('nav-spiral-torus'),
         document.getElementById('nav-stream'),
-        document.getElementById('nav-internal-tool')
+        document.getElementById('nav-internal-tool'),
+        document.getElementById('nav-torus-spring')
     ];
     navButtons.forEach(btn => {
         if (btn) btn.classList.remove('active');
@@ -165,11 +180,8 @@ function showSection(sectionId) {
 
 // Fonction pour nettoyer complètement un visualiseur
 function cleanupVisualizer(visualizer) {
-    if (visualizer) {
-        visualizer.stop();
-        if (typeof visualizer.cleanup === "function") {
-            visualizer.cleanup(); // Utilise la méthode cleanup spécifique
-        }
+    if (visualizer && typeof visualizer.cleanup === "function") {
+        visualizer.cleanup();
     }
 }
 
@@ -192,6 +204,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNavButton('nav-stream', 'stream-interface');
     setupNavButton('nav-internal-tool', 'internal-tool-interface');
 
+    // 1. Ajouter après les autres boutons de navigation
+    const navTorusSpringButton = document.getElementById('nav-torus-spring');
+    if (navTorusSpringButton) {
+        navTorusSpringButton.addEventListener('click', () => showSection('torus-spring-interface'));
+    } else {
+        console.warn("Bouton de navigation 'nav-torus-spring' non trouvé.");
+    }
 
     // 2. Gérer les boutons Start/Stop Animation pour les visualiseurs 3D (définis dans showSection)
     const setupToggleButtonForVisualizer = (buttonId, visualizerGetter) => {
@@ -223,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupToggleButtonForVisualizer('toggle-cubes-animation', () => cubesVisualizer);
     setupToggleButtonForVisualizer('toggle-spiral-simple-animation', () => spiralSimpleVisualizer);
     setupToggleButtonForVisualizer('toggle-spiral-torus-animation', () => spiralTorusVisualizer);
+    setupToggleButtonForVisualizer('toggle-torus-spring-animation', () => torusSpringVisualizer);
 
     // Initialiser les vues non-3D
     initClassicGenerator();

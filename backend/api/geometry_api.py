@@ -14,6 +14,8 @@ from geometry.cubes.generator import CubeGenerator
 from geometry.cubes.dynamics import update_cubes_dynamics
 from geometry.spiral.generator import generate_spiral_simple_initial
 from geometry.spiral.dynamics import animate_spiral_simple
+from geometry.torus_spring.generator import generate_torus_spring_system
+from geometry.torus_spring.dynamics import update_torus_spring_dynamics
 
 geometry_api = Blueprint('geometry_api', __name__)
 
@@ -327,3 +329,44 @@ def subdivide_faces(vertices, faces):
             [idx-3, idx-2, idx-1]
         ])
     return new_vertices, new_faces
+
+# --- ALIAS POUR LA COMPATIBILITÉ FRONTEND ---
+@geometry_api.route('/spiral_torus/initial', methods=['GET'])
+def get_initial_spiral_torus():
+    """Alias pour la spirale toroïdale."""
+    return get_initial_toroidal_spiral()
+
+@geometry_api.route('/spiral_torus/animate', methods=['GET'])
+def animate_spiral_torus_route():
+    """Alias pour l'animation de la spirale toroïdale."""
+    return animate_toroidal_spiral()
+
+@geometry_api.route('/torus_spring/initial', methods=['GET'])
+def get_initial_torus_spring():
+    """Génère le système tore-ressorts-sphères initial."""
+    try:
+        system = generate_torus_spring_system()
+        return jsonify(system)
+    except Exception as e:
+        logger.error(f"Erreur torus-spring initial: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@geometry_api.route('/torus_spring/animate', methods=['GET'])
+def animate_torus_spring():
+    """Animation du système tore-ressorts-sphères."""
+    try:
+        frames = []
+        system = generate_torus_spring_system()
+        
+        for i in range(10):
+            system = update_torus_spring_dynamics(system)
+            frames.append({
+                "spheres": system["spheres"],
+                "springs": system["springs"],
+                "torus": system["torus"]
+            })
+        
+        return jsonify({"frames": frames})
+    except Exception as e:
+        logger.error(f"Erreur animation torus-spring: {e}")
+        return jsonify({"error": str(e)}), 500
