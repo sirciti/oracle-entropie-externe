@@ -19,6 +19,7 @@ from geometry.torus_spring.dynamics import update_torus_spring_dynamics
 from geometry.centrifuge_laser.generator import generate_centrifuge_laser_system
 from geometry.centrifuge_laser.dynamics import update_centrifuge_laser_dynamics
 from geometry.crypto_token_river.generator import generate_crypto_token_river_data
+from geometry.stream.generator import generate_stream_tokens
 
 geometry_api = Blueprint('geometry_api', __name__)
 
@@ -433,4 +434,19 @@ def animate_crypto_token_river():
         return jsonify({"frames": frames})
     except Exception as e:
         logger.error(f"Erreur animation CryptoTokenRiver: {e}")
-        return jsonify({"error": str(e)}), 500    
+        return jsonify({"error": str(e)}), 500
+
+@geometry_api.route('/stream/generate', methods=['POST'])
+def generate_stream():
+    """Génère des tokens pour le visualiseur de stream."""
+    try:
+        data = request.get_json()
+        length = data.get('length', 32)
+        char_options = data.get('char_options', {})
+        capacity_bytes = data.get('capacity_bytes', 1024)
+        
+        result = generate_stream_tokens(length, char_options, capacity_bytes)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Erreur API stream: {e}")
+        return jsonify({"error": str(e)}), 500

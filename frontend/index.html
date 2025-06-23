@@ -16,8 +16,8 @@
             <button id="nav-spiral-torus" class="nav-button">Spiral Toroïdale</button>
             <button id="nav-centrifuge-laser" class="nav-button">Centrifugeuse Laser</button>
             <button id="nav-torus-spring" class="nav-button">Tore-Ressorts</button>
-            <button id="nav-stream" class="nav-button">Flux de Tokens</button>
             <button id="nav-crypto-token-river" class="nav-button">CryptoTokenRiver</button>
+            <button id="nav-stream" class="nav-button">Flux de Tokens</button>
             <button id="nav-internal-tool" class="nav-button">Outil Interne de Sécurité</button>
             
         </nav>
@@ -118,14 +118,16 @@
                     <input type="number" id="stream-capacity" value="1024" min="1" max="102400" />
                 </div>
                 <button id="start-stream-button" class="generate-button">Démarrer Flux</button>
-                <div id="feedback-stream" role="alert" aria-live="polite"></div>
+                
+                <!-- AJOUT ICI : Bloc de sortie du flux -->
+                <div class="stream-output-container">
+                    <label for="generated-stream-output">Flux de Tokens :</label>
+                    <textarea id="generated-stream-output" readonly rows="10" cols="80" 
+                        style="width: 100%; background: #2a2a2a; color: #00ff00; font-family: monospace; border: 1px solid #444; padding: 10px; margin-top: 10px;"></textarea>
+                    <div id="feedback-stream" style="margin-top: 10px; color: white; font-weight: bold;"></div>
+                </div>
             </div>
             <div id="stream-visualizer-3d"></div>
-            <div class="output-group">
-                <label for="generated-stream-output">Flux de Tokens :</label>
-                <textarea id="generated-stream-output" class="stream-text-box" readonly rows="10"></textarea>
-                <button id="export-stream-button" class="generate-button">Exporter Flux (.txt)</button>
-            </div>
         </div>
 
         <!-- CryptoTokenRiver -->

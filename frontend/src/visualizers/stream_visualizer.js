@@ -343,3 +343,37 @@ export function initStreamVisualizer(containerId) {
         isRunning: () => isAnimatingFlag 
     };
 }
+
+// Ajouter cette fonction dans stream_visualizer.js
+async function fetchMoreTokens(length, charOptions, capacityBytes) {
+    try {
+        const response = await fetch('/api/geometry/stream/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                length: length,
+                char_options: charOptions,
+                capacity_bytes: capacityBytes
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.tokens) {
+            streamTokens = streamTokens.concat(data.tokens);
+            console.log(`STREAM: ${data.tokens.length} nouveaux tokens reçus`);
+        }
+    } catch (error) {
+        console.error('FETCH STREAM ERROR:', error);
+        const feedbackStream = document.getElementById('feedback-stream');
+        if (feedbackStream) {
+            feedbackStream.textContent = "Erreur de génération des tokens.";
+            feedbackStream.style.color = "#f44336";
+        }
+    }
+}
