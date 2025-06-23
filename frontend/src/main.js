@@ -9,6 +9,7 @@ import { initSpiralSimpleVisualizer } from './visualizers/spiral_simple_visualiz
 import { initSpiralTorusVisualizer } from './visualizers/spiral_torus_visualizer.js';
 import { initStreamVisualizer } from './visualizers/stream_visualizer.js';
 import { initTorusSpringVisualizer } from './visualizers/torus_spring_visualizer.js';
+import { initCentrifugeLaserVisualizer } from './visualizers/centrifuge_laser_visualizer.js'; // Ajout import
 
 // Déclarer les variables globales en haut du fichier
 let icosahedronVisualizer = null;
@@ -17,6 +18,7 @@ let spiralSimpleVisualizer = null;
 let spiralTorusVisualizer = null;
 let streamVisualizer = null;
 let torusSpringVisualizer = null;
+let centrifugeLaserVisualizer = null; // Ajout variable globale
 
 // Fonction d'aide pour gérer le texte des boutons Start/Stop
 function updateToggleButtonText(buttonElement, visualizerInstance) {
@@ -36,13 +38,15 @@ function showSection(sectionId) {
     const streamInterfaceSection = document.getElementById('stream-interface');
     const internalToolInterfaceSection = document.getElementById('internal-tool-interface');
     const torusSpringInterfaceSection = document.getElementById('torus-spring-interface');
+    const centrifugeLaserInterfaceSection = document.getElementById('centrifuge-laser-interface');
 
     // 2. Cache toutes les sections et arrête les animations des visualiseurs
     const allSections = [
-        mainInterfaceSection, icosahedronInterfaceSection, cubesInterfaceSection,
-        spiralSimpleInterfaceSection, spiralTorusInterfaceSection,
-        streamInterfaceSection, internalToolInterfaceSection, torusSpringInterfaceSection
-    ];
+    mainInterfaceSection, icosahedronInterfaceSection, cubesInterfaceSection,
+    spiralSimpleInterfaceSection, spiralTorusInterfaceSection,
+    streamInterfaceSection, internalToolInterfaceSection, torusSpringInterfaceSection,
+    document.getElementById('centrifuge-laser-interface')
+];
     allSections.forEach(section => {
         if (section) section.classList.add('hidden');
     });
@@ -54,6 +58,7 @@ function showSection(sectionId) {
     cleanupVisualizer(spiralTorusVisualizer);
     cleanupVisualizer(streamVisualizer);
     cleanupVisualizer(torusSpringVisualizer);
+    cleanupVisualizer(centrifugeLaserVisualizer); // Ajout nettoyage
 
     icosahedronVisualizer = null;
     cubesVisualizer = null;
@@ -61,6 +66,7 @@ function showSection(sectionId) {
     spiralTorusVisualizer = null;
     streamVisualizer = null;
     torusSpringVisualizer = null;
+    centrifugeLaserVisualizer = null; // Ajout reset
 
     // 3. Gère la visibilité des conteneurs 3D
     const icosahedron3DContainer = document.getElementById('icosahedron-3d');
@@ -123,6 +129,10 @@ function showSection(sectionId) {
             torusSpringVisualizer.stop();
             torusSpringVisualizer = null;
         }
+        if (visualizerName === 'centrifugeLaserVisualizer' && centrifugeLaserVisualizer) {
+            centrifugeLaserVisualizer.stop();
+            centrifugeLaserVisualizer = null;
+        }
 
         setTimeout(() => {
             if (containerElement && containerElement.clientWidth > 0 && containerElement.clientHeight > 0) {
@@ -133,6 +143,7 @@ function showSection(sectionId) {
                 else if (visualizerName === 'spiralTorusVisualizer') visualizerInstance = spiralTorusVisualizer = initFunc(containerId);
                 else if (visualizerName === 'streamVisualizer') visualizerInstance = streamVisualizer = initFunc(containerId);
                 else if (visualizerName === 'torusSpringVisualizer') visualizerInstance = torusSpringVisualizer = initFunc(containerId);
+                else if (visualizerName === 'centrifugeLaserVisualizer') visualizerInstance = centrifugeLaserVisualizer = initFunc(containerId);
 
                 if (visualizerInstance && initFunc !== initStreamVisualizer) {
                     visualizerInstance.start();
@@ -158,19 +169,22 @@ function showSection(sectionId) {
         initAndStartVisualizer('streamVisualizer', initStreamVisualizer, 'stream-visualizer-3d', 'start-stream-button');
     } else if (sectionId === 'torus-spring-interface') {
         initAndStartVisualizer('torusSpringVisualizer', initTorusSpringVisualizer, 'torus-spring-3d', 'toggle-torus-spring-animation');
+    } else if (sectionId === 'centrifuge-laser-interface') { // Ajout du cas centrifuge-laser
+        initAndStartVisualizer('centrifugeLaserVisualizer', initCentrifugeLaserVisualizer, 'centrifuge-laser-3d', 'toggle-centrifuge-laser-animation');
     }
 
     // 6. Met à jour les classes 'active' des boutons de navigation
     const navButtons = [
-        document.getElementById('nav-main'),
-        document.getElementById('nav-icosahedron'),
-        document.getElementById('nav-cubes'),
-        document.getElementById('nav-spiral-simple'),
-        document.getElementById('nav-spiral-torus'),
-        document.getElementById('nav-stream'),
-        document.getElementById('nav-internal-tool'),
-        document.getElementById('nav-torus-spring')
-    ];
+    document.getElementById('nav-main'),
+    document.getElementById('nav-icosahedron'),
+    document.getElementById('nav-cubes'),
+    document.getElementById('nav-spiral-simple'),
+    document.getElementById('nav-spiral-torus'),
+    document.getElementById('nav-stream'),
+    document.getElementById('nav-internal-tool'),
+    document.getElementById('nav-torus-spring'),
+    document.getElementById('nav-centrifuge-laser') // Ajout du bouton centrifuge-laser
+];
     navButtons.forEach(btn => {
         if (btn) btn.classList.remove('active');
     });
@@ -180,8 +194,12 @@ function showSection(sectionId) {
 
 // Fonction pour nettoyer complètement un visualiseur
 function cleanupVisualizer(visualizer) {
-    if (visualizer && typeof visualizer.cleanup === "function") {
-        visualizer.cleanup();
+    if (visualizer) {
+        console.log("Nettoyage du visualiseur...");
+        visualizer.stop();
+        if (visualizer.cleanup) {
+            visualizer.cleanup();
+        }
     }
 }
 
@@ -210,6 +228,12 @@ document.addEventListener('DOMContentLoaded', () => {
         navTorusSpringButton.addEventListener('click', () => showSection('torus-spring-interface'));
     } else {
         console.warn("Bouton de navigation 'nav-torus-spring' non trouvé.");
+    }
+
+    // Ajout event listener pour le bouton centrifuge laser
+    const navCentrifugeLaserButton = document.getElementById('nav-centrifuge-laser');
+    if (navCentrifugeLaserButton) {
+        navCentrifugeLaserButton.addEventListener('click', () => showSection('centrifuge-laser-interface'));
     }
 
     // 2. Gérer les boutons Start/Stop Animation pour les visualiseurs 3D (définis dans showSection)
@@ -243,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupToggleButtonForVisualizer('toggle-spiral-simple-animation', () => spiralSimpleVisualizer);
     setupToggleButtonForVisualizer('toggle-spiral-torus-animation', () => spiralTorusVisualizer);
     setupToggleButtonForVisualizer('toggle-torus-spring-animation', () => torusSpringVisualizer);
+    setupToggleButtonForVisualizer('toggle-centrifuge-laser-animation', () => centrifugeLaserVisualizer);
 
     // Initialiser les vues non-3D
     initClassicGenerator();

@@ -16,6 +16,8 @@ from geometry.spiral.generator import generate_spiral_simple_initial
 from geometry.spiral.dynamics import animate_spiral_simple
 from geometry.torus_spring.generator import generate_torus_spring_system
 from geometry.torus_spring.dynamics import update_torus_spring_dynamics
+from geometry.centrifuge_laser.generator import generate_centrifuge_laser_system
+from geometry.centrifuge_laser.dynamics import update_centrifuge_laser_dynamics
 
 geometry_api = Blueprint('geometry_api', __name__)
 
@@ -369,4 +371,37 @@ def animate_torus_spring():
         return jsonify({"frames": frames})
     except Exception as e:
         logger.error(f"Erreur animation torus-spring: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@geometry_api.route('/centrifuge_laser/initial', methods=['GET'])
+def get_initial_centrifuge_laser():
+    """Génère le système centrifugeuse laser initial."""
+    try:
+        system = generate_centrifuge_laser_system()
+        return jsonify(system)
+    except Exception as e:
+        logger.error(f"Erreur centrifuge laser initial: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@geometry_api.route('/centrifuge_laser/animate', methods=['GET'])
+def animate_centrifuge_laser():
+    """Animation du système centrifugeuse laser."""
+    try:
+        frames = []
+        system = generate_centrifuge_laser_system()
+        
+        for i in range(10):
+            system = update_centrifuge_laser_dynamics(system)
+            frames.append({
+                "laser_center": system["laser_center"],
+                "arm_top": system["arm_top"],
+                "arm_bottom": system["arm_bottom"],
+                "spheres": system["spheres"],
+                "cubes": system["cubes"],
+                "physics": system["physics"]
+            })
+        
+        return jsonify({"frames": frames})
+    except Exception as e:
+        logger.error(f"Erreur animation centrifuge laser: {e}")
         return jsonify({"error": str(e)}), 500
