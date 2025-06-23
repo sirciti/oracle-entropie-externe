@@ -18,6 +18,7 @@ from geometry.torus_spring.generator import generate_torus_spring_system
 from geometry.torus_spring.dynamics import update_torus_spring_dynamics
 from geometry.centrifuge_laser.generator import generate_centrifuge_laser_system
 from geometry.centrifuge_laser.dynamics import update_centrifuge_laser_dynamics
+from geometry.crypto_token_river.generator import generate_crypto_token_river_data
 
 geometry_api = Blueprint('geometry_api', __name__)
 
@@ -405,3 +406,31 @@ def animate_centrifuge_laser():
     except Exception as e:
         logger.error(f"Erreur animation centrifuge laser: {e}")
         return jsonify({"error": str(e)}), 500
+    
+
+@geometry_api.route('/crypto_token_river/continuous', methods=['GET'])
+def get_crypto_token_river_continuous():
+    """Génère un flux continu de tokens cryptographiques robustes."""
+    try:
+        chunk_size = request.args.get('chunk_size', 100, type=int)
+        chunk_size = min(max(chunk_size, 10), 500)  # Limiter entre 10 et 500
+        
+        river_data = generate_crypto_token_river_data(chunk_size)
+        return jsonify(river_data)
+    except Exception as e:
+        logger.error(f"Erreur CryptoTokenRiver continu: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@geometry_api.route('/crypto_token_river/animate', methods=['GET'])
+def animate_crypto_token_river():
+    """Animation de la rivière de tokens pour visualisation."""
+    try:
+        frames = []
+        for i in range(10):  # 10 frames d'animation
+            river_data = generate_crypto_token_river_data(50)  # 50 tokens par frame
+            frames.append(river_data)
+        
+        return jsonify({"frames": frames})
+    except Exception as e:
+        logger.error(f"Erreur animation CryptoTokenRiver: {e}")
+        return jsonify({"error": str(e)}), 500    

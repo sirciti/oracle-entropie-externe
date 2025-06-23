@@ -10,6 +10,7 @@ import { initSpiralTorusVisualizer } from './visualizers/spiral_torus_visualizer
 import { initStreamVisualizer } from './visualizers/stream_visualizer.js';
 import { initTorusSpringVisualizer } from './visualizers/torus_spring_visualizer.js';
 import { initCentrifugeLaserVisualizer } from './visualizers/centrifuge_laser_visualizer.js'; // Ajout import
+import { initCryptoTokenRiverVisualizer } from './visualizers/crypto_token_river_visualizer.js';
 
 // Déclarer les variables globales en haut du fichier
 let icosahedronVisualizer = null;
@@ -19,6 +20,8 @@ let spiralTorusVisualizer = null;
 let streamVisualizer = null;
 let torusSpringVisualizer = null;
 let centrifugeLaserVisualizer = null; // Ajout variable globale
+let cryptoTokenRiverVisualizer = null; // Ajout variable globale
+
 
 // Fonction d'aide pour gérer le texte des boutons Start/Stop
 function updateToggleButtonText(buttonElement, visualizerInstance) {
@@ -39,13 +42,14 @@ function showSection(sectionId) {
     const internalToolInterfaceSection = document.getElementById('internal-tool-interface');
     const torusSpringInterfaceSection = document.getElementById('torus-spring-interface');
     const centrifugeLaserInterfaceSection = document.getElementById('centrifuge-laser-interface');
+    const cryptoTokenRiverInterfaceSection = document.getElementById('crypto-token-river-interface'); // Ajout déclaration section
 
     // 2. Cache toutes les sections et arrête les animations des visualiseurs
     const allSections = [
     mainInterfaceSection, icosahedronInterfaceSection, cubesInterfaceSection,
     spiralSimpleInterfaceSection, spiralTorusInterfaceSection,
     streamInterfaceSection, internalToolInterfaceSection, torusSpringInterfaceSection,
-    document.getElementById('centrifuge-laser-interface')
+    centrifugeLaserInterfaceSection, cryptoTokenRiverInterfaceSection // Ajouté
 ];
     allSections.forEach(section => {
         if (section) section.classList.add('hidden');
@@ -59,7 +63,7 @@ function showSection(sectionId) {
     cleanupVisualizer(streamVisualizer);
     cleanupVisualizer(torusSpringVisualizer);
     cleanupVisualizer(centrifugeLaserVisualizer); // Ajout nettoyage
-
+    cleanupVisualizer(cryptoTokenRiverVisualizer);
     icosahedronVisualizer = null;
     cubesVisualizer = null;
     spiralSimpleVisualizer = null;
@@ -67,6 +71,7 @@ function showSection(sectionId) {
     streamVisualizer = null;
     torusSpringVisualizer = null;
     centrifugeLaserVisualizer = null; // Ajout reset
+    cryptoTokenRiverVisualizer = null; // Ajout reset
 
     // 3. Gère la visibilité des conteneurs 3D
     const icosahedron3DContainer = document.getElementById('icosahedron-3d');
@@ -133,6 +138,10 @@ function showSection(sectionId) {
             centrifugeLaserVisualizer.stop();
             centrifugeLaserVisualizer = null;
         }
+        if (visualizerName === 'cryptoTokenRiverVisualizer' && cryptoTokenRiverVisualizer) {
+            cryptoTokenRiverVisualizer.stop();
+            cryptoTokenRiverVisualizer = null;
+        }
 
         setTimeout(() => {
             if (containerElement && containerElement.clientWidth > 0 && containerElement.clientHeight > 0) {
@@ -144,6 +153,7 @@ function showSection(sectionId) {
                 else if (visualizerName === 'streamVisualizer') visualizerInstance = streamVisualizer = initFunc(containerId);
                 else if (visualizerName === 'torusSpringVisualizer') visualizerInstance = torusSpringVisualizer = initFunc(containerId);
                 else if (visualizerName === 'centrifugeLaserVisualizer') visualizerInstance = centrifugeLaserVisualizer = initFunc(containerId);
+                else if (visualizerName === 'cryptoTokenRiverVisualizer') visualizerInstance = cryptoTokenRiverVisualizer = initFunc(containerId);
 
                 if (visualizerInstance && initFunc !== initStreamVisualizer) {
                     visualizerInstance.start();
@@ -171,6 +181,8 @@ function showSection(sectionId) {
         initAndStartVisualizer('torusSpringVisualizer', initTorusSpringVisualizer, 'torus-spring-3d', 'toggle-torus-spring-animation');
     } else if (sectionId === 'centrifuge-laser-interface') { // Ajout du cas centrifuge-laser
         initAndStartVisualizer('centrifugeLaserVisualizer', initCentrifugeLaserVisualizer, 'centrifuge-laser-3d', 'toggle-centrifuge-laser-animation');
+    } else if (sectionId === 'crypto-token-river-interface') {
+        initAndStartVisualizer('cryptoTokenRiverVisualizer', initCryptoTokenRiverVisualizer, 'crypto-token-river-3d', 'toggle-crypto-token-river-animation');
     }
 
     // 6. Met à jour les classes 'active' des boutons de navigation
@@ -183,7 +195,8 @@ function showSection(sectionId) {
     document.getElementById('nav-stream'),
     document.getElementById('nav-internal-tool'),
     document.getElementById('nav-torus-spring'),
-    document.getElementById('nav-centrifuge-laser') // Ajout du bouton centrifuge-laser
+    document.getElementById('nav-centrifuge-laser'),
+    document.getElementById('nav-crypto-token-river') // Ajouté
 ];
     navButtons.forEach(btn => {
         if (btn) btn.classList.remove('active');
@@ -236,6 +249,12 @@ document.addEventListener('DOMContentLoaded', () => {
         navCentrifugeLaserButton.addEventListener('click', () => showSection('centrifuge-laser-interface'));
     }
 
+    // Ajout event listener pour le bouton crypto token river
+    const navCryptoTokenRiverButton = document.getElementById('nav-crypto-token-river');
+    if (navCryptoTokenRiverButton) {
+        navCryptoTokenRiverButton.addEventListener('click', () => showSection('crypto-token-river-interface'));
+    }
+
     // 2. Gérer les boutons Start/Stop Animation pour les visualiseurs 3D (définis dans showSection)
     const setupToggleButtonForVisualizer = (buttonId, visualizerGetter) => {
         const button = document.getElementById(buttonId);
@@ -268,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupToggleButtonForVisualizer('toggle-spiral-torus-animation', () => spiralTorusVisualizer);
     setupToggleButtonForVisualizer('toggle-torus-spring-animation', () => torusSpringVisualizer);
     setupToggleButtonForVisualizer('toggle-centrifuge-laser-animation', () => centrifugeLaserVisualizer);
+    setupToggleButtonForVisualizer('toggle-crypto-token-river-animation', () => cryptoTokenRiverVisualizer);
 
     // Initialiser les vues non-3D
     initClassicGenerator();
