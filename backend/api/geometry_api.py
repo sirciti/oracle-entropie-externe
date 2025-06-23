@@ -18,6 +18,7 @@ from geometry.torus_spring.generator import generate_torus_spring_system
 from geometry.torus_spring.dynamics import update_torus_spring_dynamics
 from geometry.centrifuge_laser.generator import generate_centrifuge_laser_system
 from geometry.centrifuge_laser.dynamics import update_centrifuge_laser_dynamics
+from geometry.centrifuge_laser_v2.generator import generate_centrifuge_laser_v2_data
 from geometry.crypto_token_river.generator import generate_crypto_token_river_data
 from geometry.stream.generator import generate_stream_tokens
 
@@ -450,3 +451,20 @@ def generate_stream():
     except Exception as e:
         logger.error(f"Erreur API stream: {e}")
         return jsonify({"error": str(e)}), 500
+    
+
+
+@geometry_api.route('/centrifuge_laser_v2/animate', methods=['GET'])
+def animate_centrifuge_laser_v2():
+    """Animation révolutionnaire de la Centrifugeuse Laser 2.0."""
+    try:
+        frames = []
+        for i in range(10):  # 10 frames d'animation
+            frame_data = generate_centrifuge_laser_v2_data()
+            frames.append(frame_data)
+        
+        return jsonify({"frames": frames})
+    except Exception as e:
+        logger.error(f"Erreur animation Centrifugeuse Laser V2: {e}")
+        return jsonify({"error": str(e)}), 500
+

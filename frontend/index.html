@@ -15,6 +15,7 @@
             <button id="nav-spiral-simple" class="nav-button">Spiral Dynamique</button>
             <button id="nav-spiral-torus" class="nav-button">Spiral Toroïdale</button>
             <button id="nav-centrifuge-laser" class="nav-button">Centrifugeuse Laser</button>
+            <button id="nav-centrifuge-laser-v2" class="nav-button">Centrifugeuse Laser 2.0</button>
             <button id="nav-torus-spring" class="nav-button">Tore-Ressorts</button>
             <button id="nav-crypto-token-river" class="nav-button">CryptoTokenRiver</button>
             <button id="nav-stream" class="nav-button">Flux de Tokens</button>
@@ -174,7 +175,16 @@
             </div>
             <div id="centrifuge-laser-3d"></div>
         </div>
+
+        <!-- Centrifugeuse Laser 2.0 -->
+        <div id="centrifuge-laser-v2-interface" class="interface-section hidden">
+    <div class="content-card">
+        <h2 class="title">🚀 Centrifugeuse Laser 2.0 - Révolutionnaire</h2>
+        <p>Système révolutionnaire avec collisions physiques, explosions atomiques et entropie rotationnelle maximale</p>
+        <button id="toggle-centrifuge-laser-v2-animation" class="generate-button">Stop Animation</button>
     </div>
+    <div id="centrifuge-laser-v2-3d"></div>
+</div>
 
     <script type="module" src="/src/utils/three_utils.js"></script>
     <script type="module" src="/src/visualizers/icosahedron_visualizer.js"></script>
@@ -185,5 +195,6 @@
     <script type="module" src="/src/views/classic_generator.js"></script>
     <script type="module" src="/src/views/internal_tool.js"></script>
     <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/visualizers/centrifuge_laser_v2_visualizer.js"></script>
 </body>
 </html>

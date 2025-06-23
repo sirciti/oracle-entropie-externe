@@ -11,6 +11,8 @@ import { initStreamVisualizer } from './visualizers/stream_visualizer.js';
 import { initTorusSpringVisualizer } from './visualizers/torus_spring_visualizer.js';
 import { initCentrifugeLaserVisualizer } from './visualizers/centrifuge_laser_visualizer.js'; // Ajout import
 import { initCryptoTokenRiverVisualizer } from './visualizers/crypto_token_river_visualizer.js';
+import { initCentrifugeLaserV2Visualizer } from './visualizers/centrifuge_laser_v2_visualizer.js'; // 1. Ajout import
+
 
 // Déclarer les variables globales en haut du fichier
 let icosahedronVisualizer = null;
@@ -21,6 +23,8 @@ let streamVisualizer = null;
 let torusSpringVisualizer = null;
 let centrifugeLaserVisualizer = null; // Ajout variable globale
 let cryptoTokenRiverVisualizer = null; // Ajout variable globale
+let centrifugeLaserV2Visualizer = null; // 2. Ajout variable globale pour la version V2
+let currentSection = null; // Ajoute la variable globale en haut du fichier
 
 
 // Fonction d'aide pour gérer le texte des boutons Start/Stop
@@ -32,6 +36,16 @@ function updateToggleButtonText(buttonElement, visualizerInstance) {
 
 // Fonction principale pour afficher une section et cacher/initialiser les autres
 function showSection(sectionId) {
+  console.log("DEBUG: Changement vers section:", sectionId);
+
+  // NE PAS nettoyer si on reste sur la même section
+  if (currentSection === sectionId) {
+    console.log("DEBUG: Même section, pas de nettoyage");
+    return;
+  }
+
+  currentSection = sectionId;
+
     // 1. Sélectionne toutes les sections d'interface
     const mainInterfaceSection = document.getElementById('main-interface');
     const icosahedronInterfaceSection = document.getElementById('icosahedron-interface');
@@ -43,13 +57,16 @@ function showSection(sectionId) {
     const torusSpringInterfaceSection = document.getElementById('torus-spring-interface');
     const centrifugeLaserInterfaceSection = document.getElementById('centrifuge-laser-interface');
     const cryptoTokenRiverInterfaceSection = document.getElementById('crypto-token-river-interface'); // Ajout déclaration section
+    const centrifugeLaserV2InterfaceSection = document.getElementById('centrifuge-laser-v2-interface'); // 3. Déclaration section
+
 
     // 2. Cache toutes les sections et arrête les animations des visualiseurs
     const allSections = [
     mainInterfaceSection, icosahedronInterfaceSection, cubesInterfaceSection,
     spiralSimpleInterfaceSection, spiralTorusInterfaceSection,
     streamInterfaceSection, internalToolInterfaceSection, torusSpringInterfaceSection,
-    centrifugeLaserInterfaceSection, cryptoTokenRiverInterfaceSection // Ajouté
+    centrifugeLaserInterfaceSection, cryptoTokenRiverInterfaceSection,
+    centrifugeLaserV2InterfaceSection // 4. NOUVEAU
 ];
     allSections.forEach(section => {
         if (section) section.classList.add('hidden');
@@ -64,6 +81,7 @@ function showSection(sectionId) {
     cleanupVisualizer(torusSpringVisualizer);
     cleanupVisualizer(centrifugeLaserVisualizer); // Ajout nettoyage
     cleanupVisualizer(cryptoTokenRiverVisualizer);
+    cleanupVisualizer(centrifugeLaserV2Visualizer); // Ajout nettoyage pour la version V2
     icosahedronVisualizer = null;
     cubesVisualizer = null;
     spiralSimpleVisualizer = null;
@@ -72,6 +90,7 @@ function showSection(sectionId) {
     torusSpringVisualizer = null;
     centrifugeLaserVisualizer = null; // Ajout reset
     cryptoTokenRiverVisualizer = null; // Ajout reset
+    centrifugeLaserV2Visualizer = null; // 5. Ajout reset pour la version V2
 
     // 3. Gère la visibilité des conteneurs 3D
     const icosahedron3DContainer = document.getElementById('icosahedron-3d');
@@ -142,6 +161,10 @@ function showSection(sectionId) {
             cryptoTokenRiverVisualizer.stop();
             cryptoTokenRiverVisualizer = null;
         }
+        if (visualizerName === 'centrifugeLaserV2Visualizer' && centrifugeLaserV2Visualizer) {
+            centrifugeLaserV2Visualizer.stop();
+            centrifugeLaserV2Visualizer = null;
+        }
 
         setTimeout(() => {
             if (containerElement && containerElement.clientWidth > 0 && containerElement.clientHeight > 0) {
@@ -154,6 +177,7 @@ function showSection(sectionId) {
                 else if (visualizerName === 'torusSpringVisualizer') visualizerInstance = torusSpringVisualizer = initFunc(containerId);
                 else if (visualizerName === 'centrifugeLaserVisualizer') visualizerInstance = centrifugeLaserVisualizer = initFunc(containerId);
                 else if (visualizerName === 'cryptoTokenRiverVisualizer') visualizerInstance = cryptoTokenRiverVisualizer = initFunc(containerId);
+                else if (visualizerName === 'centrifugeLaserV2Visualizer') visualizerInstance = centrifugeLaserV2Visualizer = initFunc(containerId); // 6.
 
                 if (visualizerInstance && initFunc !== initStreamVisualizer) {
                     visualizerInstance.start();
@@ -183,7 +207,10 @@ function showSection(sectionId) {
         initAndStartVisualizer('centrifugeLaserVisualizer', initCentrifugeLaserVisualizer, 'centrifuge-laser-3d', 'toggle-centrifuge-laser-animation');
     } else if (sectionId === 'crypto-token-river-interface') {
         initAndStartVisualizer('cryptoTokenRiverVisualizer', initCryptoTokenRiverVisualizer, 'crypto-token-river-3d', 'toggle-crypto-token-river-animation');
-    }
+    } else if (sectionId === 'centrifuge-laser-v2-interface') {
+        initAndStartVisualizer('centrifugeLaserV2Visualizer', initCentrifugeLaserV2Visualizer, 'centrifuge-laser-v2-3d', 'toggle-centrifuge-laser-v2-animation');
+    } // 7.
+
 
     // 6. Met à jour les classes 'active' des boutons de navigation
     const navButtons = [
@@ -196,7 +223,8 @@ function showSection(sectionId) {
     document.getElementById('nav-internal-tool'),
     document.getElementById('nav-torus-spring'),
     document.getElementById('nav-centrifuge-laser'),
-    document.getElementById('nav-crypto-token-river') // Ajouté
+    document.getElementById('nav-crypto-token-river'),
+    document.getElementById('nav-centrifuge-laser-v2') // 8. NOUVEAU
 ];
     navButtons.forEach(btn => {
         if (btn) btn.classList.remove('active');
@@ -255,6 +283,12 @@ document.addEventListener('DOMContentLoaded', () => {
         navCryptoTokenRiverButton.addEventListener('click', () => showSection('crypto-token-river-interface'));
     }
 
+    // Ajout event listener pour le bouton centrifuge laser v2
+    const navCentrifugeLaserV2Button = document.getElementById('nav-centrifuge-laser-v2');
+    if (navCentrifugeLaserV2Button) {
+        navCentrifugeLaserV2Button.addEventListener('click', () => showSection('centrifuge-laser-v2-interface'));
+    }
+
     // 2. Gérer les boutons Start/Stop Animation pour les visualiseurs 3D (définis dans showSection)
     const setupToggleButtonForVisualizer = (buttonId, visualizerGetter) => {
         const button = document.getElementById(buttonId);
@@ -288,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupToggleButtonForVisualizer('toggle-torus-spring-animation', () => torusSpringVisualizer);
     setupToggleButtonForVisualizer('toggle-centrifuge-laser-animation', () => centrifugeLaserVisualizer);
     setupToggleButtonForVisualizer('toggle-crypto-token-river-animation', () => cryptoTokenRiverVisualizer);
+    setupToggleButtonForVisualizer('toggle-centrifuge-laser-v2-animation', () => centrifugeLaserV2Visualizer); // 9.
 
     // Initialiser les vues non-3D
     initClassicGenerator();
