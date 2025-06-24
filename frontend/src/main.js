@@ -12,6 +12,7 @@ import { initTorusSpringVisualizer } from './visualizers/torus_spring_visualizer
 import { initCentrifugeLaserVisualizer } from './visualizers/centrifuge_laser_visualizer.js'; // Ajout import
 import { initCryptoTokenRiverVisualizer } from './visualizers/crypto_token_river_visualizer.js';
 import { initCentrifugeLaserV2Visualizer } from './visualizers/centrifuge_laser_v2_visualizer.js'; // 1. Ajout import
+import { initMetaCubeOracleVisualizer } from './visualizers/metacube_oracle_visualizer.js'; // Import
 
 
 // Déclarer les variables globales en haut du fichier
@@ -24,6 +25,7 @@ let torusSpringVisualizer = null;
 let centrifugeLaserVisualizer = null; // Ajout variable globale
 let cryptoTokenRiverVisualizer = null; // Ajout variable globale
 let centrifugeLaserV2Visualizer = null; // 2. Ajout variable globale pour la version V2
+let metaCubeOracleVisualizer = null; // Variable globale
 let currentSection = null; // Ajoute la variable globale en haut du fichier
 
 
@@ -58,6 +60,7 @@ function showSection(sectionId) {
     const centrifugeLaserInterfaceSection = document.getElementById('centrifuge-laser-interface');
     const cryptoTokenRiverInterfaceSection = document.getElementById('crypto-token-river-interface'); // Ajout déclaration section
     const centrifugeLaserV2InterfaceSection = document.getElementById('centrifuge-laser-v2-interface'); // 3. Déclaration section
+    const metaCubeOracleInterfaceSection = document.getElementById('metacube-oracle-interface'); // Section MetaCube Oracle
 
 
     // 2. Cache toutes les sections et arrête les animations des visualiseurs
@@ -66,7 +69,7 @@ function showSection(sectionId) {
     spiralSimpleInterfaceSection, spiralTorusInterfaceSection,
     streamInterfaceSection, internalToolInterfaceSection, torusSpringInterfaceSection,
     centrifugeLaserInterfaceSection, cryptoTokenRiverInterfaceSection,
-    centrifugeLaserV2InterfaceSection // 4. NOUVEAU
+    centrifugeLaserV2InterfaceSection, metaCubeOracleInterfaceSection // Ajout à allSections
 ];
     allSections.forEach(section => {
         if (section) section.classList.add('hidden');
@@ -82,6 +85,7 @@ function showSection(sectionId) {
     cleanupVisualizer(centrifugeLaserVisualizer); // Ajout nettoyage
     cleanupVisualizer(cryptoTokenRiverVisualizer);
     cleanupVisualizer(centrifugeLaserV2Visualizer); // Ajout nettoyage pour la version V2
+    cleanupVisualizer(metaCubeOracleVisualizer); // Nettoyage MetaCube Oracle
     icosahedronVisualizer = null;
     cubesVisualizer = null;
     spiralSimpleVisualizer = null;
@@ -91,6 +95,7 @@ function showSection(sectionId) {
     centrifugeLaserVisualizer = null; // Ajout reset
     cryptoTokenRiverVisualizer = null; // Ajout reset
     centrifugeLaserV2Visualizer = null; // 5. Ajout reset pour la version V2
+    metaCubeOracleVisualizer = null; // 6. Ajout reset pour MetaCube Oracle
 
     // 3. Gère la visibilité des conteneurs 3D
     const icosahedron3DContainer = document.getElementById('icosahedron-3d');
@@ -165,6 +170,10 @@ function showSection(sectionId) {
             centrifugeLaserV2Visualizer.stop();
             centrifugeLaserV2Visualizer = null;
         }
+        if (visualizerName === 'metaCubeOracleVisualizer' && metaCubeOracleVisualizer) {
+            metaCubeOracleVisualizer.stop();
+            metaCubeOracleVisualizer = null;
+        }
 
         setTimeout(() => {
             if (containerElement && containerElement.clientWidth > 0 && containerElement.clientHeight > 0) {
@@ -178,6 +187,7 @@ function showSection(sectionId) {
                 else if (visualizerName === 'centrifugeLaserVisualizer') visualizerInstance = centrifugeLaserVisualizer = initFunc(containerId);
                 else if (visualizerName === 'cryptoTokenRiverVisualizer') visualizerInstance = cryptoTokenRiverVisualizer = initFunc(containerId);
                 else if (visualizerName === 'centrifugeLaserV2Visualizer') visualizerInstance = centrifugeLaserV2Visualizer = initFunc(containerId); // 6.
+                else if (visualizerName === 'metaCubeOracleVisualizer') visualizerInstance = metaCubeOracleVisualizer = initFunc(containerId); // 7.
 
                 if (visualizerInstance && initFunc !== initStreamVisualizer) {
                     visualizerInstance.start();
@@ -209,7 +219,9 @@ function showSection(sectionId) {
         initAndStartVisualizer('cryptoTokenRiverVisualizer', initCryptoTokenRiverVisualizer, 'crypto-token-river-3d', 'toggle-crypto-token-river-animation');
     } else if (sectionId === 'centrifuge-laser-v2-interface') {
         initAndStartVisualizer('centrifugeLaserV2Visualizer', initCentrifugeLaserV2Visualizer, 'centrifuge-laser-v2-3d', 'toggle-centrifuge-laser-v2-animation');
-    } // 7.
+    } else if (sectionId === 'metacube-oracle-interface') {
+        initAndStartVisualizer('metaCubeOracleVisualizer', initMetaCubeOracleVisualizer, 'metacube-oracle-3d', 'toggle-metacube-oracle-animation');
+    } // 8.
 
 
     // 6. Met à jour les classes 'active' des boutons de navigation
@@ -224,7 +236,8 @@ function showSection(sectionId) {
     document.getElementById('nav-torus-spring'),
     document.getElementById('nav-centrifuge-laser'),
     document.getElementById('nav-crypto-token-river'),
-    document.getElementById('nav-centrifuge-laser-v2') // 8. NOUVEAU
+    document.getElementById('nav-centrifuge-laser-v2'),
+    document.getElementById('nav-metacube-oracle') // 9. NOUVEAU
 ];
     navButtons.forEach(btn => {
         if (btn) btn.classList.remove('active');
@@ -289,6 +302,12 @@ document.addEventListener('DOMContentLoaded', () => {
         navCentrifugeLaserV2Button.addEventListener('click', () => showSection('centrifuge-laser-v2-interface'));
     }
 
+    // Ajout event listener pour le bouton MetaCube Oracle
+    const navMetaCubeOracleButton = document.getElementById('nav-metacube-oracle');
+    if (navMetaCubeOracleButton) {
+        navMetaCubeOracleButton.addEventListener('click', () => showSection('metacube-oracle-interface'));
+    }
+
     // 2. Gérer les boutons Start/Stop Animation pour les visualiseurs 3D (définis dans showSection)
     const setupToggleButtonForVisualizer = (buttonId, visualizerGetter) => {
         const button = document.getElementById(buttonId);
@@ -323,6 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupToggleButtonForVisualizer('toggle-centrifuge-laser-animation', () => centrifugeLaserVisualizer);
     setupToggleButtonForVisualizer('toggle-crypto-token-river-animation', () => cryptoTokenRiverVisualizer);
     setupToggleButtonForVisualizer('toggle-centrifuge-laser-v2-animation', () => centrifugeLaserV2Visualizer); // 9.
+    setupToggleButtonForVisualizer('toggle-metacube-oracle-animation', () => metaCubeOracleVisualizer); // 10.
 
     // Initialiser les vues non-3D
     initClassicGenerator();

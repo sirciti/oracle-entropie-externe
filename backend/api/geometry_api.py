@@ -21,6 +21,7 @@ from geometry.centrifuge_laser.dynamics import update_centrifuge_laser_dynamics
 from geometry.centrifuge_laser_v2.generator import generate_centrifuge_laser_v2_data
 from geometry.crypto_token_river.generator import generate_crypto_token_river_data
 from geometry.stream.generator import generate_stream_tokens
+from geometry.metacube_oracle.generator import generate_metacube_oracle_data
 
 geometry_api = Blueprint('geometry_api', __name__)
 
@@ -466,5 +467,20 @@ def animate_centrifuge_laser_v2():
         return jsonify({"frames": frames})
     except Exception as e:
         logger.error(f"Erreur animation Centrifugeuse Laser V2: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@geometry_api.route('/metacube_oracle/animate', methods=['GET'])
+def animate_metacube_oracle():
+    """Animation révolutionnaire du MetaCube Oracle Kaléidoscopique."""
+    try:
+        # Génération de frames multiples pour animation fluide
+        frames = []
+        for i in range(5):  # 5 frames pour fluidité
+            frame_data = generate_metacube_oracle_data()
+            frames.append(frame_data)
+        
+        return jsonify({"frames": frames})
+    except Exception as e:
+        logger.error(f"Erreur animation MetaCube Oracle: {e}")
         return jsonify({"error": str(e)}), 500
 

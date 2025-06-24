@@ -359,3 +359,196 @@ html, body {
     background: transparent;
     border-radius: 8px;
 }
+
+/* MetaCube Oracle Kaléidoscopique */
+#metacube-oracle-3d {
+    background: radial-gradient(circle at center, #001122 0%, #000000 70%);
+    border-radius: 12px;
+    box-shadow: 
+        0 0 50px rgba(0, 255, 255, 0.3),
+        inset 0 0 30px rgba(0, 100, 200, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex-grow: 1;
+    margin: 0 auto;
+    overflow: hidden;
+    min-height: 400px;
+    height: 500px;
+    position: relative;
+    perspective: 1600px; /* Pour l'effet 3D */
+}
+
+#metacube-oracle-3d canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    margin: auto;
+    background: transparent;
+    border-radius: 12px;
+    filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.4));
+}
+
+/* Interface MetaCube Oracle */
+#metacube-oracle-interface .content-card {
+    background: linear-gradient(135deg, 
+        rgba(0, 20, 40, 0.9) 0%, 
+        rgba(0, 10, 30, 0.95) 50%, 
+        rgba(0, 5, 20, 0.9) 100%);
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+/* Métriques d'entropie */
+.entropy-metrics {
+    display: flex;
+    justify-content: space-around;
+    margin: 15px 0;
+    padding: 15px;
+    background: rgba(0, 50, 100, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.entropy-metrics div {
+    color: #00ffff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.entropy-metrics span {
+    color: #ffffff;
+    background: rgba(0, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 5px;
+}
+
+/* Bouton MetaCube Oracle */
+#toggle-metacube-oracle-animation {
+    background: linear-gradient(135deg, #004466 0%, #0066aa 100%);
+    border: 2px solid #00ffff;
+    color: #ffffff;
+    box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.3),
+        inset 0 0 10px rgba(0, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+#toggle-metacube-oracle-animation:hover {
+    background: linear-gradient(135deg, #0066aa 0%, #0088cc 100%);
+    box-shadow: 
+        0 0 30px rgba(0, 255, 255, 0.5),
+        inset 0 0 15px rgba(0, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Navigation MetaCube Oracle */
+#nav-metacube-oracle {
+    background: linear-gradient(135deg, #001a33 0%, #003366 100%);
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    color: #00ffff;
+    position: relative;
+    overflow: hidden;
+}
+
+#nav-metacube-oracle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(0, 255, 255, 0.2) 50%, 
+        transparent 100%);
+    transition: left 0.5s ease;
+}
+
+#nav-metacube-oracle:hover::before {
+    left: 100%;
+}
+
+#nav-metacube-oracle:hover {
+    background: linear-gradient(135deg, #003366 0%, #004499 100%);
+    box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.4),
+        inset 0 0 10px rgba(0, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+#nav-metacube-oracle.active {
+    background: linear-gradient(135deg, #004499 0%, #0066cc 100%);
+    box-shadow: 
+        0 0 25px rgba(0, 255, 255, 0.6),
+        inset 0 0 15px rgba(0, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+/* Animation kaléidoscope */
+@keyframes kaleidoscope-rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes entropy-pulse {
+    0%, 100% { 
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
+        transform: scale(1.02);
+    }
+}
+
+/* Effet de pulsation pour le conteneur 3D */
+#metacube-oracle-3d {
+    animation: entropy-pulse 4s ease-in-out infinite;
+}
+
+/* Responsive pour MetaCube Oracle */
+@media (max-width: 768px) {
+    #metacube-oracle-3d {
+        height: 350px;
+        min-height: 300px;
+    }
+    
+    .entropy-metrics {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .entropy-metrics div {
+        text-align: center;
+        font-size: 12px;
+    }
+}
+
+/* Effet glassmorphisme pour l'interface */
+#metacube-oracle-interface .content-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+        rgba(0, 255, 255, 0.05) 0%, 
+        transparent 50%, 
+        rgba(0, 255, 255, 0.05) 100%);
+    pointer-events: none;
+    border-radius: 8px;
+    z-index: 1;
+}
+
+#metacube-oracle-interface .content-card {
+    position: relative;
+    z-index: 2;
+}
