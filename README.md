@@ -1,3 +1,5 @@
+
+
 # ⚛️ Oracle d'Entropie Quantique-Géométrique 🎲
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/username/oracle-entropie-externe/ci.yml?branch=main)](https://github.com/username/oracle-entropie-externe/actions)
@@ -7,7 +9,7 @@
 [![Node.js](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
 
-> Générateur d'entropie cryptographique révolutionnaire avec visualisations 3D immersives et système de playlist MetaCube Oracle
+> Générateur d'entropie cryptographique révolutionnaire avec visualisations 3D immersives, favicon animé WAwa et système de playlist MetaCube Oracle
 
 ## 📜 Description
 
@@ -33,8 +35,15 @@
 - **Système de playlist** : 4 versions (Optimisée 30fps, Cinématographique 60fps, HD, Ultra)
 - **Contrôles avancés** : Start/Stop/Playlist/Version suivante
 
+### 🎬 Favicon Animé Révolutionnaire (NOUVEAU)
+- **Animation WAwa** : Alternance entre 4 images et vidéo mp4
+- **Synchronisation entropie** : Vitesse liée aux métriques Shannon
+- **Effet visuel unique** : Pulsation dans la barre de navigation
+- **Multi-format** : Support tous navigateurs modernes
+
 ### ⚡ Performance & Qualité
 - **Rendu optimisé** : WebGL 2.0, object pooling, rendu par batch
+- **Monitoring adaptatif** : Système FPS intelligent avec récupération
 - **Qualité HD/4K** : Render targets jusqu'à 1024x1024
 - **Métriques temps réel** : Entropie Shannon, accumulateur, signatures quantiques
 
@@ -51,9 +60,16 @@ oracle-entropie-externe/
 │ ├── sources/ # Sources d'entropie
 │ └── tests/ # Tests Pytest
 ├── frontend/ # Interface Vite + Three.js
+│ ├── public/ # Assets statiques
+│ │ ├── favicon.ico # Favicon principal
+│ │ ├── favicon.png # Image secondaire
+│ │ ├── favicon_1.png # Frame animation
+│ │ ├── favicon_2.png # Frame animation
+│ │ └── vid_favicon.mp4 # Vidéo WAwa
 │ ├── src/
 │ │ ├── visualizers/ # 12 visualiseurs 3D
 │ │ ├── styles/ # CSS modulaire
+│ │ ├── favicon-animator.js # Animation favicon
 │ │ └── main.js
 │ └── tests/ # Tests Playwright E2E
 ├── docker-compose.yml # Orchestration containers
@@ -87,6 +103,7 @@ python app.py
 3. Frontend Node.js (nouveau terminal)
 cd frontend
 npm install
+npm run build # Important pour CSS
 npm run dev
 
 4. Accès
@@ -121,10 +138,23 @@ Ajouter vos clés API météo
 ## 📋 Usage
 
 ### 🖥️ Interface Web
-1. **Accédez** à http://localhost:5173
-2. **Naviguez** entre les visualiseurs via la barre latérale
-3. **Contrôlez** le MetaCube Oracle avec les boutons playlist
-4. **Générez** des tokens via l'outil interne
+1. **Accédez** à http://localhost (Docker) ou http://localhost:5173 (local)
+2. **Observez** le favicon animé dans la barre de navigation
+3. **Naviguez** entre les visualiseurs via la barre latérale
+4. **Contrôlez** le MetaCube Oracle avec les boutons playlist
+5. **Générez** des tokens via l'outil interne
+
+### 🎬 Contrôles Favicon WAwa
+- **Animation automatique** : Démarre au chargement de la page
+- **Mode statique** : Rotation des 4 images (3 secondes chacune)
+- **Mode vidéo** : Lecture de la vidéo mp4 avec effets colorés
+- **Synchronisation** : Vitesse adaptée à l'entropie Shannon
+
+### 🎛️ Contrôles MetaCube Oracle
+- **🎵 Démarrer Playlist** : Lance l'alternance automatique des 4 versions
+- **⏹️ Arrêter Playlist** : Stoppe l'alternance automatique
+- **⏭️ Version Suivante** : Passe manuellement à la version suivante
+- **Indicateur** : Affiche la version actuelle (1/4, 2/4, etc.)
 
 ### 🔌 API REST
 
@@ -168,7 +198,6 @@ cd frontend
 npm run test:e2e
 
 
-
 ### 📈 Qualité Code
 Linting & Formatting
 black backend/
@@ -197,9 +226,25 @@ npm run format
 
 ### ⚡ Performance Technique
 - **Backend** : 1000+ req/s (Flask + Gunicorn)
-- **Frontend** : 30-60 FPS selon mode
+- **Frontend** : 15-60 FPS adaptatif selon performance
 - **Mémoire** : <512MB par container
 - **Startup** : <30s démarrage complet
+
+## 🔧 Troubleshooting
+
+### ❌ Problèmes Courants
+
+**Favicon ne s'affiche pas :**
+- Vérifier que `<link rel="stylesheet" href="./src/styles/style.css">` est dans index.html
+- Rebuild : `npm run build` puis redémarrer
+
+**Interface sans styles :**
+- Vérifier le lien CSS dans frontend/index.html
+- Vider le cache navigateur (Ctrl+F5)
+
+**Performance dégradée :**
+- Le système s'adapte automatiquement
+- Monitoring FPS avec récupération intelligente
 
 ## 🔒 Sécurité
 
@@ -245,17 +290,18 @@ npm run format
 
 ## 📈 Roadmap
 
-### 🎯 Version Actuelle (v2.0)
-- ✅ MetaCube Oracle fonctionnel
-- ✅ Système playlist 4 versions
-- ✅ 12 visualiseurs intégrés
-- ✅ Performance optimisée
+### 🎯 Version Actuelle (v2.1) - Juin 2025
+- ✅ MetaCube Oracle fonctionnel avec playlist 4 versions
+- ✅ Favicon animé WAwa révolutionnaire
+- ✅ 12 visualiseurs intégrés et optimisés
+- ✅ Performance adaptative avec monitoring intelligent
+- ✅ Interface utilisateur professionnelle restaurée
 
 ### 🔮 Prochaines Versions
-- **v2.1** : Interface admin configuration
-- **v2.2** : API GraphQL avancée  
-- **v3.0** : Intégration blockchain native
-- **v3.1** : Mobile app companion
+- **v2.2** : Interface admin configuration avancée
+- **v2.3** : API GraphQL pour intégrations complexes  
+- **v3.0** : Intégration blockchain native Web3
+- **v3.1** : Application mobile companion
 
 ## 📄 Licence
 
@@ -285,3 +331,18 @@ Ce projet est sous licence **MIT** - voir le fichier [LICENSE](LICENSE) pour plu
 <div align="center">
 
 **🚀 Ready for the Future of Cryptographic Entropy! 🚀**
+
+[![Stargazers](https://img.shields.io/github/stars/username/oracle-entropie-externe?style=social)](https://github.com/username/oracle-entropie-externe/stargazers)
+[![Forks](https://img.shields.io/github/forks/username/oracle-entropie-externe?style=social)](https://github.com/username/oracle-entropie-externe/network/members)
+
+*Dernière mise à jour : 24 juin 2025, 23:42 CEST*
+
+</div>
+✨ Nouveautés ajoutées dans cette version :
+
+✅ Section Favicon WAwa - Fonctionnalité révolutionnaire détaillée
+✅ Contrôles utilisateur - Guide complet playlist et favicon
+✅ Troubleshooting - Solutions aux problèmes rencontrés
+✅ Architecture mise à jour - Fichiers favicon et animator
+✅ Version 2.1 - Roadmap actualisée
+✅ Date mise à jour - 24 juin 2025, 23:42
