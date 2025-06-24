@@ -12,7 +12,7 @@ import { initTorusSpringVisualizer } from './visualizers/torus_spring_visualizer
 import { initCentrifugeLaserVisualizer } from './visualizers/centrifuge_laser_visualizer.js'; // Ajout import
 import { initCryptoTokenRiverVisualizer } from './visualizers/crypto_token_river_visualizer.js';
 import { initCentrifugeLaserV2Visualizer } from './visualizers/centrifuge_laser_v2_visualizer.js'; // 1. Ajout import
-import { initMetaCubeOracleVisualizer } from './visualizers/metacube_oracle_visualizer.js'; // Import
+import { initMetaCubeOraclePlaylist } from './visualizers/metacube_oracle_playlist.js'; // Import
 
 
 // Déclarer les variables globales en haut du fichier
@@ -127,57 +127,34 @@ function showSection(sectionId) {
     }
 
     // 5. Initialise ou réinitialise et démarre le visualiseur correspondant
-    const initAndStartVisualizer = (visualizerName, initFunc, containerId, toggleBtnId) => {
-        const containerElement = document.getElementById(containerId);
-        const toggleButtonElement = document.getElementById(toggleBtnId);
+    const initAndStartVisualizer = async (visualizerName, initFunc, containerId, toggleBtnId) => {
+      const containerElement = document.getElementById(containerId);
+      const toggleButtonElement = document.getElementById(toggleBtnId);
 
-        if (containerElement) containerElement.style.display = 'flex';
+      if (containerElement) containerElement.style.display = 'flex';
 
-        // Nettoyage
-        if (visualizerName === 'icosahedronVisualizer' && icosahedronVisualizer) {
-            icosahedronVisualizer.stop();
-            icosahedronVisualizer = null;
-        }
-        if (visualizerName === 'cubesVisualizer' && cubesVisualizer) {
-            cubesVisualizer.stop();
-            cubesVisualizer = null;
-        }
-        if (visualizerName === 'spiralSimpleVisualizer' && spiralSimpleVisualizer) {
-            spiralSimpleVisualizer.stop();
-            spiralSimpleVisualizer = null;
-        }
-        if (visualizerName === 'spiralTorusVisualizer' && spiralTorusVisualizer) {
-            spiralTorusVisualizer.stop();
-            spiralTorusVisualizer = null;
-        }
-        if (visualizerName === 'streamVisualizer' && streamVisualizer) {
-            streamVisualizer.stop();
-            streamVisualizer = null;
-        }
-        if (visualizerName === 'torusSpringVisualizer' && torusSpringVisualizer) {
-            torusSpringVisualizer.stop();
-            torusSpringVisualizer = null;
-        }
-        if (visualizerName === 'centrifugeLaserVisualizer' && centrifugeLaserVisualizer) {
-            centrifugeLaserVisualizer.stop();
-            centrifugeLaserVisualizer = null;
-        }
-        if (visualizerName === 'cryptoTokenRiverVisualizer' && cryptoTokenRiverVisualizer) {
-            cryptoTokenRiverVisualizer.stop();
-            cryptoTokenRiverVisualizer = null;
-        }
-        if (visualizerName === 'centrifugeLaserV2Visualizer' && centrifugeLaserV2Visualizer) {
-            centrifugeLaserV2Visualizer.stop();
-            centrifugeLaserV2Visualizer = null;
-        }
-        if (visualizerName === 'metaCubeOracleVisualizer' && metaCubeOracleVisualizer) {
-            metaCubeOracleVisualizer.stop();
-            metaCubeOracleVisualizer = null;
-        }
-
-        setTimeout(() => {
+      // OPTIMISATION: Utiliser requestAnimationFrame au lieu de setTimeout
+      const initWithRAF = () => {
+        return new Promise(resolve => {
+          requestAnimationFrame(() => {
             if (containerElement && containerElement.clientWidth > 0 && containerElement.clientHeight > 0) {
-                let visualizerInstance = null;
+              let visualizerInstance = null;
+              
+              console.log(`DEBUG: Initialisation de ${visualizerName}`);
+              
+              // OPTIMISATION: Initialisation progressive
+              if (visualizerName === 'metaCubeOracleVisualizer') {
+                // Initialisation spéciale pour MetaCube Oracle
+                visualizerInstance = metaCubeOracleVisualizer = initFunc(containerId);
+                
+                // Démarrage différé pour éviter la surcharge
+                requestAnimationFrame(() => {
+                  if (visualizerInstance) {
+                    visualizerInstance.start();
+                  }
+                });
+              } else {
+                // Autres visualiseurs
                 if (visualizerName === 'icosahedronVisualizer') visualizerInstance = icosahedronVisualizer = initFunc(containerId);
                 else if (visualizerName === 'cubesVisualizer') visualizerInstance = cubesVisualizer = initFunc(containerId);
                 else if (visualizerName === 'spiralSimpleVisualizer') visualizerInstance = spiralSimpleVisualizer = initFunc(containerId);
@@ -187,17 +164,27 @@ function showSection(sectionId) {
                 else if (visualizerName === 'centrifugeLaserVisualizer') visualizerInstance = centrifugeLaserVisualizer = initFunc(containerId);
                 else if (visualizerName === 'cryptoTokenRiverVisualizer') visualizerInstance = cryptoTokenRiverVisualizer = initFunc(containerId);
                 else if (visualizerName === 'centrifugeLaserV2Visualizer') visualizerInstance = centrifugeLaserV2Visualizer = initFunc(containerId); // 6.
-                else if (visualizerName === 'metaCubeOracleVisualizer') visualizerInstance = metaCubeOracleVisualizer = initFunc(containerId); // 7.
 
                 if (visualizerInstance && initFunc !== initStreamVisualizer) {
-                    visualizerInstance.start();
+                  visualizerInstance.start();
                 }
-                updateToggleButtonText(toggleButtonElement, visualizerInstance);
+              }
+              
+              updateToggleButtonText(toggleButtonElement, visualizerInstance);
+              resolve();
             } else {
-                console.warn(`Initialisation différée pour ${containerId}: dimensions non prêtes. Réessai...`);
-                setTimeout(() => initAndStartVisualizer(visualizerName, initFunc, containerId, toggleBtnId), 100);
+              console.warn(`Initialisation différée pour ${containerId}: dimensions non prêtes. Réessai...`);
+              setTimeout(() => initWithRAF().then(resolve), 50); // Fallback avec timeout plus court
             }
-        }, 50);
+          });
+        });
+      };
+
+      try {
+        await initWithRAF();
+      } catch (error) {
+        console.error(`Erreur initialisation ${visualizerName}:`, error);
+      }
     };
 
     // Appels d'initialisation basés sur la section active
@@ -220,7 +207,7 @@ function showSection(sectionId) {
     } else if (sectionId === 'centrifuge-laser-v2-interface') {
         initAndStartVisualizer('centrifugeLaserV2Visualizer', initCentrifugeLaserV2Visualizer, 'centrifuge-laser-v2-3d', 'toggle-centrifuge-laser-v2-animation');
     } else if (sectionId === 'metacube-oracle-interface') {
-        initAndStartVisualizer('metaCubeOracleVisualizer', initMetaCubeOracleVisualizer, 'metacube-oracle-3d', 'toggle-metacube-oracle-animation');
+        initAndStartVisualizer('metaCubeOracleVisualizer', initMetaCubeOraclePlaylist, 'metacube-oracle-3d', 'toggle-metacube-oracle-animation');
     } // 8.
 
 

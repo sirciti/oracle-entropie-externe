@@ -44,40 +44,7 @@ const VISUALIZERS_CONFIG = {
 // Event listener reference pour cleanup
 let onWindowResize = null;
 
-// --- Ajout en haut du fichier ---
-let lastFrameTime = 0;
-let TARGET_FPS = 30; // Réduire à 30 FPS pour performance
-const FRAME_INTERVAL = 1000 / TARGET_FPS;
-
-// Pool d'objets pour éviter création/destruction (optionnel, à étendre selon besoins)
-let objectPools = {
-  spheres: [],
-  boxes: [],
-  cylinders: []
-};
-
-// Pause automatique si performance faible
-let performanceMonitor = {
-  frameCount: 0,
-  lastCheck: 0,
-  avgFrameTime: 16.67
-};
-
-function monitorPerformance() {
-  const now = performance.now();
-  if (performanceMonitor.lastCheck) {
-    const frameTime = now - performanceMonitor.lastCheck;
-    performanceMonitor.avgFrameTime = (performanceMonitor.avgFrameTime * 0.9) + (frameTime * 0.1);
-    // Si performance faible, réduire encore le FPS
-    if (performanceMonitor.avgFrameTime > 33) { // Plus de 33ms = moins de 30 FPS
-      TARGET_FPS = Math.max(15, TARGET_FPS - 1);
-      console.warn("Performance dégradée, FPS réduit à:", TARGET_FPS);
-    }
-  }
-  performanceMonitor.lastCheck = now;
-}
-
-export function initMetaCubeOracleVisualizer(containerId) {
+export function initMetaCubeOracleVisualizerV3(containerId) {
   const container = document.getElementById(containerId);
   if (!container) {
     console.error(`INIT METACUBE_ORACLE ERROR: Conteneur #${containerId} non trouvé.`);
@@ -132,11 +99,11 @@ export function initMetaCubeOracleVisualizer(containerId) {
 
   function setupCinematicLighting() {
     // Éclairage ambiant doux
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
     scene.add(ambientLight);
     
     // Lumière principale style cinéma
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
     keyLight.position.set(20, 20, 20);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.width = 2048;
@@ -144,19 +111,19 @@ export function initMetaCubeOracleVisualizer(containerId) {
     scene.add(keyLight);
 
     // Lumière de remplissage
-    const fillLight = new THREE.DirectionalLight(0x4444ff, 0.7);
+    const fillLight = new THREE.DirectionalLight(0x4444ff, 0.5);
     fillLight.position.set(-20, 10, -10);
     scene.add(fillLight);
 
     // Lumières colorées pour effet dramatique
     const dramaticColors = [0xff0040, 0x0040ff, 0x40ff00, 0xff4000, 0x4000ff, 0x00ff40];
     dramaticColors.forEach((color, index) => {
-      const light = new THREE.PointLight(color, 1.0, 120);
+      const light = new THREE.PointLight(color, 0.8, 100);
       const angle = (index / dramaticColors.length) * Math.PI * 2;
       light.position.set(
-        Math.cos(angle) * 35,
-        Math.sin(angle) * 35,
-        Math.sin(angle * 2) * 25
+        Math.cos(angle) * 30,
+        Math.sin(angle) * 30,
+        Math.sin(angle * 2) * 20
       );
       scene.add(light);
     });
@@ -165,51 +132,40 @@ export function initMetaCubeOracleVisualizer(containerId) {
   function createHDRenderTargets() {
     // Render targets HD pour tous les visualiseurs
     [...VISUALIZERS_CONFIG.cube_faces, ...VISUALIZERS_CONFIG.floating_surfaces].forEach(config => {
-      renderTargets[config.name] = new THREE.WebGLRenderTarget(512, 512, {
+      renderTargets[config.name] = new THREE.WebGLRenderTarget(1024, 1024, { // HD 1024x1024
         minFilter: THREE.LinearFilter,
         magFilter: THREE.LinearFilter,
         format: THREE.RGBAFormat,
+        type: THREE.UnsignedByteType,
         colorSpace: THREE.SRGBColorSpace // Three.js r152+
       });
     });
-    console.log("METACUBE_ORACLE: Render targets optimisés créés pour 9 visualiseurs");
+    
+    console.log("METACUBE_ORACLE: Render targets HD créés pour 9 visualiseurs");
   }
 
   function createVisualizerScenes() {
-    // OPTIMISATION: Création progressive des scènes
-    const configs = [...VISUALIZERS_CONFIG.cube_faces, ...VISUALIZERS_CONFIG.floating_surfaces];
+    // Créer des scènes individuelles pour chaque visualiseur
+    [...VISUALIZERS_CONFIG.cube_faces, ...VISUALIZERS_CONFIG.floating_surfaces].forEach(config => {
+      // Scène individuelle
+      visualizerScenes[config.name] = new THREE.Scene();
+      visualizerScenes[config.name].background = new THREE.Color(0x000000);
+      
+      // Caméra individuelle
+      visualizerCameras[config.name] = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
+      visualizerCameras[config.name].position.set(0, 0, 20);
+      visualizerCameras[config.name].lookAt(0, 0, 0);
+      
+      // Éclairage pour la scène individuelle
+      const sceneLight = new THREE.AmbientLight(0xffffff, 0.8);
+      visualizerScenes[config.name].add(sceneLight);
+      
+      const directionalLight = new THREE.DirectionalLight(config.color, 1.0);
+      directionalLight.position.set(10, 10, 10);
+      visualizerScenes[config.name].add(directionalLight);
+    });
     
-    const createSceneAsync = (config, index) => {
-      return new Promise(resolve => {
-        // Délai progressif pour éviter la surcharge
-        setTimeout(() => {
-          // Scène individuelle
-          visualizerScenes[config.name] = new THREE.Scene();
-          visualizerScenes[config.name].background = new THREE.Color(0x000000);
-          
-          // Caméra individuelle
-          visualizerCameras[config.name] = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
-          visualizerCameras[config.name].position.set(0, 0, 20);
-          visualizerCameras[config.name].lookAt(0, 0, 0);
-          
-          // Éclairage pour la scène individuelle
-          const sceneLight = new THREE.AmbientLight(0xffffff, 0.8);
-          visualizerScenes[config.name].add(sceneLight);
-          
-          const directionalLight = new THREE.DirectionalLight(config.color, 1.0);
-          directionalLight.position.set(10, 10, 10);
-          visualizerScenes[config.name].add(directionalLight);
-          
-          resolve();
-        }, index * 10); // Délai de 10ms entre chaque scène
-      });
-    };
-    
-    // Création progressive
-    Promise.all(configs.map((config, index) => createSceneAsync(config, index)))
-      .then(() => {
-        console.log("METACUBE_ORACLE: Scènes individuelles créées progressivement");
-      });
+    console.log("METACUBE_ORACLE: Scènes individuelles créées pour 9 visualiseurs");
   }
 
   function fetchMetaCubeOracleData() {
@@ -262,9 +218,8 @@ export function initMetaCubeOracleVisualizer(containerId) {
         map: renderTargets[config.name].texture,
         transparent: true,
         opacity: 0.95,
-        color: new THREE.Color(config.color).multiplyScalar(0.8),
-        emissive: new THREE.Color(config.color).multiplyScalar(0.2),
-        shininess: 150,
+        emissive: new THREE.Color(config.color).multiplyScalar(0.1),
+        shininess: 100,
         side: THREE.FrontSide
       });
       cubeMaterials.push(material);
@@ -285,7 +240,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
     const haloMaterial = new THREE.MeshBasicMaterial({
       color: 0x00aaff,
       transparent: true,
-      opacity: 0.2,
+      opacity: 0.15,
       side: THREE.BackSide
     });
     const halo = new THREE.Mesh(haloGeometry, haloMaterial);
@@ -293,11 +248,11 @@ export function initMetaCubeOracleVisualizer(containerId) {
     
     // Anneaux de données style Inception
     for (let i = 0; i < 5; i++) {
-      const ringGeometry = new THREE.TorusGeometry(25 + i * 4, 0.4, 8, 64);
+      const ringGeometry = new THREE.TorusGeometry(25 + i * 4, 0.3, 8, 64);
       const ringMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color().setHSL(i / 5, 0.8, 0.6),
         transparent: true,
-        opacity: 0.5
+        opacity: 0.4
       });
       const ring = new THREE.Mesh(ringGeometry, ringMaterial);
       ring.rotation.x = Math.PI / 2 + i * Math.PI / 10;
@@ -311,15 +266,14 @@ export function initMetaCubeOracleVisualizer(containerId) {
   function createFloatingSurfaces(frameData) {
     VISUALIZERS_CONFIG.floating_surfaces.forEach((config, index) => {
       // Géométrie de surface flottante
-      const surfaceGeometry = new THREE.PlaneGeometry(16, 16);
+      const surfaceGeometry = new THREE.PlaneGeometry(15, 15);
       
       // Matériau HD avec texture du visualiseur
       const surfaceMaterial = new THREE.MeshPhongMaterial({
         map: renderTargets[config.name].texture,
         transparent: true,
         opacity: 0.9,
-        color: new THREE.Color(config.color).multiplyScalar(0.8),
-        emissive: new THREE.Color(config.color).multiplyScalar(0.3),
+        emissive: new THREE.Color(config.color).multiplyScalar(0.2),
         side: THREE.DoubleSide
       });
       
@@ -328,32 +282,15 @@ export function initMetaCubeOracleVisualizer(containerId) {
       surface.rotation.set(...config.rotation);
       
       // Cadre énergétique autour de la surface
-      const frameGeometry = new THREE.RingGeometry(8, 9, 32);
+      const frameGeometry = new THREE.RingGeometry(7.5, 8.5, 32);
       const frameMaterial = new THREE.MeshBasicMaterial({
         color: config.color,
         transparent: true,
-        opacity: 0.7,
+        opacity: 0.6,
         side: THREE.DoubleSide
       });
       const frame = new THREE.Mesh(frameGeometry, frameMaterial);
       surface.add(frame);
-      
-      // Particules autour de la surface
-      for (let p = 0; p < 10; p++) {
-        const particleGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-        const particleMaterial = new THREE.MeshBasicMaterial({
-          color: config.color,
-          transparent: true,
-          opacity: 0.6
-        });
-        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-        particle.position.set(
-          (Math.random() - 0.5) * 20,
-          (Math.random() - 0.5) * 20,
-          (Math.random() - 0.5) * 10
-        );
-        surface.add(particle);
-      }
       
       floatingSurfacesGroup.add(surface);
     });
@@ -400,18 +337,9 @@ export function initMetaCubeOracleVisualizer(containerId) {
     const scene = visualizerScenes[visualizerName];
     const time = cinematicTime;
     
-    // Nettoyer la scène (garder les lumières)
-    while (scene.children.length > 2) {
-      const child = scene.children[2];
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) {
-        if (Array.isArray(child.material)) {
-          child.material.forEach(mat => mat.dispose());
-        } else {
-          child.material.dispose();
-        }
-      }
-      scene.remove(child);
+    // Nettoyer la scène
+    while (scene.children.length > 2) { // Garder les lumières
+      scene.remove(scene.children[2]);
     }
     
     // Créer du contenu dynamique basé sur le type de visualiseur
@@ -449,9 +377,8 @@ export function initMetaCubeOracleVisualizer(containerId) {
   function createIcosahedronContent(scene, time) {
     const geometry = new THREE.IcosahedronGeometry(8, 1);
     const material = new THREE.MeshPhongMaterial({
-      color: new THREE.Color().setHSL((time * 0.1) % 1, 0.8, 0.6),
-      wireframe: Math.sin(time * 2) > 0,
-      emissive: new THREE.Color().setHSL((time * 0.1) % 1, 0.5, 0.2)
+      color: new THREE.Color().setHSL(time * 0.1, 0.8, 0.6),
+      wireframe: Math.sin(time * 2) > 0
     });
     const icosahedron = new THREE.Mesh(geometry, material);
     icosahedron.rotation.set(time * 0.5, time * 0.3, time * 0.7);
@@ -462,8 +389,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
     for (let i = 0; i < 8; i++) {
       const geometry = new THREE.BoxGeometry(2, 2, 2);
       const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color().setHSL((i / 8 + time * 0.1) % 1, 0.8, 0.6),
-        emissive: new THREE.Color().setHSL((i / 8 + time * 0.1) % 1, 0.3, 0.1)
+        color: new THREE.Color().setHSL((i / 8 + time * 0.1) % 1, 0.8, 0.6)
       });
       const cube = new THREE.Mesh(geometry, material);
       const angle = (i / 8) * Math.PI * 2 + time * 0.5;
@@ -481,8 +407,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
     for (let i = 0; i < 50; i++) {
       const geometry = new THREE.SphereGeometry(0.3, 8, 8);
       const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color().setHSL((i / 50 + time * 0.1) % 1, 1.0, 0.7),
-        emissive: new THREE.Color().setHSL((i / 50 + time * 0.1) % 1, 0.5, 0.2)
+        color: new THREE.Color().setHSL((i / 50 + time * 0.1) % 1, 1.0, 0.7)
       });
       const sphere = new THREE.Mesh(geometry, material);
       const t = i / 50 * Math.PI * 4 + time;
@@ -498,8 +423,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
   function createTorusContent(scene, time) {
     const geometry = new THREE.TorusGeometry(6, 2, 16, 100);
     const material = new THREE.MeshPhongMaterial({
-      color: new THREE.Color().setHSL((time * 0.1) % 1, 0.8, 0.6),
-      emissive: new THREE.Color().setHSL((time * 0.1) % 1, 0.3, 0.1)
+      color: new THREE.Color().setHSL(time * 0.1, 0.8, 0.6)
     });
     const torus = new THREE.Mesh(geometry, material);
     torus.rotation.set(time * 0.3, time * 0.5, time * 0.2);
@@ -511,8 +435,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
     const coreGeometry = new THREE.SphereGeometry(2, 32, 32);
     const coreMaterial = new THREE.MeshPhongMaterial({
       color: 0x00ffff,
-      emissive: 0x004444,
-      emissiveIntensity: 1.5
+      emissive: 0x004444
     });
     const core = new THREE.Mesh(coreGeometry, coreMaterial);
     scene.add(core);
@@ -520,10 +443,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
     // Tiges rotatives
     for (let i = 0; i < 4; i++) {
       const armGeometry = new THREE.CylinderGeometry(0.2, 0.2, 12, 8);
-      const armMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x888888,
-        emissive: 0x222222
-      });
+      const armMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
       const arm = new THREE.Mesh(armGeometry, armMaterial);
       const angle = (i / 4) * Math.PI * 2 + time * 2;
       arm.position.set(Math.cos(angle) * 6, 0, Math.sin(angle) * 6);
@@ -540,9 +460,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
     for (let i = 0; i < 20; i++) {
       const particleGeometry = new THREE.SphereGeometry(0.1, 8, 8);
       const particleMaterial = new THREE.MeshBasicMaterial({
-        color: new THREE.Color().setHSL(Math.random(), 1.0, 0.8),
-        transparent: true,
-        opacity: 0.8
+        color: new THREE.Color().setHSL(Math.random(), 1.0, 0.8)
       });
       const particle = new THREE.Mesh(particleGeometry, particleMaterial);
       particle.position.set(
@@ -558,8 +476,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
     for (let i = 0; i < 3; i++) {
       const geometry = new THREE.TorusGeometry(4 + i * 2, 0.5, 8, 32);
       const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color().setHSL((i / 3 + time * 0.1) % 1, 0.8, 0.6),
-        emissive: new THREE.Color().setHSL((i / 3 + time * 0.1) % 1, 0.3, 0.1)
+        color: new THREE.Color().setHSL((i / 3 + time * 0.1) % 1, 0.8, 0.6)
       });
       const torus = new THREE.Mesh(geometry, material);
       torus.rotation.set(time * (0.3 + i * 0.1), time * (0.2 + i * 0.1), 0);
@@ -571,8 +488,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
     for (let i = 0; i < 30; i++) {
       const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
       const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color().setHSL((i / 30 + time * 0.2) % 1, 1.0, 0.7),
-        emissive: new THREE.Color().setHSL((i / 30 + time * 0.2) % 1, 0.5, 0.2)
+        color: new THREE.Color().setHSL((i / 30 + time * 0.2) % 1, 1.0, 0.7)
       });
       const token = new THREE.Mesh(geometry, material);
       const flow = time * 2 + i * 0.2;
@@ -590,9 +506,7 @@ export function initMetaCubeOracleVisualizer(containerId) {
     for (let i = 0; i < 40; i++) {
       const geometry = new THREE.SphereGeometry(0.2, 8, 8);
       const material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color().setHSL((time * 0.1 + i * 0.025) % 1, 1.0, 0.8),
-        transparent: true,
-        opacity: 0.8
+        color: new THREE.Color().setHSL((time * 0.1 + i * 0.025) % 1, 1.0, 0.8)
       });
       const particle = new THREE.Mesh(geometry, material);
       const stream = time + i * 0.1;
@@ -605,137 +519,17 @@ export function initMetaCubeOracleVisualizer(containerId) {
     }
   }
 
-  // Variables pour optimisation ultime
-  let isRendering = false;
-  let frameSkipCounter = 0;
-  const FRAME_SKIP = 2; // Render 1 frame sur 3
-  let workerQueue = [];
-
-  // Remplacement complet de la fonction animateMetaCubeOracle
-  function animateMetaCubeOracle() {
-    if (!animationId || !scene || !renderer || isRendering) return;
-    
-    animationId = requestAnimationFrame(animateMetaCubeOracle);
-    
-    // OPTIMISATION ULTIME: Skip frames pour performance
-    frameSkipCounter++;
-    if (frameSkipCounter < FRAME_SKIP) {
-      return;
-    }
-    frameSkipCounter = 0;
-    
-    isRendering = true;
-    
-    // MINIMAL: Seulement les animations essentielles
-    updateEssentialAnimations();
-    
-    // Rendu principal SEULEMENT
-    renderer.render(scene, camera);
-    
-    isRendering = false;
-    
-    // Déléguer le travail lourd au prochain cycle
-    if (workerQueue.length > 0) {
-      setTimeout(() => {
-        processHeavyWork();
-      }, 0);
-    }
-  }
-
-  function updateEssentialAnimations() {
-    const time = Date.now() * 0.0005; // Plus lent
-    
-    // MINIMAL: Seulement le cube central
-    if (metaCubeGroup && cachedFrameData && cachedFrameData.metacube) {
-      metaCubeGroup.rotation.y = time;
-      
-      // Pulsation simple
-      const scale = 1 + Math.sin(time * 2) * 0.02;
-      metaCubeGroup.scale.setScalar(scale);
-    }
-    
-    // MINIMAL: Caméra simple
-    camera.position.x = Math.cos(time) * 40;
-    camera.position.z = Math.sin(time) * 40;
-    camera.lookAt(0, 0, 0);
-  }
-
-  function processHeavyWork() {
-    // Traitement lourd en dehors de requestAnimationFrame
-    const task = workerQueue.shift();
-    if (task) {
-      switch (task.type) {
-        case 'updateTextures':
-          updateSingleTexture(task.visualizerName);
-          break;
-        case 'updateMetrics':
-          updateEntropyMetrics(task.data);
-          break;
-      }
-    }
-  }
-
-  function updateSingleTexture(visualizerName) {
-    if (!visualizerScenes[visualizerName] || !renderTargets[visualizerName]) return;
-    
-    // Contenu minimal pour texture
-    const scene = visualizerScenes[visualizerName];
-    const time = Date.now() * 0.001;
-    
-    // Nettoyer rapidement
-    while (scene.children.length > 2) {
-      scene.remove(scene.children[2]);
-    }
-    
-    // Ajouter UN seul objet simple
-    const geometry = new THREE.SphereGeometry(4, 8, 8); // Low poly
-    const material = new THREE.MeshBasicMaterial({
-      color: new THREE.Color().setHSL((time * 0.1) % 1, 0.8, 0.6)
-    });
-    const sphere = new THREE.Mesh(geometry, material);
-    sphere.rotation.y = time;
-    scene.add(sphere);
-    
-    // Rendu vers texture
-    renderer.setRenderTarget(renderTargets[visualizerName]);
-    renderer.render(scene, visualizerCameras[visualizerName]);
-    renderer.setRenderTarget(null);
-  }
-
-  // Planifier les tâches lourdes
-  function scheduleHeavyWork() {
-    const configs = [...VISUALIZERS_CONFIG.cube_faces, ...VISUALIZERS_CONFIG.floating_surfaces];
-    const randomConfig = configs[Math.floor(Math.random() * configs.length)];
-    
-    workerQueue.push({
-      type: 'updateTextures',
-      visualizerName: randomConfig.name
-    });
-    
-    // Programmer la prochaine tâche
-    setTimeout(scheduleHeavyWork, 200); // Toutes les 200ms
-  }
-
-  // Démarrer le planificateur
-  scheduleHeavyWork();
-
-  // Simplifier drastiquement la mise à jour des données
   function updateMetaCubeAnimation() {
     const currentTime = Date.now();
     
-    // ULTRA OPTIMISÉ: Fetch très rare
-    if (currentTime - lastFetchTime > 2000) { // 2 secondes au lieu de 500ms
+    // OPTIMISATION: Fetch seulement toutes les 500ms
+    if (currentTime - lastFetchTime > FETCH_INTERVAL) {
       fetch("/api/geometry/metacube_oracle/animate")
         .then(res => res.json())
         .then(data => {
           if (data.frames && data.frames.length > 0) {
             cachedFrameData = data.frames[0];
-            
-            // Planifier la mise à jour des métriques
-            workerQueue.push({
-              type: 'updateMetrics',
-              data: cachedFrameData
-            });
+            updateEntropyMetrics(cachedFrameData);
           }
         })
         .catch(error => {
@@ -743,175 +537,64 @@ export function initMetaCubeOracleVisualizer(containerId) {
         });
       lastFetchTime = currentTime;
     }
+    
+    // Utiliser les données mises en cache pour l'animation fluide
+    if (cachedFrameData) {
+      animateWithCachedData(cachedFrameData);
+    }
   }
 
-  // Appeler la mise à jour séparément
-  setInterval(updateMetaCubeAnimation, 2000);
+  function animateWithCachedData(frameData) {
+    cinematicTime = Date.now() * 0.001;
+    
+    // Animation cinématographique du cube central
+    if (metaCubeGroup && frameData.metacube) {
+      metaCubeGroup.rotation.x = frameData.metacube.rotation[0] + cinematicTime * 0.2;
+      metaCubeGroup.rotation.y = frameData.metacube.rotation[1] + cinematicTime * 0.3;
+      metaCubeGroup.rotation.z = frameData.metacube.rotation[2] + cinematicTime * 0.1;
+      
+      // Pulsation basée sur l'entropie
+      const scale = frameData.metacube.scale[0] + Math.sin(cinematicTime * 2) * 0.05;
+      metaCubeGroup.scale.setScalar(scale);
+    }
+    
+    // Animation des surfaces flottantes
+    if (floatingSurfacesGroup) {
+      floatingSurfacesGroup.children.forEach((surface, index) => {
+        surface.rotation.x += 0.005 * (index + 1);
+        surface.rotation.y += 0.008 * (index + 1);
+        
+        // Mouvement orbital
+        const orbit = cinematicTime * 0.1 + index * Math.PI * 2 / 3;
+        const radius = 25 + Math.sin(cinematicTime + index) * 5;
+        surface.position.x = Math.cos(orbit) * radius;
+        surface.position.z = Math.sin(orbit) * radius;
+        surface.position.y = Math.sin(cinematicTime * 0.5 + index) * 10;
+      });
+    }
+  }
 
-  // --- Remplace la fonction animateMetaCubeOracle ---
   function animateMetaCubeOracle() {
     if (!animationId || !scene || !renderer) return;
-
+    
     animationId = requestAnimationFrame(animateMetaCubeOracle);
-
-    const currentTime = performance.now();
-
-    // OPTIMISATION: Limitation FPS pour réduire la charge
-    if (currentTime - lastFrameTime < FRAME_INTERVAL) {
-      return; // Skip cette frame
-    }
-    lastFrameTime = currentTime;
-
-    // OPTIMISATION: Rendu des visualiseurs par batch (2 par frame)
-    renderVisualizersInBatches();
-
+    
+    // Rendu des visualiseurs vers les textures HD
+    renderVisualizersToTextures();
+    
     // Animation continue optimisée
     updateMetaCubeAnimation();
-
-    // Caméra cinématographique
-    updateCinematicCamera();
-
-    // Rendu principal
-    renderer.render(scene, camera);
-
-    // Surveillance des performances
-    monitorPerformance();
-  }
-
-  // --- Nouvelle fonction pour batch rendering ---
-  function renderVisualizersInBatches() {
-    const configs = [...VISUALIZERS_CONFIG.cube_faces, ...VISUALIZERS_CONFIG.floating_surfaces];
-    const batchSize = 2; // Seulement 2 visualiseurs par frame
-    const frameIndex = Math.floor(cinematicTime * TARGET_FPS) % Math.ceil(configs.length / batchSize);
-
-    const startIndex = frameIndex * batchSize;
-    const endIndex = Math.min(startIndex + batchSize, configs.length);
-
-    for (let i = startIndex; i < endIndex; i++) {
-      const config = configs[i];
-      if (visualizerScenes[config.name] && visualizerCameras[config.name] && renderTargets[config.name]) {
-        updateVisualizerContentOptimized(config.name);
-
-        renderer.setRenderTarget(renderTargets[config.name]);
-        renderer.render(visualizerScenes[config.name], visualizerCameras[config.name]);
-      }
-    }
-
-    renderer.setRenderTarget(null);
-  }
-
-  // --- Nouvelle fonction pour updateVisualizerContentOptimized ---
-  function updateVisualizerContentOptimized(visualizerName) {
-    const scene = visualizerScenes[visualizerName];
-    const time = cinematicTime;
-    const existingObjects = scene.children.slice(2);
-
-    switch (visualizerName) {
-      case 'icosahedron':
-        updateIcosahedronOptimized(scene, existingObjects, time);
-        break;
-      case 'cubes':
-        updateCubesOptimized(scene, existingObjects, time);
-        break;
-      case 'spiral_simple':
-      case 'spiral_torus':
-      case 'centrifuge_laser':
-      case 'centrifuge_laser_v2':
-      case 'torus_spring':
-      case 'crypto_token_river':
-      case 'stream':
-        updateGenericOptimized(scene, existingObjects, time);
-        break;
-      default:
-        updateGenericOptimized(scene, existingObjects, time);
-    }
-  }
-
-  function updateIcosahedronOptimized(scene, existingObjects, time) {
-    let icosahedron = existingObjects[0];
-
-    if (!icosahedron) {
-      // Créer seulement si n'existe pas
-      const geometry = new THREE.IcosahedronGeometry(8, 1);
-      const material = new THREE.MeshPhongMaterial({
-        color: 0xff0000,
-        wireframe: false
-      });
-      icosahedron = new THREE.Mesh(geometry, material);
-      scene.add(icosahedron);
-    }
-
-    // Mise à jour des propriétés seulement
-    icosahedron.rotation.set(time * 0.5, time * 0.3, time * 0.7);
-    icosahedron.material.color.setHSL((time * 0.1) % 1, 0.8, 0.6);
-    icosahedron.material.wireframe = Math.sin(time * 2) > 0;
-  }
-
-  function updateCubesOptimized(scene, existingObjects, time) {
-    const targetCount = 8;
-
-    // Réutiliser ou créer les cubes
-    for (let i = 0; i < targetCount; i++) {
-      let cube = existingObjects[i];
-
-      if (!cube) {
-        const geometry = new THREE.BoxGeometry(2, 2, 2);
-        const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
-        cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
-      }
-
-      // Mise à jour position et rotation
-      const angle = (i / targetCount) * Math.PI * 2 + time * 0.5;
-      cube.position.set(
-        Math.cos(angle) * 6,
-        Math.sin(angle) * 6,
-        Math.sin(time + i) * 3
-      );
-      cube.rotation.set(time + i, time * 0.7 + i, time * 0.3 + i);
-      cube.material.color.setHSL((i / targetCount + time * 0.1) % 1, 0.8, 0.6);
-      cube.visible = true;
-    }
-
-    // Masquer les cubes en excès
-    for (let i = targetCount; i < existingObjects.length; i++) {
-      if (existingObjects[i]) {
-        existingObjects[i].visible = false;
-      }
-    }
-  }
-
-  function updateGenericOptimized(scene, existingObjects, time) {
-    // Contenu générique optimisé pour les autres visualiseurs
-    if (existingObjects.length === 0) {
-      const geometry = new THREE.SphereGeometry(4, 16, 16);
-      const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color().setHSL(time * 0.1, 0.8, 0.6)
-      });
-      const sphere = new THREE.Mesh(geometry, material);
-      scene.add(sphere);
-    } else {
-      const sphere = existingObjects[0];
-      sphere.rotation.y = time * 0.5;
-      sphere.material.color.setHSL((time * 0.1) % 1, 0.8, 0.6);
-      sphere.visible = true;
-    }
-    // Masquer les objets en excès
-    for (let i = 1; i < existingObjects.length; i++) {
-      if (existingObjects[i]) {
-        existingObjects[i].visible = false;
-      }
-    }
-  }
-
-  function updateCinematicCamera() {
-    // OPTIMISATION: Caméra moins fréquente
-    const time = Date.now() * 0.0001; // Plus lent
-    const radius = 50 + Math.sin(time * 0.5) * 15; // Mouvement réduit
+    
+    // Caméra cinématographique style Inception
+    const time = Date.now() * 0.0002;
+    const radius = 50 + Math.sin(time * 0.5) * 20;
     camera.position.x = Math.cos(time) * radius;
-    camera.position.y = Math.sin(time * 0.7) * 15;
+    camera.position.y = Math.sin(time * 0.7) * 20;
     camera.position.z = Math.sin(time) * radius;
     camera.lookAt(0, 0, 0);
+    
+    // Rendu principal
+    renderer.render(scene, camera);
   }
 
   // Gestion du redimensionnement
@@ -932,8 +615,6 @@ export function initMetaCubeOracleVisualizer(containerId) {
   onWindowResize();
 
   function cleanup() {
-    console.log("METACUBE_ORACLE: Cleanup critique appelé");
-    
     if (animationId) {
       cancelAnimationFrame(animationId);
       animationId = null;
@@ -1025,8 +706,6 @@ export function initMetaCubeOracleVisualizer(containerId) {
     cachedFrameData = null;
     lastFetchTime = 0;
     cinematicTime = 0;
-    
-    console.log("METACUBE_ORACLE: Cleanup critique terminé");
   }
 
   return {

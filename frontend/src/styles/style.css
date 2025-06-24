@@ -491,6 +491,72 @@ html, body {
     color: #ffffff;
 }
 
+/* Contrôles diaporama */
+.slideshow-controls {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.slideshow-controls button {
+    padding: 10px 18px;
+    font-size: 14px;
+    min-width: 140px;
+    transition: all 0.3s ease;
+}
+
+.slideshow-controls button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: linear-gradient(135deg, #004466 0%, #0066aa 100%);
+}
+
+.version-indicator {
+    display: flex;
+    align-items: center;
+    color: #00ffff;
+    font-weight: bold;
+    margin-left: 15px;
+    padding: 8px 16px;
+    background: rgba(0, 255, 255, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+#current-version-display {
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+
+/* Animation pour les transitions */
+#metacube-oracle-3d {
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* Responsive pour playlist */
+@media (max-width: 768px) {
+    .slideshow-controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .slideshow-controls button {
+        min-width: 200px;
+    }
+    
+    .version-indicator {
+        margin-left: 0;
+        margin-top: 10px;
+        text-align: center;
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
 /* Animation kaléidoscope */
 @keyframes kaleidoscope-rotation {
     0% { transform: rotate(0deg); }
