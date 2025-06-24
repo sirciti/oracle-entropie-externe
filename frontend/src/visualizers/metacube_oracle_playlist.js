@@ -200,16 +200,27 @@ export function initMetaCubeOraclePlaylist(containerId) {
       const statusText = isPlaylistRunning ? '🎵' : '⏸️';
       versionDisplay.textContent = `${statusText} ${config.name} (${currentVersion + 1}/4)`;
     }
+  }
 
-    // Mettre à jour les métriques d'entropie si disponibles
+  // Ajouter ou remplacer la fonction updateEntropyMetrics :
+  function updateEntropyMetrics(frameData) {
+    shannonEntropy = frameData.shannon_entropy || 0;
+    entropyAccumulator = frameData.entropy_accumulator || 0;
+
+    // Synchroniser favicon WAwa avec entropie
+    if (window.WAwaFaviconAnimator) {
+      window.WAwaFaviconAnimator.syncWithEntropy(shannonEntropy);
+    }
+
+    // Mise à jour de l'affichage dans l'interface
     const shannonDisplay = document.getElementById('shannon-entropy-display');
     const accumulatorDisplay = document.getElementById('entropy-accumulator-display');
     
     if (shannonDisplay) {
-      shannonDisplay.textContent = (Math.random() * 5 + 0.5).toFixed(4);
+      shannonDisplay.textContent = shannonEntropy.toFixed(4);
     }
     if (accumulatorDisplay) {
-      accumulatorDisplay.textContent = (Math.random() * 10 + 5).toFixed(2);
+      accumulatorDisplay.textContent = entropyAccumulator.toFixed(2);
     }
   }
 

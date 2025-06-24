@@ -13,7 +13,7 @@ import { initCentrifugeLaserVisualizer } from './visualizers/centrifuge_laser_vi
 import { initCryptoTokenRiverVisualizer } from './visualizers/crypto_token_river_visualizer.js';
 import { initCentrifugeLaserV2Visualizer } from './visualizers/centrifuge_laser_v2_visualizer.js'; // 1. Ajout import
 import { initMetaCubeOraclePlaylist } from './visualizers/metacube_oracle_playlist.js'; // Import
-
+import './favicon-animator.js';
 
 // Déclarer les variables globales en haut du fichier
 let icosahedronVisualizer = null;
