@@ -1,254 +1,287 @@
-
-
 # ⚛️ Oracle d'Entropie Quantique-Géométrique 🎲
 
-## Générateur d'Entropie Cryptographique Avancé avec Visualisations 3D Immersives
+[![Build Status](https://img.shields.io/github/actions/workflow/status/username/oracle-entropie-externe/ci.yml?branch=main)](https://github.com/username/oracle-entropie-externe/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/username/oracle-entropie-externe)](https://codecov.io/gh/username/oracle-entropie-externe)
+[![License](https://img.shields.io/github/license/username/oracle-entropie-externe)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
+[![Node.js](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](Dockerfile)
+
+> Générateur d'entropie cryptographique révolutionnaire avec visualisations 3D immersives et système de playlist MetaCube Oracle
 
-## 🌟 Vision et Innovation
+## 📜 Description
+
+**Oracle d'Entropie Quantique-Géométrique** est un générateur d'entropie de nouvelle génération qui fusionne **12 sources d'aléa** (météo géolocalisée, géométries dynamiques, simulation quantique) pour produire des nombres aléatoires et tokens cryptographiquement sûrs de qualité exceptionnelle.
 
-Ce projet révolutionnaire développe un Oracle d'Entropie de nouvelle génération qui fusionne physique quantique, géométrie dynamique et données du monde réel pour créer la source d'entropie cryptographique la plus robuste et imprévisible jamais conçue.  
-Objectif Principal : Créer un système d'entropie moderne, innovant, robuste et hyper sécurisé capable de générer des clés cryptographiques, tokens sécurisés et nombres aléatoires de qualité exceptionnelle pour applications critiques.
+### 🎯 Cas d'Usage
+- **Cybersécurité** : Clés cryptographiques inviolables
+- **Blockchain & Web3** : Seeds et wallets ultra-sécurisés  
+- **Intelligence Artificielle** : Initialisation de réseaux neuronaux
+- **Gaming & NFT** : Génération procédurale imprévisible
 
-## 🎯 Cas d'Usage Révolutionnaires
+## 🚀 Fonctionnalités Clés
 
-* Cybersécurité Avancée : Génération de clés cryptographiques inviolables  
-* Blockchain & Web3 : Seeds et wallets ultra-sécurisés  
-* Intelligence Artificielle : Initialisation de réseaux neuronaux  
-* Simulations Quantiques : Recherche scientifique de pointe  
-* Gaming & NFT : Génération procédurale imprévisible  
-* IoT Sécurisé : Authentification distribuée
+### 🔐 Génération d'Entropie
+- **Générateur hexadécimal** avec entropie Shannon ~5.0 (qualité cryptographique maximale)
+- **Tokens sécurisés** personnalisables (longueur, composition, complexité)
+- **API RESTful** pour intégration système
+- **Standards conformes** : NIST SP 800-90B, FIPS 140-2
 
-## 🌐 Architecture d'Entropie Multi-Sources
+### 🌀 Visualisations 3D Révolutionnaires
+- **12 Visualiseurs interactifs** : Icosaèdre, Cubes, Spirales, Centrifugeuses Laser, Tore-Ressorts
+- **MetaCube Oracle Kaléidoscopique** : Fusion de tous les visualiseurs en système unifié
+- **Système de playlist** : 4 versions (Optimisée 30fps, Cinématographique 60fps, HD, Ultra)
+- **Contrôles avancés** : Start/Stop/Playlist/Version suivante
 
-## Sources Primaires d'Entropie
+### ⚡ Performance & Qualité
+- **Rendu optimisé** : WebGL 2.0, object pooling, rendu par batch
+- **Qualité HD/4K** : Render targets jusqu'à 1024x1024
+- **Métriques temps réel** : Entropie Shannon, accumulateur, signatures quantiques
 
-1. Données Météo Géolocalisées \- Fluctuations atmosphériques temps réel (température, pression, humidité, vent) de multiples stations mondiales  
-2. Entropie Temporelle Quantique \- Fusion de timestamps de fuseaux horaires mondiaux avec micro-variations  
-3. Bruit Système Cryptographique \- Aléa OS combiné avec événements hardware  
-4. Simulation Quantique \- Décohérence et intrication via nœuds quantiques simulés
+## 🏗️ Architecture
 
-## Sources Géométriques Révolutionnaires
+oracle-entropie-externe/
+├── backend/ # API Flask Python
+│ ├── app.py # Point d'entrée
+│ ├── entropy_oracle.py # Orchestrateur principal
+│ ├── geometry/ # 12 générateurs géométriques
+│ │ ├── icosahedron/ # Icosaèdre dynamique
+│ │ ├── metacube_oracle/ # Fusion révolutionnaire
+│ │ └── ...
+│ ├── sources/ # Sources d'entropie
+│ └── tests/ # Tests Pytest
+├── frontend/ # Interface Vite + Three.js
+│ ├── src/
+│ │ ├── visualizers/ # 12 visualiseurs 3D
+│ │ ├── styles/ # CSS modulaire
+│ │ └── main.js
+│ └── tests/ # Tests Playwright E2E
+├── docker-compose.yml # Orchestration containers
+├── .github/workflows/ # CI/CD GitHub Actions
+└── docs/ # Documentation technique
 
-5. Icosaèdre Dynamique \- Évolution chaotique avec subdivision fractale  
-6. Cubes Rebondissants \- Système physique avec collisions et billes internes  
-7. Spirales Quantiques \- Géométrie simple et torus avec entropie rotationnelle  
-8. Centrifugeuses Laser \- V1 et V2 avec explosions atomiques et particules  
-9. Tore-Ressorts \- Oscillations complexes multi-axes  
-10. CryptoTokenRiver \- Flux de tokens avec dynamique fluviale  
-11. Stream Entropique \- Particules en mouvement brownien
 
-## Innovation : MetaCube Oracle Kaléidoscopique
 
-12. Fusion Révolutionnaire \- Système unifié combinant tous les visualiseurs en un cube central avec surfaces flottantes  
-13. Playlist Automatique \- 4 versions (Optimisée, Cinématographique, HD, Ultra) avec alternance intelligente  
-14. Qualité Cinématographique \- Rendu style Inception avec effets visuels spectaculaires
+## 🛠️ Installation & Déploiement
 
-## ⚡ Fonctionnalités Avancées
+### 📋 Prérequis
+- **Python** 3.11+
+- **Node.js** 18+ (LTS)
+- **Docker** & Docker Compose (optionnel)
+- **Git**
 
-## Génération d'Entropie
+### 🚀 Démarrage Rapide
 
-* Générateur Hexadécimal \- Nombres aléatoires cryptographiquement sûrs  
-* Outil Tokens Sécurisés \- Génération personnalisable (longueur, composition, complexité)  
-* API Cryptographique \- Endpoints RESTful pour intégration système  
-* Métriques Shannon \- Calcul d'entropie en temps réel (\~5.0 \= qualité maximale)
+#### Option 1: Installation Locale
+1. Cloner le projet
+git clone https://github.com/username/oracle-entropie-externe.git
+cd oracle-entropie-externe
 
-## Visualisations 3D Immersives
+2. Backend Python
+cd backend
+python -m venv venv
+source venv/bin/activate # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
 
-* 12 Visualiseurs Interactifs \- Chacun contribuant à l'entropie globale  
-* MetaCube Oracle \- Système révolutionnaire de fusion visuelle  
-* Contrôles Utilisateur \- Start/Stop/Playlist/Version suivante  
-* Performance Optimisée \- 30-60 FPS selon mode (Optimisé/Cinématographique)  
-* Qualité HD/4K \- Render targets jusqu'à 1024x1024
+3. Frontend Node.js (nouveau terminal)
+cd frontend
+npm install
+npm run dev
 
-## Interface Utilisateur Révolutionnaire
+4. Accès
+Frontend: http://localhost:5173
+Backend API: http://localhost:5000
 
-* Navigation Intuitive \- Basculement fluide entre visualiseurs  
-* Métriques Temps Réel \- Entropie Shannon, accumulateur, signatures quantiques  
-* Système de Playlist \- Diaporama automatique avec contrôles avancés  
-* Design Futuriste \- Interface glassmorphisme avec effets visuels
 
-## 🏗️ Architecture Technique Moderne
+#### Option 2: Docker Compose (Recommandé)
+Démarrage complet
+docker-compose up -d
 
-## Backend Python Robuste
+Logs en temps réel
+docker-compose logs -f
 
-* Framework : Flask avec architecture modulaire  
-* Performance : Optimisations asyncio et multiprocessing  
-* Sécurité : Chiffrement bout-en-bout, validation stricte  
-* Monitoring : Logs structurés, métriques de performance  
-* APIs : RESTful avec documentation OpenAPI/Swagger
+Arrêt
+docker-compose down
 
-Stack Technique :
 
-`Python 3.11+ | Flask | NumPy | SciPy | Cryptography`  
-`Requests | PyTZ | HashLib | Secrets | Flask-CORS`  
-`Pytest | Coverage | Black | Flake8 | MyPy`
 
-Structure Modulaire :
+### 🔧 Configuration
 
-`backend/`  
-`├── app.py                 # Point d'entrée Flask`  
-`├── config.json           # Configuration système`  
-`├── entropy_oracle.py     # Orchestrateur principal`  
-`├── geometry/             # Générateurs géométriques`  
-`│   ├── icosahedron/      # Icosaèdre dynamique`  
-`│   ├── cubes/           # Cubes rebondissants`  
-`│   ├── metacube_oracle/ # Fusion révolutionnaire`  
-`│   └── common.py        # Utilitaires partagés`  
-`├── sources/             # Sources d'entropie`  
-`│   ├── weather_data.py  # Données météo`  
-`│   ├── temporal_entropy.py # Entropie temporelle`  
-`│   └── quantum_nodes.py # Simulation quantique`  
-`└── tests/              # Suite de tests complète`
+Variables d'environnement
+cp .env.example .env
 
-## Frontend JavaScript Moderne
+Éditer .env avec vos paramètres
+Configuration backend
+cp backend/config.example.json backend/config.json
 
-* Framework : Vite avec Hot Module Replacement  
-* Rendu 3D : Three.js r160+ avec optimisations WebGL  
-* Performance : Object pooling, rendu par batch, limitation FPS  
-* UX : Interface responsive, contrôles gestuels  
-* Qualité : Rendu HD/4K, effets post-processing
+Ajouter vos clés API météo
 
-Stack Technique :
 
-`Vite | Three.js | ES Modules | WebGL 2.0`  
-`CSS3 Grid/Flexbox | Playwright | ESLint | Prettier`
+## 📋 Usage
 
-Structure Organisée :
+### 🖥️ Interface Web
+1. **Accédez** à http://localhost:5173
+2. **Naviguez** entre les visualiseurs via la barre latérale
+3. **Contrôlez** le MetaCube Oracle avec les boutons playlist
+4. **Générez** des tokens via l'outil interne
 
-`frontend/`  
-`├── index.html           # Page principale`  
-`├── src/`  
-`│   ├── styles/         # CSS modulaire`  
-`│   ├── visualizers/    # 12 visualiseurs 3D`  
-`│   │   ├── metacube_oracle_playlist.js # Système playlist`  
-`│   │   └── metacube_oracle_visualizer.js # Fusion révolutionnaire`  
-`│   ├── utils/          # Utilitaires Three.js`  
-`│   └── main.js         # Point d'entrée`  
-`└── tests/             # Tests Playwright E2E`
+### 🔌 API REST
 
-## 🚀 Innovations Techniques Révolutionnaires
+Génération d'entropie
+curl http://localhost:5000/api/entropy/generate
 
-## MetaCube Oracle Kaléidoscopique
+Données géométriques
+curl http://localhost:5000/api/geometry/icosahedron/animate
 
-* Architecture Unique : Cube central 6 faces \+ 3 surfaces flottantes \= 9 visualiseurs  
-* Rendu Temps Réel : Chaque face affiche un visualiseur différent en HD  
-* Effet Kaléidoscope : Triangulation hexagonale avec miroirs et symétries  
-* Fusion d'Entropie : Combinaison de toutes les sources via Shannon
+MetaCube Oracle
+curl http://localhost:5000/api/geometry/metacube_oracle/animate
 
-## Système de Playlist Intelligent
+Documentation complète
+curl http://localhost:5000/api/docs
 
-* 4 Versions Optimisées :  
-  * Optimisée : 30 FPS, 256x256, performance maximale  
-  * Cinématographique : 60 FPS, 512x512, qualité HD  
-  * Ultra HD : 60 FPS, 1024x1024, qualité 4K  
-  * Expérimentale : Effets avancés, recherche  
-* Alternance Automatique : 15 secondes par version  
-* Contrôles Avancés : Playlist, pause, version suivante, indicateurs
 
-## Optimisations Performance
 
-* WebGL Optimisé : Un seul contexte, rendu par batch  
-* Memory Management : Cleanup automatique, object pooling  
-* FPS Adaptatif : Limitation intelligente selon performance  
-* Lazy Loading : Import dynamique des visualiseurs
+### 📊 Métriques & Monitoring
 
-## 📊 Métriques de Qualité Cryptographique
+Health check
+curl http://localhost:5000/health
 
-## Standards Respectés
+Métriques Prometheus
+curl http://localhost:5000/metrics
 
-* NIST SP 800-90B : Validation sources d'entropie  
-* ITU-T X.1702 : Standards quantiques internationaux  
-* TEC 91020:2024 : Spécifications QRNG indiennes  
-* FIPS 140-2 : Sécurité cryptographique
+Logs structurés
+docker-compose logs backend | jq
 
-## Métriques Temps Réel
 
-* Entropie Shannon : \~5.0 (qualité cryptographique maximale)  
-* Min-Entropy : \>0.98 (selon standards QRNG)  
-* Débit : 1-100 Mbps selon configuration  
-* Latence : \<10ms pour génération token
 
-## 🛠️ DevOps et Déploiement
+## 🧪 Tests & Qualité
 
-## Containerisation
+### 🔬 Tests Backend
+cd backend
+pytest tests/ -v --cov=. --cov-report=html
 
-`Docker Compose | Multi-stage builds`  
-`Nginx reverse proxy | SSL/TLS automatique`  
-`Health checks | Auto-scaling`
 
-## CI/CD Pipeline
 
-`GitHub Actions | Tests automatisés`  
-`Quality gates | Security scanning`  
-`Deployment automatique | Monitoring`
+### 🌐 Tests Frontend E2E
+cd frontend
+npm run test:e2e
 
-## Monitoring et Observabilité
 
-* Logs Structurés : JSON avec correlation IDs  
-* Métriques : Prometheus \+ Grafana  
-* Alerting : Détection anomalies entropie  
-* Tracing : Suivi performance end-to-end
 
-## 🔒 Sécurité et Conformité
+### 📈 Qualité Code
+Linting & Formatting
+black backend/
+flake8 backend/
+mypy backend/
 
-## Sécurité Cryptographique
+Frontend
+npm run lint
+npm run format
 
-* Chiffrement : AES-256, RSA-4096, ECDSA  
-* Hachage : BLAKE2b, SHA-3, Argon2  
-* Validation : Tests statistiques NIST  
-* Audit : Logs immutables, signatures
 
-## Protection Infrastructure
 
-* WAF : Protection DDoS, injection  
-* HTTPS : TLS 1.3 obligatoire  
-* CORS : Politique stricte  
-* Rate Limiting : Protection surcharge
+### 🚀 CI/CD Pipeline
+- **Tests automatisés** sur chaque PR
+- **Quality gates** : couverture >90%, sécurité, performance
+- **Déploiement automatique** sur merge main
+- **Monitoring** continu post-déploiement
 
-## 📈 Roadmap et Évolutions
+## 📊 Performance & Métriques
 
-## Phase 1 : Stabilisation (Q1 2025\)
+### 🎯 Métriques Cryptographiques
+- **Entropie Shannon** : ~5.0 (qualité maximale)
+- **Min-Entropy** : >0.98 (standards QRNG)
+- **Débit** : 1-100 Mbps selon configuration
+- **Latence** : <10ms génération token
 
-* ✅ MetaCube Oracle fonctionnel  
-* ✅ Système playlist opérationnel  
-* ✅ 12 visualiseurs intégrés  
-* ✅ Performance optimisée
+### ⚡ Performance Technique
+- **Backend** : 1000+ req/s (Flask + Gunicorn)
+- **Frontend** : 30-60 FPS selon mode
+- **Mémoire** : <512MB par container
+- **Startup** : <30s démarrage complet
 
-## Phase 2 : Extension (Q2 2025\)
+## 🔒 Sécurité
 
-* 🔄 Interface admin configuration  
-* 🔄 API GraphQL avancée  
-* 🔄 Intégration blockchain  
-* 🔄 Mobile app companion
+### 🛡️ Mesures Implémentées
+- **Chiffrement** : AES-256, RSA-4096, ECDSA
+- **HTTPS** : TLS 1.3 obligatoire
+- **CORS** : Politique stricte
+- **Rate Limiting** : Protection surcharge
+- **Validation** : Tests statistiques NIST
 
-## Phase 3 : Innovation (Q3 2025\)
+### 🔍 Audit & Conformité
+- **Standards** : NIST SP 800-90B, FIPS 140-2
+- **Logs** : Immutables avec signatures
+- **Monitoring** : Détection anomalies temps réel
 
-* 🔮 IA/ML pour prédiction qualité  
-* 🔮 Quantum computing réel  
-* 🔮 Edge computing distribué  
-* 🔮 Certification internationale
+## 🤝 Contribution
 
-## 🎯 Avantages Concurrentiels
+### 📝 Guidelines
+1. **Fork** le projet
+2. **Créez** une branche feature (`git checkout -b feature/amazing-feature`)
+3. **Commitez** vos changements (`git commit -m 'feat: add amazing feature'`)
+4. **Pushez** la branche (`git push origin feature/amazing-feature`)
+5. **Ouvrez** une Pull Request
 
-## Technique
+### 🔄 Workflow
+- **Issues** : Bugs, features, questions
+- **PR Template** : Description, tests, documentation
+- **Code Review** : Obligatoire avant merge
+- **Conventional Commits** : feat, fix, docs, style, refactor
 
-* Unique au Monde : Fusion 12 sources géométriques  
-* Qualité Exceptionnelle : Shannon \~5.0 constant  
-* Performance : Optimisations GPU avancées  
-* Modulaire : Architecture extensible
+### 🧪 Standards Qualité
+- **Tests** : Couverture >90%
+- **Documentation** : Code commenté, README à jour
+- **Performance** : Pas de régression
+- **Sécurité** : Scan automatique
 
-## Business
+## 📚 Documentation
 
-* Open Source : Transparence totale  
-* Standards : Conformité internationale  
-* Scalable : Architecture cloud-native  
-* Innovant : Visualisations révolutionnaires
+- **[CdC Technique](docs/cahier-des-charges.md)** : Spécifications complètes
+- **[API Reference](docs/api.md)** : Documentation endpoints
+- **[Architecture](docs/architecture.md)** : Diagrammes système
+- **[Deployment](docs/deployment.md)** : Guide production
 
-## 🏆 Conclusion
+## 📈 Roadmap
 
-L'Oracle d'Entropie Quantique-Géométrique représente une révolution dans la génération d'entropie cryptographique. Combinant innovation technique, qualité visuelle et robustesse cryptographique, il établit un nouveau standard pour les applications sécurisées de demain.  
-Vision : Devenir la référence mondiale pour la génération d'entropie cryptographique avec une expérience utilisateur exceptionnelle et une qualité inégalée.  
+### 🎯 Version Actuelle (v2.0)
+- ✅ MetaCube Oracle fonctionnel
+- ✅ Système playlist 4 versions
+- ✅ 12 visualiseurs intégrés
+- ✅ Performance optimisée
+
+### 🔮 Prochaines Versions
+- **v2.1** : Interface admin configuration
+- **v2.2** : API GraphQL avancée  
+- **v3.0** : Intégration blockchain native
+- **v3.1** : Mobile app companion
+
+## 📄 Licence
+
+Ce projet est sous licence **MIT** - voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## 👥 Équipe
+
+- **Lead Developer** : [Votre nom](https://github.com/username)
+- **Contributors** : Voir [CONTRIBUTORS.md](CONTRIBUTORS.md)
+
+## 🙏 Remerciements
+
+- **Three.js** : Moteur de rendu 3D exceptionnel
+- **Flask** : Framework web Python robuste
+- **Communauté Open Source** : Inspiration et support
+
 ---
 
-*Projet développé avec passion pour repousser les limites de la cryptographie moderne et de la visualisation 3D interactive.*  
-🚀 Ready for the Future of Cryptographic Entropy\! 🚀  
+## 📞 Support
+
+- **Issues** : [GitHub Issues](https://github.com/username/oracle-entropie-externe/issues)
+- **Discussions** : [GitHub Discussions](https://github.com/username/oracle-entropie-externe/discussions)
+- **Email** : support@oracle-entropie.dev
+
+---
+
+<div align="center">
+
+**🚀 Ready for the Future of Cryptographic Entropy! 🚀**
