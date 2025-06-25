@@ -200,6 +200,14 @@ html, body {
     visibility: visible !important;
 }
 
+#stream-visualizer-3d {
+    min-width: 800px !important;
+    min-height: 600px !important;
+    width: 800px !important;
+    height: 600px !important;
+    display: block !important;
+}
+
 /* Canvas Three.js */
 [id$="-3d"] canvas {
     display: block;

@@ -384,38 +384,72 @@
     <script type="module" src="/src/main.js"></script>
     <script type="module" src="/src/visualizers/centrifuge_laser_v2_visualizer.js"></script>
     <script>
-document.getElementById('nav-admin-interface').addEventListener('click', () => {
-    document.querySelectorAll('.interface-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('admin-interface').classList.add('active');
-    document.querySelectorAll('.nav-button').forEach(b => b.classList.remove('active'));
-    document.getElementById('nav-admin-interface').classList.add('active');
-});
-
-// Navigation universelle pour TOUS les boutons
-document.querySelectorAll('.nav-button').forEach(button => {
-    button.addEventListener('click', () => {
-        // Masquer toutes les sections
-        document.querySelectorAll('.interface-section').forEach(section => {
-            section.classList.remove('active');
+// NAVIGATION UNIVERSELLE UNIQUE - Solution définitive
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser la première section
+    document.getElementById('main-interface').style.display = 'flex';
+    document.getElementById('nav-main').classList.add('active');
+    
+    // Navigation universelle pour TOUS les boutons
+    document.querySelectorAll('.nav-button').forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Déclarer targetId correctement
+            let targetId = this.id.replace('nav-', '');
+            
+            // Nettoyage complet avant changement
+            if (window.streamTokenInterval) {
+                clearInterval(window.streamTokenInterval);
+                window.streamTokenInterval = null;
+            }
+            if (window.streamAnimationId) {
+                cancelAnimationFrame(window.streamAnimationId);
+                window.streamAnimationId = null;
+            }
+            if (window.currentAnimation) {
+                cancelAnimationFrame(window.currentAnimation);
+                window.currentAnimation = null;
+            }
+            
+            // Reset admin
+            if (document.getElementById('admin-interface').style.display === 'flex') {
+                document.body.style.overflow = 'auto';
+                document.body.style.position = 'static';
+            }
+            
+            // Masquer TOUTES les sections
+            document.querySelectorAll('.interface-section').forEach(section => {
+                section.style.display = 'none';
+                section.style.visibility = 'hidden';
+                section.classList.remove('active');
+            });
+            
+            // Correspondance ID correcte
+            if (targetId !== 'admin-interface') {
+                targetId = targetId + '-interface';
+            }
+            
+            // Afficher la section cible
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.style.display = 'flex';
+                targetSection.style.visibility = 'visible';
+                targetSection.classList.add('active');
+                
+                // Force refresh pour visualiseurs 3D
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 150);
+            }
+            
+            // Mettre à jour boutons actifs
+            document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            console.log('DEBUG: Changement vers section:', targetId);
         });
-        
-        // Correspondance ID correcte
-        let targetId = button.id.replace('nav-', '');
-        if (targetId === 'admin-interface') {
-            targetId = 'admin-interface'; 
-        } else {
-            targetId = targetId + '-interface'; // Ajouter -interface
-        }
-        
-        // Afficher la section
-        const targetSection = document.getElementById(targetId);
-        if (targetSection) {
-            targetSection.classList.add('active');
-        }
-        
-        // Boutons actifs
-        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
     });
 });
 </script>
@@ -546,6 +580,59 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
         });
+    });
+});
+</script>
+<script>
+// Ajoutez ceci dans la fonction de navigation, juste AVANT d'afficher la nouvelle section cible
+// (par exemple, après avoir masqué toutes les sections et avant targetSection.style.display = 'flex';)
+
+if (targetId !== 'stream-interface') {
+    // Nettoyage complet du visualiseur Stream
+    if (window.streamTokenInterval) {
+        clearInterval(window.streamTokenInterval);
+        window.streamTokenInterval = null;
+    }
+    if (window.streamAnimationId) {
+        cancelAnimationFrame(window.streamAnimationId);
+        window.streamAnimationId = null;
+    }
+    if (window.streamTokens) {
+        window.streamTokens = [];
+    }
+}
+</script>
+<script>
+// CORRIGÉ : Navigation universelle avec gestion correcte de targetId et reset admin
+document.querySelectorAll('.nav-button').forEach(button => {
+    button.addEventListener('click', function(event) {
+        event.stopPropagation();
+
+        let targetId = this.id.replace('nav-', ''); // DÉCLARER targetId ici
+
+        // Reset admin
+        if (document.getElementById('admin-interface').style.display === 'flex') {
+            document.body.style.overflow = 'auto';
+        }
+
+        // Masquer toutes les sections
+        document.querySelectorAll('.interface-section').forEach(section => {
+            section.style.display = 'none';
+        });
+
+        // Afficher la section cible
+        if (targetId !== 'admin-interface') {
+            targetId = targetId + '-interface';
+        }
+
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+            targetSection.style.display = 'flex';
+        }
+
+        // Boutons actifs
+        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
     });
 });
 </script>
