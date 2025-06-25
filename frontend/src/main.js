@@ -14,6 +14,8 @@ import { initCryptoTokenRiverVisualizer } from './visualizers/crypto_token_river
 import { initCentrifugeLaserV2Visualizer } from './visualizers/centrifuge_laser_v2_visualizer.js'; // 1. Ajout import
 import { initMetaCubeOraclePlaylist } from './visualizers/metacube_oracle_playlist.js'; // Import
 import './favicon-animator.js';
+import './admin/admin-interface.js';
+
 
 // Déclarer les variables globales en haut du fichier
 let icosahedronVisualizer = null;
@@ -294,6 +296,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (navMetaCubeOracleButton) {
         navMetaCubeOracleButton.addEventListener('click', () => showSection('metacube-oracle-interface'));
     }
+
+    // Gestion bouton admin
+    document.getElementById('nav-admin-interface').addEventListener('click', () => {
+        document.querySelectorAll('.interface-section').forEach(section => {
+            section.classList.add('hidden');
+        });
+        document.getElementById('admin-interface').classList.remove('hidden');
+    });
+
 
     // 2. Gérer les boutons Start/Stop Animation pour les visualiseurs 3D (définis dans showSection)
     const setupToggleButtonForVisualizer = (buttonId, visualizerGetter) => {

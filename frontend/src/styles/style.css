@@ -65,25 +65,14 @@ html, body {
 
 /* Styles pour toutes les sections d'interface */
 .interface-section {
+    display: none;
+    position: relative;
     width: 100%;
-    max-width: 800px;
-    background-color: #1e1e1e;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    text-align: center;
-    box-sizing: border-box;
-    margin-bottom: 20px;
-    display: none; /* Cachées par défaut */
-    flex-direction: column;
-    align-items: center;
-    flex-grow: 1;
-    min-height: 0;
-}
-
-/* Afficher la section active */
-.interface-section:not(.hidden) {
-    display: flex;
+    min-height: 100vh;
+    z-index: 1;
+    overflow-y: auto;
+    min-width: 800px;
+    min-height: 600px;
 }
 
 /* Cartes de contenu */
@@ -193,30 +182,26 @@ html, body {
     color: #f44336;
 }
 
-/* Conteneurs 3D */
-#icosahedron-3d,
-#icosahedron-3d-cubes,
-#stream-visualizer-3d,
-#icosahedron-3d-spiral-torus {
+/* Conteneurs 3D - dimensions forcées */
+[id$="-3d"] {
     background-color: #181818;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
+    width: 800px !important;
+    height: 600px !important;
     flex-grow: 1;
     margin: 0 auto;
     overflow: hidden;
-    min-height: 200px;
-    height: 400px;
+    min-height: 400px;
+    position: relative !important;
+    visibility: visible !important;
 }
 
 /* Canvas Three.js */
-#icosahedron-3d canvas,
-#icosahedron-3d-cubes canvas,
-#stream-visualizer-3d canvas,
-#icosahedron-3d-spiral-torus canvas {
+[id$="-3d"] canvas {
     display: block;
     max-width: 100%;
     max-height: 100%;
@@ -225,139 +210,20 @@ html, body {
     border-radius: 8px;
 }
 
-/* Conteneurs 3D pour les spirales */
-#spiral-simple-3d,
-#spiral-torus-3d {
-    background-color: #181818;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    flex-grow: 1;
-    margin: 0 auto;
-    overflow: hidden;
-    min-height: 200px;
-    height: 400px;
-}
-
-/* Canvas Three.js pour les spirales */
-#spiral-simple-3d canvas,
-#spiral-torus-3d canvas {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    margin: auto;
-    background: transparent;
-    border-radius: 8px;
-}
-
-/* Forcer les dimensions même quand la section parent est cachée */
-.interface-section.hidden #spiral-simple-3d,
-.interface-section.hidden #spiral-torus-3d {
-    width: 800px;
-    height: 400px;
-    position: absolute;
-    top: -9999px;
-    visibility: hidden;
-}
-
-#torus-spring-3d {
-    background-color: #181818;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    flex-grow: 1;
-    margin: 0 auto;
-    overflow: hidden;
-    min-height: 200px;
-    height: 400px;
-}
-
-#torus-spring-3d canvas {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    margin: auto;
-    background: transparent;
-    border-radius: 8px;
-}
-
+/* Styles spécifiques pour certains visualiseurs */
 #centrifuge-laser-3d {
     background-color: #050505;
-    border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 255, 255, 0.3);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    flex-grow: 1;
-    margin: 0 auto;
-    overflow: hidden;
-    min-height: 200px;
-    height: 400px;
-}
-
-#centrifuge-laser-3d canvas {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    margin: auto;
-    background: transparent;
-    border-radius: 8px;
 }
 
 #crypto-token-river-3d {
     background: linear-gradient(135deg, #000011 0%, #001122 100%);
-    border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 255, 255, 0.2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    flex-grow: 1;
-    margin: 0 auto;
-    overflow: hidden;
-    min-height: 200px;
-    height: 400px;
 }
-
-#crypto-token-river-3d canvas {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    margin: auto;
-    background: transparent;
-    border-radius: 8px;
-}
-
 
 #centrifuge-laser-v2-3d {
     background: linear-gradient(135deg, #000000 0%, #001122 50%, #000000 100%);
-    border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    flex-grow: 1;
-    margin: 0 auto;
-    overflow: hidden;
-    min-height: 200px;
-    height: 400px;
-}
-
-#centrifuge-laser-v2-3d canvas {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    margin: auto;
-    background: transparent;
-    border-radius: 8px;
 }
 
 /* MetaCube Oracle Kaléidoscopique */
@@ -367,26 +233,11 @@ html, body {
     box-shadow: 
         0 0 50px rgba(0, 255, 255, 0.3),
         inset 0 0 30px rgba(0, 100, 200, 0.1);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    flex-grow: 1;
-    margin: 0 auto;
-    overflow: hidden;
-    min-height: 400px;
-    height: 500px;
-    position: relative;
-    perspective: 1600px; /* Pour l'effet 3D */
+    perspective: 1600px;
+    height: 500px !important;
 }
 
 #metacube-oracle-3d canvas {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    margin: auto;
-    background: transparent;
-    border-radius: 12px;
     filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.4));
 }
 
@@ -535,9 +386,27 @@ html, body {
 /* Animation pour les transitions */
 #metacube-oracle-3d {
     transition: opacity 0.5s ease-in-out;
+    animation: entropy-pulse 4s ease-in-out infinite;
 }
 
-/* Responsive pour playlist */
+/* Animations */
+@keyframes kaleidoscope-rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes entropy-pulse {
+    0%, 100% { 
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
+        transform: scale(1.02);
+    }
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .slideshow-controls {
         flex-direction: column;
@@ -555,34 +424,9 @@ html, body {
         padding: 6px 12px;
         font-size: 12px;
     }
-}
-
-/* Animation kaléidoscope */
-@keyframes kaleidoscope-rotation {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-@keyframes entropy-pulse {
-    0%, 100% { 
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-        transform: scale(1);
-    }
-    50% { 
-        box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
-        transform: scale(1.02);
-    }
-}
-
-/* Effet de pulsation pour le conteneur 3D */
-#metacube-oracle-3d {
-    animation: entropy-pulse 4s ease-in-out infinite;
-}
-
-/* Responsive pour MetaCube Oracle */
-@media (max-width: 768px) {
+    
     #metacube-oracle-3d {
-        height: 350px;
+        height: 350px !important;
         min-height: 300px;
     }
     
@@ -618,3 +462,15 @@ html, body {
     position: relative;
     z-index: 2;
 }
+
+/* Interface admin */
+#admin-interface {
+    position: relative !important;
+    z-index: 10 !important;
+    background: #000 !important;
+    min-width: 800px !important;
+    min-height: 600px !important;
+}
+
+/* Import styles admin */
+@import url('./admin.css');

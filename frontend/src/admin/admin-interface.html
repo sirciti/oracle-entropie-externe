@@ -1,0 +1,152 @@
+<!-- Interface Admin -->
+<div id="admin-interface" class="interface-section hidden">
+    <div class="admin-container">
+        <!-- Header Admin -->
+        <div class="admin-header">
+            <h2 class="admin-title">🎛️ Interface Admin Oracle d'Entropie</h2>
+            <div class="admin-status">
+                <span class="status-indicator active"></span>
+                <span>Système Opérationnel</span>
+            </div>
+        </div>
+
+        <!-- Dashboard Principal -->
+        <div class="admin-dashboard">
+            <!-- Métriques Temps Réel -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Entropie Shannon</h3>
+                    <div class="metric-value" id="admin-shannon">5.0000</div>
+                    <div class="metric-trend up">+0.12%</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Qualité Cryptographique</h3>
+                    <div class="metric-value" id="admin-quality">98.7%</div>
+                    <div class="metric-trend up">+0.05%</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Sources Actives</h3>
+                    <div class="metric-value" id="admin-sources">12/12</div>
+                    <div class="metric-trend stable">Stable</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Débit Entropie</h3>
+                    <div class="metric-value" id="admin-throughput">47.3 Mbps</div>
+                    <div class="metric-trend up">+2.1%</div>
+                </div>
+            </div>
+
+            <!-- Graphique Performance -->
+            <div class="performance-chart">
+                <h3>Performance Temps Réel</h3>
+                <canvas id="admin-chart" width="800" height="300"></canvas>
+            </div>
+        </div>
+
+        <!-- Configuration Sources -->
+        <div class="admin-config">
+            <h3>Configuration Sources d'Entropie</h3>
+            <div class="config-grid">
+                <!-- Sources Météo -->
+                <div class="config-section">
+                    <h4>🌤️ Sources Météorologiques</h4>
+                    <div class="config-controls">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="weather-enabled" checked>
+                            <span class="slider"></span>
+                            <span class="label">Données Météo Actives</span>
+                        </label>
+                        <div class="config-detail">
+                            <label>Stations: <span id="weather-stations">5</span></label>
+                            <input type="range" id="weather-stations-slider" min="1" max="10" value="5">
+                        </div>
+                        <div class="config-detail">
+                            <label>Fréquence: <span id="weather-freq">30s</span></label>
+                            <input type="range" id="weather-freq-slider" min="10" max="300" value="30">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sources Quantiques -->
+                <div class="config-section">
+                    <h4>⚛️ Simulation Quantique</h4>
+                    <div class="config-controls">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="quantum-enabled" checked>
+                            <span class="slider"></span>
+                            <span class="label">Nœuds Quantiques Actifs</span>
+                        </label>
+                        <div class="config-detail">
+                            <label>Nœuds: <span id="quantum-nodes">8</span></label>
+                            <input type="range" id="quantum-nodes-slider" min="1" max="16" value="8">
+                        </div>
+                        <div class="config-detail">
+                            <label>Décohérence: <span id="quantum-decoherence">0.85</span></label>
+                            <input type="range" id="quantum-decoherence-slider" min="0.1" max="1" step="0.05" value="0.85">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sources Géométriques -->
+                <div class="config-section">
+                    <h4>🔷 Géométries Dynamiques</h4>
+                    <div class="config-controls">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="geometry-enabled" checked>
+                            <span class="slider"></span>
+                            <span class="label">Visualiseurs 3D Actifs</span>
+                        </label>
+                        <div class="config-detail">
+                            <label>Résolution: <span id="geometry-resolution">512x512</span></label>
+                            <select id="geometry-resolution-select">
+                                <option value="256">256x256</option>
+                                <option value="512" selected>512x512</option>
+                                <option value="1024">1024x1024</option>
+                            </select>
+                        </div>
+                        <div class="config-detail">
+                            <label>FPS Target: <span id="geometry-fps">30</span></label>
+                            <input type="range" id="geometry-fps-slider" min="15" max="60" value="30">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoring Système -->
+        <div class="admin-monitoring">
+            <h3>Monitoring Système</h3>
+            <div class="monitoring-grid">
+                <div class="monitor-card">
+                    <h4>Performance GPU</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 67%"></div>
+                    </div>
+                    <span>67% Utilisation</span>
+                </div>
+                <div class="monitor-card">
+                    <h4>Mémoire Système</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 43%"></div>
+                    </div>
+                    <span>43% Utilisée</span>
+                </div>
+                <div class="monitor-card">
+                    <h4>Réseau Backend</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 23%"></div>
+                    </div>
+                    <span>23% Charge</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Admin -->
+        <div class="admin-actions">
+            <button class="admin-button primary" id="save-config">💾 Sauvegarder Configuration</button>
+            <button class="admin-button secondary" id="reset-config">🔄 Réinitialiser</button>
+            <button class="admin-button warning" id="export-logs">📊 Exporter Logs</button>
+            <button class="admin-button danger" id="emergency-stop">🚨 Arrêt d'Urgence</button>
+        </div>
+    </div>
+</div>
