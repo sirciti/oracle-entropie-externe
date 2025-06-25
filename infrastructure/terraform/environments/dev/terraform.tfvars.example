@@ -1,0 +1,15 @@
+# Exemple de configuration DEV
+# Copier vers terraform.tfvars et adapter
+
+aws_region = "eu-west-3"
+
+allowed_cidr_blocks = [
+  "0.0.0.0/0"  # Ouvert en dev - À restreindre en prod
+]
+
+instance_types = {
+  frontend   = "t3.micro"
+  backend    = "t3.micro" 
+  monitoring = "t3.small"
+  database   = "db.t3.micro"
+}
