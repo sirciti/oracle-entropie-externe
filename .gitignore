@@ -185,3 +185,11 @@ requirements.txt
 frontend/node_modules/.vite/deps/
 # Playwright test results
 frontend/test-results/
+
+# Terraform local state
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+*.tfplan
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
