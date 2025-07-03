@@ -34,6 +34,11 @@ docker stop $OLD_TRAEFIK_NAME 2>/dev/null || true
 docker rm -f $OLD_TRAEFIK_NAME 2>/dev/null || true
 echo -e "${GREEN}✅ Ancien Traefik supprimé définitivement${NC}"
 
+echo -e "${BLUE}### ÉTAPE 2B: SUPPRESSION DU NOUVEAU TRAEFIK S'IL EXISTE DÉJÀ ###${NC}"
+echo -e "${YELLOW}Suppression du conteneur Traefik (nouveau) s'il existe déjà...${NC}"
+docker stop $NEW_TRAEFIK_NAME 2>/dev/null || true
+docker rm -f $NEW_TRAEFIK_NAME 2>/dev/null
+
 echo -e "${BLUE}### ÉTAPE 3: NETTOYAGE COMPLET DE L'ENVIRONNEMENT DOCKER ###${NC}"
 echo -e "${YELLOW}Nettoyage des conteneurs, réseaux, volumes et images...${NC}"
 docker system prune -af --volumes
