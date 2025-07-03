@@ -1,3 +1,5 @@
+# docker-compose.dev.yml
+
 services:
   backend:
     build: ./backend
@@ -18,7 +20,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - backend
     healthcheck:
