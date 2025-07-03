@@ -1,4 +1,3 @@
-# docker-compose.yml
 services:
   backend:
     build: ./backend
@@ -15,6 +14,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    labels:
+      - "app=oracle-backend"
 
   frontend:
     build: ./frontend
@@ -27,6 +28,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    labels:
+      - "app=oracle-frontend"
 
 networks:
   default:

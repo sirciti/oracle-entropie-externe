@@ -17,6 +17,7 @@ NEW_TRAEFIK_NAME="traefik-oracle"
 APP_NETWORK="oracle-network"
 APP_DOMAIN="quantum-oracle-entropie.duckdns.org"
 ACME_EMAIL="votre.email@domaine.com" # IMPORTANT: Mettez votre email ici
+FRONTEND_LABEL="app=oracle-frontend"
 
 # --- Couleurs pour les messages ---
 RED='\033[0;31m'
@@ -85,8 +86,12 @@ sleep 15
 echo -e "${YELLOW}--- État final des conteneurs ---${NC}"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
+# Détection dynamique du conteneur frontend par label
+FRONTEND_CONTAINER=$(docker ps -q -f "label=${FRONTEND_LABEL}")
+FRONTEND_CONTAINER_NAME=$(docker ps --filter "label=${FRONTEND_LABEL}" --format "{{.Names}}" | head -n1)
+
 echo -e "${YELLOW}--- Vérification de la configuration réseau ---${NC}"
-NETWORK_CONTAINERS=$(docker network inspect $APP_NETWORK 2>/dev/null | grep -E "(oracle-frontend|$NEW_TRAEFIK_NAME)" | wc -l)
+NETWORK_CONTAINERS=$(docker network inspect $APP_NETWORK 2>/dev/null | grep -E "(${FRONTEND_CONTAINER_NAME}|$NEW_TRAEFIK_NAME)" | wc -l)
 if [ "$NETWORK_CONTAINERS" -ge 2 ]; then
     echo -e "${GREEN}✅ Traefik et Frontend sont connectés au réseau ${APP_NETWORK}${NC}"
 else
@@ -94,10 +99,14 @@ else
 fi
 
 echo -e "${YELLOW}--- Test de connectivité interne au frontend ---${NC}"
-if docker exec oracle-frontend curl -s --head http://localhost | grep -q "200\|HTTP"; then
-    echo -e "${GREEN}✅ Le conteneur frontend répond correctement${NC}"
+if [ -n "$FRONTEND_CONTAINER" ]; then
+    if docker exec $FRONTEND_CONTAINER curl -s --head http://localhost | grep -q "200\|HTTP"; then
+        echo -e "${GREEN}✅ Le conteneur frontend répond correctement${NC}"
+    else
+        echo -e "${RED}⚠️  Le conteneur frontend ne répond pas${NC}"
+    fi
 else
-    echo -e "${RED}⚠️  Le conteneur frontend ne répond pas${NC}"
+    echo -e "${RED}⚠️  Aucun conteneur frontend détecté (label=${FRONTEND_LABEL})${NC}"
 fi
 
 echo -e "${YELLOW}--- Vérification des logs Traefik récents ---${NC}"
