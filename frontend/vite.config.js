@@ -1,15 +1,12 @@
-// frontend/vite.config.js
-import { defineConfig } from "vite";
-// import { sentryVitePlugin } from "@sentry/vite-plugin"; // optionnel
-import { fileURLToPath, URL } from "url";
+// vite.config.js
 
-export default defineConfig({
+export default {
   server: {
     host: true,
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "http://127.0.0.1:5000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
@@ -17,7 +14,6 @@ export default defineConfig({
     hmr: {
       overlay: true,
     },
-    // hmr: false, // pour désactiver le hot reload
   },
   root: "./",
   build: {
@@ -27,20 +23,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@sentry/browser": "@sentry/browser",
-      "three": fileURLToPath(new URL("./node_modules/three", import.meta.url)),
-      // Ajoute d’autres alias personnalisés ici si besoin
-      // Exemple : "@": "/src",
+      // Si tu utilises "three" dans ton code, tu peux garder l'alias ci-dessous,
+      // sinon tu peux l'enlever si ça pose problème dans Docker.
+      // "three": "/node_modules/three",
     },
   },
   optimizeDeps: {
     include: ["three"],
   },
-  // plugins: [
-  //   sentryVitePlugin({
-  //     org: "TON_ORG",
-  //     project: "TON_PROJECT",
-  //     authToken: "TON_AUTH_TOKEN",
-  //     // Autres options Sentry…
-  //   }),
-  // ],
-});
+};

@@ -1,9 +1,9 @@
 import numpy as np
 import random
-import logging # Ajouter le logging
+import logging
 from typing import List, Dict, Any
 
-logger = logging.getLogger(__name__) # Logger pour ce module
+logger = logging.getLogger(__name__)
 
 class CubeGenerator:
     """
@@ -11,9 +11,9 @@ class CubeGenerator:
     Crée des cubes avec des billes internes, avec positions et vitesses aléatoires.
     """
     def __init__(self):
-        self.max_velocity = 1.5 
+        self.max_velocity = 1.5
 
-    def generate_cubes_system(self, num_cubes: int = 3, cube_size: float = 8.0, 
+    def generate_cubes_system(self, num_cubes: int = 3, cube_size: float = 8.0,
                               num_balls_per_cube: int = 3, space_bounds: float = 30.0) -> List[Dict[str, Any]]:
         cubes = []
         cube_spawn_limit = space_bounds / 2 - cube_size / 2
@@ -45,7 +45,7 @@ class CubeGenerator:
                 "balls": []
             }
 
-            half_cube_limit = (cube_size / 2.0) - (cube_size / 8.0) # Espace pour les billes à l'intérieur
+            half_cube_limit = (cube_size / 2.0) - (cube_size / 8.0)
             ball_radius = cube_size / 8.0
 
             for j in range(num_balls_per_cube):
@@ -63,47 +63,15 @@ class CubeGenerator:
                     "id": j,
                     "position": ball_pos,
                     "radius": ball_radius,
-                    "color": [1.0, 0.0, 0.0], # <-- CORRECTION : Billes rouges
+                    "color": [1.0, 0.0, 0.0],
                     "velocity": ball_vel
                 })
-            
+
             cubes.append(cube_data)
 
         logger.info(f"Génération du système de {num_cubes} cubes avec {num_balls_per_cube} billes/cube terminée.")
         return cubes
 
-    def generate_cubes_system_v2(self, num_cubes=3, cube_size=8.0, num_balls_per_cube=3, space_bounds=30.0):
-        cubes = []
-        for _ in range(num_cubes):
-            cube = {
-                'position': [
-                    np.random.uniform(-space_bounds, space_bounds),
-                    np.random.uniform(-space_bounds, space_bounds),
-                    np.random.uniform(-space_bounds, space_bounds)
-                ],
-                'rotation': [
-                    np.random.uniform(0, 2*np.pi),
-                    np.random.uniform(0, 2*np.pi),
-                    np.random.uniform(0, 2*np.pi)
-                ],
-                'size': cube_size,
-                'balls': []
-            }
-            # ... génération des balls ...
-            cubes.append(cube)
-        return cubes
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    generator = CubeGenerator()
-    cubes_system = generator.generate_cubes_system(num_cubes=3, cube_size=8.0, num_balls_per_cube=3, space_bounds=30.0)
-    print(f"Système de cubes généré : {len(cubes_system)} cubes")
-    for i, cube in enumerate(cubes_system):
-        print(f"\nCube {i+1}:")
-        print(f"   Position: {cube['position']}")
-        print(f"   Taille: {cube['size']}")
-        print(f"   Vitesse: {cube['velocity']}")
-        print(f"   Vitesse angulaire: {cube['angular_velocity']}")
-        print(f"   {len(cube['balls'])} billes:")
-        for j, ball in enumerate(cube['balls']):
-            print(f"     Bille {j+1}: Position={ball['position']}, Vitesse={ball['velocity']}, Rayon={ball['radius']}, Couleur={ball['color']}")
+# --- ALIAS POUR COMPATIBILITÉ AVEC LE RESTE DU PROJET ---
+def generate_cubes_data(*args, **kwargs):
+    return CubeGenerator().generate_cubes_system(*args, **kwargs)

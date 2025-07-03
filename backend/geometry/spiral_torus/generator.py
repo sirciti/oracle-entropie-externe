@@ -66,3 +66,8 @@ def generate_toroidal_spiral_system(
             })
 
     return system
+
+
+def generate_spiral_torus_data(*args, **kwargs):
+    # Appelle la vraie fonction ou lève une exception si non implémenté
+    raise NotImplementedError("Spiral torus non implémenté")
