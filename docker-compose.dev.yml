@@ -30,6 +30,10 @@ services:
       retries: 3
     labels:
       - "app=oracle-frontend"
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`quantum-oracle-entropie.duckdns.org`)"
+      - "traefik.http.routers.frontend.entrypoints=web,websecure"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
 networks:
   default:
