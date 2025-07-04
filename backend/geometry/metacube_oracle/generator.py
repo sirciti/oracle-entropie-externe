@@ -18,7 +18,7 @@ def safe_import_generator(module_path, function_name):
 # Imports sécurisés avec fallback
 generate_icosahedron_data = safe_import_generator('geometry.icosahedron.generator', 'generate_icosahedron_data')
 generate_cubes_data = safe_import_generator('geometry.cubes.generator', 'generate_cubes_data')
-generate_spiral_simple_data = safe_import_generator('geometry.spiral_simple.generator', 'generate_spiral_simple_data')
+generate_spiral_simple_data = safe_import_generator('geometry.spiral.generator', 'generate_spiral_simple_data')
 generate_spiral_torus_data = safe_import_generator('geometry.spiral_torus.generator', 'generate_spiral_torus_data')
 generate_centrifuge_laser_data = safe_import_generator('geometry.centrifuge_laser.generator', 'generate_centrifuge_laser_data')
 generate_centrifuge_laser_v2_data = safe_import_generator('geometry.centrifuge_laser_v2.generator', 'generate_centrifuge_laser_v2_data')
