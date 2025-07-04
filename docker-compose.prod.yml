@@ -1,5 +1,4 @@
 
-
 services:
   backend:
     build: ./backend
@@ -9,12 +8,9 @@ services:
       - FLASK_ENV=production
       - PYTHONPATH=/app
       - GUNICORN_CMD_ARGS=--timeout 120 --workers 3
-      # Ajoute ici d'autres variables d'environnement sensibles si besoin (ex: SENTRY_DSN, SECRET_KEY)
-    # En prod, on NE MONTE PAS le code source local !
-    # volumes:
-    #   - ./backend:/app   # <-- désactivé pour la prod
+      # Ajoute ici d'autres variables d'environnement (SENTRY_DSN, SECRET_KEY, etc.)
+    # Pas de volume en prod !
     healthcheck:
-      # Utilise une route existante et rapide pour vérifier la santé
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/geometry/icosahedron/initial"]
       interval: 30s
       timeout: 10s
