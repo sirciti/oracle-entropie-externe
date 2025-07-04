@@ -43,3 +43,7 @@ def generate_stream_tokens(length: int, char_options: dict, capacity_bytes: int)
     except Exception as e:
         logger.error(f"Erreur génération stream tokens: {e}")
         return {"error": str(e)}
+    
+def generate_stream_data(*args, **kwargs):
+    return generate_stream_tokens(*args, **kwargs)
+

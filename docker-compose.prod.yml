@@ -1,14 +1,10 @@
-
 services:
   backend:
     build: ./backend
-    
     environment:
       - FLASK_ENV=production
       - PYTHONPATH=/app
       - GUNICORN_CMD_ARGS=--timeout 120 --workers 3
-      # Ajoute ici d'autres variables d'environnement (SENTRY_DSN, SECRET_KEY, etc.)
-    # Pas de volume en prod !
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/geometry/icosahedron/initial"]
       interval: 30s
@@ -20,6 +16,8 @@ services:
       - "traefik.http.routers.backend.rule=Host(`quantum-oracle-entropie.duckdns.org`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=web,websecure"
       - "traefik.http.services.backend.loadbalancer.server.port=5000"
+    networks:
+      - oracle-network
 
   frontend:
     build: ./frontend
@@ -38,7 +36,9 @@ services:
       - "traefik.http.routers.frontend.rule=Host(`quantum-oracle-entropie.duckdns.org`)"
       - "traefik.http.routers.frontend.entrypoints=web,websecure"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    networks:
+      - oracle-network
 
 networks:
-  default:
-    name: oracle-entropie-
+  oracle-network:
+    external: true

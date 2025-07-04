@@ -103,3 +103,7 @@ def generate_torus_spring_system(
     except Exception as e:
         logger.error(f"Erreur génération torus-spring: {e}")
         return {"error": str(e)}
+
+
+def generate_torus_spring_data(*args, **kwargs):
+    return generate_torus_spring_system(*args, **kwargs)

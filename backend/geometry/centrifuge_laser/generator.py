@@ -104,3 +104,7 @@ def generate_centrifuge_laser_system(
     except Exception as e:
         logger.error(f"Erreur génération centrifuge laser: {e}")
         return {"error": str(e)}
+    
+def generate_centrifuge_laser_data(*args, **kwargs):
+    return generate_centrifuge_laser_system(*args, **kwargs)
+
