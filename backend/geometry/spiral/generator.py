@@ -40,6 +40,6 @@ def generate_spiral(
         return {"error": str(e)}
 
 # Ajoute cette ligne à la fin du fichier
-def generate_spiral_simple_data(*args, **kwargs):
+def generate_spiral_simple_initial(*args, **kwargs):
     return generate_spiral(*args, **kwargs)
 
