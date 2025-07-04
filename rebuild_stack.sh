@@ -1,12 +1,10 @@
 #!/bin/bash
 # =================================================================
-# SCRIPT DE REDÉPLOIEMENT ROBUSTE ET PERMANENT DE LA STACK
+# SCRIPT DE REDÉPLOIEMENT ROBUSTE ET PERMANENT DE LA STACK PROD
 # =================================================================
 # Auteur : sirciti
 # Date : 2025-07-01
-# Description : Ce script garantit un déploiement stable en gérant
-# tous les cas de corruption réseau, redémarrage Docker et problèmes
-# de cache Traefik, pour une solution constante et permanente.
+# Description : Déploiement stable, gestion réseau, Traefik, nettoyage.
 # =================================================================
 
 set -e # Arrête le script immédiatement si une commande échoue
@@ -18,6 +16,7 @@ APP_NETWORK="oracle-network"
 APP_DOMAIN="quantum-oracle-entropie.duckdns.org"
 ACME_EMAIL="votre.email@domaine.com" # IMPORTANT: Mettez votre email ici
 FRONTEND_LABEL="app=oracle-frontend"
+COMPOSE_FILE="docker-compose.prod.yml"
 
 # --- Couleurs pour les messages ---
 RED='\033[0;31m'
@@ -27,7 +26,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}### ÉTAPE 1: ARRÊT COMPLET DE LA STACK APPLICATIVE ###${NC}"
-docker-compose down --remove-orphans --volumes || true
+docker-compose -f $COMPOSE_FILE down --remove-orphans --volumes || true
 
 echo -e "${BLUE}### ÉTAPE 2: SUPPRESSION DÉFINITIVE DE L'ANCIEN TRAEFIK ###${NC}"
 echo -e "${YELLOW}Suppression du conteneur Traefik corrompu...${NC}"
@@ -77,7 +76,7 @@ echo -e "${GREEN}✅ Nouveau Traefik créé avec succès sur le réseau ${APP_NE
 
 echo -e "${BLUE}### ÉTAPE 7: DÉPLOIEMENT DE L'APPLICATION ###${NC}"
 echo -e "${YELLOW}Reconstruction des images et démarrage des services...${NC}"
-docker-compose up --build -d
+docker-compose -f $COMPOSE_FILE up --build -d
 
 echo -e "${BLUE}### ÉTAPE 8: VÉRIFICATIONS POST-DÉPLOIEMENT ###${NC}"
 echo -e "${YELLOW}Attente du démarrage des services (15 secondes)...${NC}"
