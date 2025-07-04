@@ -16,8 +16,8 @@ services:
       - "traefik.http.routers.backend.rule=Host(`quantum-oracle-entropie.duckdns.org`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=web,websecure"
       - "traefik.http.services.backend.loadbalancer.server.port=5000"
-      - "traefik.http.middlewares.api-strip.stripprefix.prefixes=/api"
-      - "traefik.http.routers.backend.middlewares=api-strip"
+      #- "traefik.http.middlewares.api-strip.stripprefix.prefixes=/api"
+      #- "traefik.http.routers.backend.middlewares=api-strip"
     networks:
       - oracle-network
 
