@@ -39,9 +39,7 @@ def generate_spiral(
         logger.error(f"Erreur dans generate_spiral : {e}")
         return {"error": str(e)}
 
-def generate_spiral_initial(*args, **kwargs):
+# Ajoute cette ligne à la fin du fichier
+def generate_spiral_simple_data(*args, **kwargs):
     return generate_spiral(*args, **kwargs)
 
-# --- ALIAS attendu par le backend ---
-def generate_spiral_simple_initial(*args, **kwargs):
-    return generate_spiral(*args, **kwargs)
