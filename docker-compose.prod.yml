@@ -13,8 +13,8 @@ services:
     labels:
       - "app=oracle-backend"
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`quantum-oracle-entropie.duckdns.org`) && Path(`/api/geometry/icosahedron/initial`)"
       - "traefik.http.routers.backend.entrypoints=web,websecure"
+      - "traefik.http.routers.backend.rule=Host(`quantum-oracle-entropie.duckdns.org`) && PathPrefix(`/api`)"
       - "traefik.http.services.backend.loadbalancer.server.port=5000"
       - "traefik.http.routers.backend.tls=true"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
