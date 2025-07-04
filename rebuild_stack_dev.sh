@@ -12,7 +12,12 @@ echo "Arrêt des conteneurs de développement..."
 docker-compose -f docker-compose.dev.yml down
 
 echo "---------------------------------------------"
+echo "Préparation du nginx.conf (dev) pour le frontend..."
+cp frontend/nginx.dev.conf frontend/nginx.conf
+
+echo "---------------------------------------------"
 echo "Rebuild et redémarrage de la stack dev..."
+docker-compose -f docker-compose.dev.yml build frontend
 docker-compose -f docker-compose.dev.yml up --build -d
 
 echo "---------------------------------------------"

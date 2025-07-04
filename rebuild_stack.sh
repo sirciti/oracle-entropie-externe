@@ -25,6 +25,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+echo -e "${BLUE}### ÉTAPE 0: PRÉPARATION DU nginx.conf (prod) POUR LE FRONTEND ###${NC}"
+cp frontend/nginx.prod.conf frontend/nginx.conf
+
 echo -e "${BLUE}### ÉTAPE 1: ARRÊT COMPLET DE LA STACK APPLICATIVE ###${NC}"
 docker-compose -f $COMPOSE_FILE down --remove-orphans --volumes || true
 
@@ -76,6 +79,7 @@ echo -e "${GREEN}✅ Nouveau Traefik créé avec succès sur le réseau ${APP_NE
 
 echo -e "${BLUE}### ÉTAPE 7: DÉPLOIEMENT DE L'APPLICATION ###${NC}"
 echo -e "${YELLOW}Reconstruction des images et démarrage des services...${NC}"
+docker-compose -f $COMPOSE_FILE build frontend
 docker-compose -f $COMPOSE_FILE up --build -d
 
 echo -e "${BLUE}### ÉTAPE 8: VÉRIFICATIONS POST-DÉPLOIEMENT ###${NC}"
