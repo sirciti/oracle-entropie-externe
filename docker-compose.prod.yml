@@ -32,6 +32,18 @@ services:
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
       - "--providers.file.directory=/data/dynamic"
       - "--providers.file.watch=true"
+    labels:
+      - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.security-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.security-headers.headers.stsSeconds=63072000"
+      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.security-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.security-headers.headers.referrerPolicy=same-origin"
+      - "traefik.http.middlewares.security-headers.headers.contentSecurityPolicy=default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; font-src 'self'; object-src 'none'; frame-src 'none';"
+      - "traefik.http.middlewares.rate-limit.rateLimit.average=100"
+      - "traefik.http.middlewares.rate-limit.rateLimit.burst=50"
 
   backend:
     build: ./backend
