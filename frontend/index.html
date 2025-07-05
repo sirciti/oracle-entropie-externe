@@ -383,19 +383,23 @@
     <script type="module" src="/src/views/internal_tool.js"></script>
     <script type="module" src="/src/main.js"></script>
     <script type="module" src="/src/visualizers/centrifuge_laser_v2_visualizer.js"></script>
-    <!-- Script consolidé pour la navigation et l'initialisation différée des visualiseurs 3D -->
-<script>
+    <script>
+// NAVIGATION UNIVERSELLE UNIQUE - Solution définitive
 document.addEventListener('DOMContentLoaded', function() {
-    // NAVIGATION UNIVERSELLE
+    // Initialiser la première section
     document.getElementById('main-interface').style.display = 'flex';
     document.getElementById('nav-main').classList.add('active');
-
+    
+    // Navigation universelle pour TOUS les boutons
     document.querySelectorAll('.nav-button').forEach(button => {
         button.addEventListener('click', function(event) {
             event.preventDefault();
             event.stopPropagation();
-
-            // Nettoyage des animations avant changement
+            
+            // Déclarer targetId correctement
+            let targetId = this.id.replace('nav-', '');
+            
+            // Nettoyage complet avant changement
             if (window.streamTokenInterval) {
                 clearInterval(window.streamTokenInterval);
                 window.streamTokenInterval = null;
@@ -408,85 +412,227 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelAnimationFrame(window.currentAnimation);
                 window.currentAnimation = null;
             }
-
-            // Reset admin (si applicable)
+            
+            // Reset admin
             if (document.getElementById('admin-interface').style.display === 'flex') {
                 document.body.style.overflow = 'auto';
                 document.body.style.position = 'static';
             }
-
-            // Masquer toutes les sections
+            
+            // Masquer TOUTES les sections
             document.querySelectorAll('.interface-section').forEach(section => {
                 section.style.display = 'none';
                 section.style.visibility = 'hidden';
                 section.classList.remove('active');
             });
-
-            // Définir targetId correctement
-            let targetId = this.id.replace('nav-', '');
+            
+            // Correspondance ID correcte
             if (targetId !== 'admin-interface') {
                 targetId = targetId + '-interface';
             }
-
+            
             // Afficher la section cible
             const targetSection = document.getElementById(targetId);
             if (targetSection) {
                 targetSection.style.display = 'flex';
                 targetSection.style.visibility = 'visible';
                 targetSection.classList.add('active');
-
-                // Forcer un resize pour les visualiseurs 3D
+                
+                // Force refresh pour visualiseurs 3D
                 setTimeout(() => {
                     window.dispatchEvent(new Event('resize'));
                 }, 150);
             }
-
-            // Mettre à jour les boutons actifs
+            
+            // Mettre à jour boutons actifs
             document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
-
+            
             console.log('DEBUG: Changement vers section:', targetId);
         });
     });
+});
+</script>
+<script>
+//  Navigation avec gestion performance
+let navigationLocked = false;
 
-    // INITIALISATION DIFFÉRÉE DES VISUALISEURS 3D
-    const visualizers = [
-        'icosahedron-3d',
-        'icosahedron-3d-cubes',
-        'spiral-simple-3d',
-        'icosahedron-3d-spiral-torus',
-        'torus-spring-3d',
-        'stream-visualizer-3d',
-        'centrifuge-laser-3d',
-        'centrifuge-laser-v2-3d',
-        'crypto-token-river-3d',
-        'metacube-oracle-3d'
-    ];
-
-    visualizers.forEach(vizId => {
-        const targetElement = document.getElementById(vizId);
-        if (targetElement) {
-            if (targetElement.offsetWidth > 0 && targetElement.offsetHeight > 0) {
-                console.log(`Dimensions prêtes, initialisation de ${vizId}`);
-                // Si une fonction globale d’initialisation existe, appelle-la ici
-                // Exemple : if (window.initializeVisualizer) window.initializeVisualizer(vizId);
-            } else {
-                console.log(`Dimensions non prêtes, observation de ${vizId}`);
-                const observer = new ResizeObserver(entries => {
-                    for (let entry of entries) {
-                        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
-                            console.log(`Dimensions maintenant prêtes, initialisation de ${vizId}`);
-                            // Si une fonction globale d’initialisation existe, appelle-la ici
-                            // Exemple : if (window.initializeVisualizer) window.initializeVisualizer(vizId);
-                            observer.disconnect(); // Arrêter l’observation une fois initialisé
-                        }
-                    }
-                });
-                observer.observe(targetElement);
-            }
-        } else {
-            console.error(`Élément ${vizId} non trouvé dans le DOM`);
+document.querySelectorAll('.nav-button').forEach(button => {
+    button.addEventListener('click', () => {
+        // Éviter les clics multiples rapides
+        if (navigationLocked) return;
+        navigationLocked = true;
+        
+        // Arrêter toutes les animations avant changement
+        if (window.currentAnimation) {
+            cancelAnimationFrame(window.currentAnimation);
         }
+        
+        // Navigation normale
+        document.querySelectorAll('.interface-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        let targetId = button.id.replace('nav-', '');
+        if (targetId !== 'admin-interface') {
+            targetId = targetId + '-interface';
+        }
+        
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
+        
+        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Débloquer après un délai
+        setTimeout(() => {
+            navigationLocked = false;
+        }, 100);
+    });
+});
+</script>
+<script>
+//  - Gestion des dimensions Three.js
+function initializeVisualizerWhenReady(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    
+    // Attendre que la section soit visible
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && 
+                mutation.attributeName === 'class' &&
+                section.classList.contains('active')) {
+                
+                // Section maintenant visible - forcer resize des visualiseurs
+                setTimeout(() => {
+                    const canvas3d = section.querySelector('[id$="-3d"]');
+                    if (canvas3d) {
+                        // Déclencher resize selon [4]
+                        window.dispatchEvent(new Event('resize'));
+                    }
+                }, 100);
+                
+                observer.disconnect();
+            }
+        });
+    });
+    
+    observer.observe(section, { attributes: true });
+}
+
+// Navigation universelle avec gestion 3D
+document.querySelectorAll('.nav-button').forEach(button => {
+    button.addEventListener('click', () => {
+        // Masquer toutes les sections
+        document.querySelectorAll('.interface-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        // Afficher la section cible
+        let targetId = button.id.replace('nav-', '');
+        if (targetId !== 'admin-interface') {
+            targetId = targetId + '-interface';
+        }
+        
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+            targetSection.classList.add('active');
+            
+            // Initialiser le visualiseur 3D si nécessaire
+            initializeVisualizerWhenReady(targetId);
+        }
+        
+        // Boutons actifs
+        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+    });
+});
+</script>
+<script>
+// Solution selon  - DOMContentLoaded + Event delegation
+document.addEventListener('DOMContentLoaded', function() {
+    // Navigation universelle selon 
+    document.querySelectorAll('.nav-button').forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.stopPropagation(); // Éviter bubbling 
+            
+            // Masquer toutes les sections
+            document.querySelectorAll('.interface-section').forEach(section => {
+                section.style.display = 'none'; // Force hide 
+            });
+            
+            // Afficher la section cible
+            let targetId = this.id.replace('nav-', '');
+            if (targetId !== 'admin-interface') {
+                targetId = targetId + '-interface';
+            }
+            
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.style.display = 'flex'; // Force show 
+                targetSection.style.visibility = 'visible'; // Ensure visible 
+            }
+            
+            // Boutons actifs
+            document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+});
+</script>
+<script>
+// Ajoutez ceci dans la fonction de navigation, juste AVANT d'afficher la nouvelle section cible
+// (par exemple, après avoir masqué toutes les sections et avant targetSection.style.display = 'flex';)
+
+if (targetId !== 'stream-interface') {
+    // Nettoyage complet du visualiseur Stream
+    if (window.streamTokenInterval) {
+        clearInterval(window.streamTokenInterval);
+        window.streamTokenInterval = null;
+    }
+    if (window.streamAnimationId) {
+        cancelAnimationFrame(window.streamAnimationId);
+        window.streamAnimationId = null;
+    }
+    if (window.streamTokens) {
+        window.streamTokens = [];
+    }
+}
+</script>
+<script>
+// CORRIGÉ : Navigation universelle avec gestion correcte de targetId et reset admin
+document.querySelectorAll('.nav-button').forEach(button => {
+    button.addEventListener('click', function(event) {
+        event.stopPropagation();
+
+        let targetId = this.id.replace('nav-', ''); // DÉCLARER targetId ici
+
+        // Reset admin
+        if (document.getElementById('admin-interface').style.display === 'flex') {
+            document.body.style.overflow = 'auto';
+        }
+
+        // Masquer toutes les sections
+        document.querySelectorAll('.interface-section').forEach(section => {
+            section.style.display = 'none';
+        });
+
+        // Afficher la section cible
+        if (targetId !== 'admin-interface') {
+            targetId = targetId + '-interface';
+        }
+
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+            targetSection.style.display = 'flex';
+        }
+
+        // Boutons actifs
+        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
     });
 });
 </script>
