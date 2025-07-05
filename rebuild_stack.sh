@@ -105,7 +105,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # Détection dynamique du conteneur frontend par label
 FRONTEND_CONTAINER=$(docker ps -q -f "label=traefik.enable=true" -f "name=frontend")
-FRONTEND_CONTAINER_NAME=$(docker ps --filter "label=traefik.enable=true" --filter "name=frontend" --format "{{.Names}}" | head -n1
+FRONTEND_CONTAINER_NAME=$(docker ps --filter "label=traefik.enable=true" --filter "name=frontend" --format "{{.Names}}" | head -n1)
 
 
 echo -e "${YELLOW}--- Vérification de la configuration réseau ---${NC}"
@@ -124,7 +124,7 @@ if [ -n "$FRONTEND_CONTAINER" ]; then
         echo -e "${RED}⚠️ Le conteneur frontend ne répond pas${NC}"
     fi
 else
-    echo -e "${RED}⚠️ Aucun conteneur frontend détecté (label=${FRONTEND_LABEL})${NC}"
+    echo -e "${RED}⚠️ Aucun conteneur frontend détecté (label=traefik.enable=true, name=frontend)${NC}"
 fi
 
 echo -e "${YELLOW}--- Vérification des logs Traefik récents ---${NC}"
