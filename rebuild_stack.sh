@@ -5,7 +5,7 @@
 # Auteur : sirciti
 # Date : 2025-07-01
 # Description : Déploiement stable, gestion réseau, Traefik, nettoyage.
-# Version : 2.0 (Mise à jour 2025-07-05 pour intégration centralisée de Traefik)
+# Version : 3.0 (Mise à jour 2025-07-05 pour intégration centralisée de Traefik et vérification réseau/DNS)
 # =================================================================
 
 set -e # Arrête le script immédiatement si une commande échoue
@@ -30,6 +30,31 @@ echo -e "${YELLOW}### VÉRIFICATION DE L'INTÉGRITÉ DU SCRIPT ###${NC}"
 if [[ ! -f "$COMPOSE_FILE" ]]; then
     echo -e "${RED}⚠️ Fichier $COMPOSE_FILE introuvable. Arrêt du script.${NC}"
     exit 1
+fi
+
+# --- Vérification de la connectivité réseau et DNS ---
+echo -e "${BLUE}### VÉRIFICATION DE LA CONNECTIVITÉ RÉSEAU ET DNS ###${NC}"
+echo -e "${YELLOW}Test de connectivité Internet...${NC}"
+if ping -c 4 8.8.8.8 > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Connectivité Internet confirmée${NC}"
+else
+    echo -e "${RED}⚠️ Échec de connectivité Internet. Vérifiez votre réseau.${NC}"
+    exit 1
+fi
+
+echo -e "${YELLOW}Test de résolution DNS...${NC}"
+if nslookup quantum-oracle-entropie.duckdns.org > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Résolution DNS réussie${NC}"
+else
+    echo -e "${RED}⚠️ Échec de résolution DNS. Configuration des serveurs DNS...${NC}"
+    echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf
+    echo "nameserver 8.8.8.8" | sudo tee -a /etc/resolv.conf
+    if nslookup quantum-oracle-entropie.duckdns.org > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ Résolution DNS corrigée${NC}"
+    else
+        echo -e "${RED}⚠️ Échec persistant de résolution DNS. Arrêt du script.${NC}"
+        exit 1
+    fi
 fi
 
 echo -e "${BLUE}### ÉTAPE 0: PRÉPARATION DU nginx.conf (prod) POUR LE FRONTEND ###${NC}"
