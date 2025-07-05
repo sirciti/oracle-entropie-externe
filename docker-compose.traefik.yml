@@ -1,5 +1,4 @@
 
-
 services:
   traefik:
     image: traefik:latest
@@ -32,50 +31,6 @@ services:
       - "--certificatesresolvers.myresolver.acme.email=lmaumau22@gmail.com"
       - "--certificatesresolvers.myresolver.acme.storage=/data/acme.json"
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-
-  backend:
-    build: ./backend
-    environment:
-      - FLASK_ENV=production
-      - PYTHONPATH=/app
-      - GUNICORN_CMD_ARGS=--timeout 120 --workers 3
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/geometry/icosahedron/initial"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    labels:
-      - "app=oracle-backend"
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`quantum-oracle-entropie.duckdns.org`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.backend.entrypoints=web,websecure"
-      - "traefik.http.services.backend.loadbalancer.server.port=5000"
-      - "traefik.http.routers.backend.tls=true"
-      - "traefik.http.routers.backend.tls.certresolver=myresolver"
-    networks:
-      - oracle-network
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "8080:80"
-    depends_on:
-      - backend
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    labels:
-      - "app=oracle-frontend"
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`quantum-oracle-entropie.duckdns.org`)"
-      - "traefik.http.routers.frontend.entrypoints=web,websecure"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
-      - "traefik.http.routers.frontend.tls=true"
-      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
-    networks:
-      - oracle-network
 
 networks:
   oracle-network:
