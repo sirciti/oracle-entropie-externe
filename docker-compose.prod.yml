@@ -1,5 +1,3 @@
-
-
 services:
   traefik:
     image: traefik:latest
@@ -40,18 +38,22 @@ services:
       - PYTHONPATH=/app
       - GUNICORN_CMD_ARGS=--timeout 120 --workers 3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/geometry/icosahedron/initial"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:5000/api/geometry/icosahedron/initial",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
     labels:
-      - "app=oracle-backend"
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`quantum-oracle-entropie.duckdns.org`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.backend.entrypoints=web,websecure"
-      - "traefik.http.services.backend.loadbalancer.server.port=5000"
-      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.http.services.backend.loadbalancer.server.port=5000"
     networks:
       - oracle-network
     restart: unless-stopped
@@ -68,13 +70,11 @@ services:
       timeout: 10s
       retries: 3
     labels:
-      - "app=oracle-frontend"
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`quantum-oracle-entropie.duckdns.org`)"
-      - "traefik.http.routers.frontend.entrypoints=web,websecure"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
-      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
     networks:
       - oracle-network
     restart: unless-stopped
