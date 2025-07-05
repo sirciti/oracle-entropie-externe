@@ -584,25 +584,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
-// Ajoutez ceci dans la fonction de navigation, juste AVANT d'afficher la nouvelle section cible
-// (par exemple, après avoir masqué toutes les sections et avant targetSection.style.display = 'flex';)
-
-if (targetId !== 'stream-interface') {
-    // Nettoyage complet du visualiseur Stream
-    if (window.streamTokenInterval) {
-        clearInterval(window.streamTokenInterval);
-        window.streamTokenInterval = null;
-    }
-    if (window.streamAnimationId) {
-        cancelAnimationFrame(window.streamAnimationId);
-        window.streamAnimationId = null;
-    }
-    if (window.streamTokens) {
-        window.streamTokens = [];
-    }
-}
-</script>
-<script>
 // CORRIGÉ : Navigation universelle avec gestion correcte de targetId et reset admin
 document.querySelectorAll('.nav-button').forEach(button => {
     button.addEventListener('click', function(event) {
