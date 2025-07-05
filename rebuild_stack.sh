@@ -136,12 +136,18 @@ else
 fi
 
 echo -e "${YELLOW}--- Test final de connectivité externe ---${NC}"
-if curl -4 -k -s --head https://$APP_DOMAIN | grep -q "200"; then
+echo -e "${YELLOW}Attente supplémentaire pour la stabilisation de Traefik (10 secondes)...${NC}"
+sleep 10
+if curl -4 -k -s --head https://$APP_DOMAIN | grep -qE "200|304"; then
     echo -e "${GREEN}✅ L'application répond correctement via Traefik sur https://$APP_DOMAIN${NC}"
-elif curl -4 -k -s --head https://$APP_DOMAIN/api/geometry/icosahedron/initial | grep -q "200"; then
+elif curl -4 -k -s --head https://$APP_DOMAIN/api/geometry/icosahedron/initial | grep -qE "200|304"; then
     echo -e "${GREEN}✅ L'application répond correctement via Traefik sur https://$APP_DOMAIN (endpoint API)${NC}"
 else
     echo -e "${RED}⚠️ L'application ne répond pas correctement via Traefik${NC}"
+    echo -e "${YELLOW}Détails de la réponse (page principale):${NC}"
+    curl -4 -k -s --head https://$APP_DOMAIN | head -n 5
+    echo -e "${YELLOW}Détails de la réponse (endpoint API):${NC}"
+    curl -4 -k -s --head https://$APP_DOMAIN/api/geometry/icosahedron/initial | head -n 5
 fi
 
 echo ""
