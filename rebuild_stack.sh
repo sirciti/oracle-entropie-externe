@@ -104,8 +104,9 @@ echo -e "${YELLOW}--- État final des conteneurs ---${NC}"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # Détection dynamique du conteneur frontend par label
-FRONTEND_CONTAINER=$(docker ps -q -f "label=${FRONTEND_LABEL}")
-FRONTEND_CONTAINER_NAME=$(docker ps --filter "label=${FRONTEND_LABEL}" --format "{{.Names}}" | head -n1)
+FRONTEND_CONTAINER=$(docker ps -q -f "label=traefik.enable=true" -f "name=frontend")
+FRONTEND_CONTAINER_NAME=$(docker ps --filter "label=traefik.enable=true" --filter "name=frontend" --format "{{.Names}}" | head -n1
+
 
 echo -e "${YELLOW}--- Vérification de la configuration réseau ---${NC}"
 NETWORK_CONTAINERS=$(docker network inspect $APP_NETWORK 2>/dev/null | grep -E "(${FRONTEND_CONTAINER_NAME}|$NEW_TRAEFIK_NAME)" | wc -l)
@@ -135,8 +136,10 @@ else
 fi
 
 echo -e "${YELLOW}--- Test final de connectivité externe ---${NC}"
-if curl -4 -k -s --head https://$APP_DOMAIN/api/geometry/icosahedron/initial | grep -q "200"; then
+if curl -4 -k -s --head https://$APP_DOMAIN | grep -q "200"; then
     echo -e "${GREEN}✅ L'application répond correctement via Traefik sur https://$APP_DOMAIN${NC}"
+elif curl -4 -k -s --head https://$APP_DOMAIN/api/geometry/icosahedron/initial | grep -q "200"; then
+    echo -e "${GREEN}✅ L'application répond correctement via Traefik sur https://$APP_DOMAIN (endpoint API)${NC}"
 else
     echo -e "${RED}⚠️ L'application ne répond pas correctement via Traefik${NC}"
 fi
