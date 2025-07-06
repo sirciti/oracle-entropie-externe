@@ -52,72 +52,68 @@ function updateToggleButtonText(button, visualizerInstance) {
 }
 
 function initAndStartVisualizer({ visualizerId, toggleId, initFn, name }) {
-    const container = document.getElementById(visualizerId);
-    const button = document.getElementById(toggleId);
-    if (!container) {
-        console.error(`Conteneur ${visualizerId} non trouvé`);
-        if (button) {
-            button.disabled = true;
-            button.textContent = "Erreur d’initialisation";
-        }
-        return null;
-    }
-
-    const tryInit = () => {
-        if (container.offsetWidth > 0 && container.offsetHeight > 0) {
-            try {
-                console.log(`DEBUG: Initialisation de ${name}`);
-                container.style.display = "block";
-                container.innerHTML = ""; // Reset container
-                const visualizer = initFn(visualizerId);
-                if (visualizer && typeof visualizer.start === "function") {
-                    visualizer.start();
-                    updateToggleButtonText(button, visualizer);
-                    return visualizer;
-                } else {
-                    throw new Error(`Échec de l’initialisation de ${name}`);
-                }
-            } catch (error) {
-                console.error(`Erreur lors de l’initialisation de ${name}:`, error);
-                if (button) {
-                    button.disabled = true;
-                    button.textContent = "Erreur d’initialisation";
-                }
-                return null;
+    return new Promise(resolve => {
+        const container = document.getElementById(visualizerId);
+        const button = document.getElementById(toggleId);
+        if (!container) {
+            console.error(`Conteneur ${visualizerId} non trouvé`);
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Erreur d’initialisation";
             }
-        } else {
-            console.warn(`Initialisation différée pour ${visualizerId}: dimensions non prêtes. Réessai...`);
-            return null;
+            resolve(null);
+            return;
         }
-    };
 
-    if (container.offsetWidth > 0 && container.offsetHeight > 0) {
-        return tryInit();
-    } else {
-        const observer = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                if (entry.target === container && entry.contentRect.width > 0 && entry.contentRect.height > 0) {
-                    const visualizer = tryInit();
-                    if (visualizer) {
-                        currentVisualizer = visualizer;
+        const tryInit = () => {
+            if (container.offsetWidth > 0 && container.offsetHeight > 0) {
+                try {
+                    console.log(`DEBUG: Initialisation de ${name}`);
+                    container.style.display = "block";
+                    container.innerHTML = ""; // Reset container
+                    const visualizer = initFn(visualizerId);
+                    if (visualizer && typeof visualizer.start === "function") {
+                        visualizer.start();
+                        updateToggleButtonText(button, visualizer);
+                        resolve(visualizer);
+                    } else {
+                        throw new Error(`Échec de l’initialisation de ${name}`);
+                    }
+                } catch (error) {
+                    console.error(`Erreur lors de l’initialisation de ${name}:`, error);
+                    if (button) {
+                        button.disabled = true;
+                        button.textContent = "Erreur d’initialisation";
+                    }
+                    resolve(null);
+                }
+            } else {
+                console.warn(`Initialisation différée pour ${visualizerId}: dimensions non prêtes. Réessai...`);
+                resolve(null);
+            }
+        };
+
+        if (container.offsetWidth > 0 && container.offsetHeight > 0) {
+            tryInit();
+        } else {
+            const observer = new ResizeObserver((entries) => {
+                for (const entry of entries) {
+                    if (entry.target === container && entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+                        tryInit();
                         observer.disconnect();
                     }
                 }
-            }
-        });
-        observer.observe(container);
-        // Délai de secours pour forcer une tentative après 1 seconde
-        setTimeout(() => {
-            if (!currentVisualizer) {
-                console.log(`Délai de secours atteint pour ${visualizerId}. Nouvelle tentative forcée.`);
-                const visualizer = tryInit();
-                if (visualizer) {
-                    currentVisualizer = visualizer;
+            });
+            observer.observe(container);
+            // Délai de secours pour forcer une tentative après 1 seconde
+            setTimeout(() => {
+                if (!currentVisualizer) {
+                    console.log(`Délai de secours atteint pour ${visualizerId}. Nouvelle tentative forcée.`);
+                    tryInit();
                 }
-            }
-        }, 1000);
-        return null;
-    }
+            }, 1000);
+        }
+    });
 }
 
 function setupToggleButtonForVisualizer(visualizerId, toggleId, initFn, name) {
@@ -205,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     // Ajouter manuellement les boutons non couverts par visualizerConfig
     setupNavButton("nav-main", "main-interface");
-    setupNavButton("nav-internal-tool", "internal-tool-interface");
+    setupNavButton("nav-internal_tool", "internal-tool-interface");
     setupNavButton("nav-admin-interface", "admin-interface");
 
     // Initialiser les vues non-3D
