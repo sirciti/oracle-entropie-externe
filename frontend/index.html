@@ -384,6 +384,125 @@
     <script type="module" src="/src/main.js"></script>
     <script type="module" src="/src/visualizers/centrifuge_laser_v2_visualizer.js"></script>
     <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Liste des IDs de visualizers 3D
+    const visualizerIds = [
+        "icosahedron-3d",
+        "icosahedron-3d-cubes",
+        "spiral-simple-3d",
+        "icosahedron-3d-spiral-torus",
+        "torus-spring-3d",
+        "stream-visualizer-3d",
+        "centrifuge-laser-3d",
+        "centrifuge-laser-v2-3d",
+        "crypto-token-river-3d",
+        "metacube-oracle-3d"
+    ];
+
+    // Fonction d'initialisation différée pour chaque visualizer
+    function initializeVisualizerWhenReady(elementId, initFn) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        function tryInit() {
+            if (el.offsetWidth > 0 && el.offsetHeight > 0) {
+                if (typeof initFn === "function") initFn(el);
+                return true;
+            }
+            return false;
+        }
+        if (!tryInit()) {
+            const observer = new ResizeObserver(() => {
+                if (tryInit()) observer.disconnect();
+            });
+            observer.observe(el);
+        }
+    }
+
+    // Map d'initialisation pour chaque visualizer (à adapter selon ton projet)
+    const visualizerInitMap = {
+        "icosahedron-3d": window.initIcosahedron3D,
+        "icosahedron-3d-cubes": window.initCubes3D,
+        "spiral-simple-3d": window.initSpiralSimple3D,
+        "icosahedron-3d-spiral-torus": window.initSpiralTorus3D,
+        "torus-spring-3d": window.initTorusSpring3D,
+        "stream-visualizer-3d": window.initStreamVisualizer3D,
+        "centrifuge-laser-3d": window.initCentrifugeLaser3D,
+        "centrifuge-laser-v2-3d": window.initCentrifugeLaserV2_3D,
+        "crypto-token-river-3d": window.initCryptoTokenRiver3D,
+        "metacube-oracle-3d": window.initMetacubeOracle3D
+    };
+
+    // Navigation universelle
+    document.querySelectorAll('.nav-button').forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Nettoyage des animations globales
+            if (window.streamTokenInterval) {
+                clearInterval(window.streamTokenInterval);
+                window.streamTokenInterval = null;
+            }
+            if (window.streamAnimationId) {
+                cancelAnimationFrame(window.streamAnimationId);
+                window.streamAnimationId = null;
+            }
+            if (window.currentAnimation) {
+                cancelAnimationFrame(window.currentAnimation);
+                window.currentAnimation = null;
+            }
+
+            // Reset admin
+            if (document.getElementById('admin-interface').style.display === 'flex') {
+                document.body.style.overflow = 'auto';
+                document.body.style.position = 'static';
+            }
+
+            // Masquer toutes les sections
+            document.querySelectorAll('.interface-section').forEach(section => {
+                section.style.display = 'none';
+                section.style.visibility = 'hidden';
+                section.classList.remove('active');
+            });
+
+            // Déterminer la section cible
+            let targetId = this.id.replace('nav-', '');
+            if (targetId !== 'admin-interface') {
+                targetId = targetId + '-interface';
+            }
+
+            // Afficher la section cible
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.style.display = 'flex';
+                targetSection.style.visibility = 'visible';
+                targetSection.classList.add('active');
+
+                // Initialiser le visualizer 3D si la section en contient un
+                visualizerIds.forEach(vid => {
+                    if (targetSection.querySelector(`#${vid}`)) {
+                        initializeVisualizerWhenReady(vid, visualizerInitMap[vid]);
+                    }
+                });
+
+                // Forcer un resize global (utile pour Three.js)
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 150);
+            }
+
+            // Mettre à jour les boutons actifs
+            document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Afficher la première section au chargement
+    document.getElementById('main-interface').style.display = 'flex';
+    document.getElementById('nav-main').classList.add('active');
+});
+</script>
+<script>
 // NAVIGATION UNIVERSELLE UNIQUE - Solution définitive
 document.addEventListener('DOMContentLoaded', function() {
     // Initialiser la première section
