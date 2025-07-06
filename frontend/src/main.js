@@ -1,5 +1,3 @@
-// frontend/src/main.js
-
 // Importe les fonctions d'initialisation des visualiseurs et des vues non-3D
 import { initClassicGenerator } from './views/classic_generator.js';
 import { initInternalTool } from './views/internal_tool.js';
@@ -9,13 +7,12 @@ import { initSpiralSimpleVisualizer } from './visualizers/spiral_simple_visualiz
 import { initSpiralTorusVisualizer } from './visualizers/spiral_torus_visualizer.js';
 import { initStreamVisualizer } from './visualizers/stream_visualizer.js';
 import { initTorusSpringVisualizer } from './visualizers/torus_spring_visualizer.js';
-import { initCentrifugeLaserVisualizer } from './visualizers/centrifuge_laser_visualizer.js'; // Ajout import
+import { initCentrifugeLaserVisualizer } from './visualizers/centrifuge_laser_visualizer.js';
 import { initCryptoTokenRiverVisualizer } from './visualizers/crypto_token_river_visualizer.js';
-import { initCentrifugeLaserV2Visualizer } from './visualizers/centrifuge_laser_v2_visualizer.js'; // 1. Ajout import
-import { initMetaCubeOraclePlaylist } from './visualizers/metacube_oracle_playlist.js'; // Import
+import { initCentrifugeLaserV2Visualizer } from './visualizers/centrifuge_laser_v2_visualizer.js';
+import { initMetaCubeOraclePlaylist } from './visualizers/metacube_oracle_playlist.js';
 import './favicon-animator.js';
 import './admin/admin-interface.js';
-
 
 // Déclarer les variables globales en haut du fichier
 let icosahedronVisualizer = null;
@@ -24,31 +21,33 @@ let spiralSimpleVisualizer = null;
 let spiralTorusVisualizer = null;
 let streamVisualizer = null;
 let torusSpringVisualizer = null;
-let centrifugeLaserVisualizer = null; // Ajout variable globale
-let cryptoTokenRiverVisualizer = null; // Ajout variable globale
-let centrifugeLaserV2Visualizer = null; // 2. Ajout variable globale pour la version V2
-let metaCubeOracleVisualizer = null; // Variable globale
-let currentSection = null; // Ajoute la variable globale en haut du fichier
-
+let centrifugeLaserVisualizer = null;
+let cryptoTokenRiverVisualizer = null;
+let centrifugeLaserV2Visualizer = null;
+let metaCubeOracleVisualizer = null;
+let currentSection = null;
 
 // Fonction d'aide pour gérer le texte des boutons Start/Stop
 function updateToggleButtonText(buttonElement, visualizerInstance) {
-    if (buttonElement && visualizerInstance) {
+    if (buttonElement && visualizerInstance && typeof visualizerInstance.isRunning === 'function') {
         buttonElement.textContent = visualizerInstance.isRunning() ? "Stop Animation" : "Start Animation";
+    } else if (buttonElement) {
+        buttonElement.textContent = "Start Animation"; // Par défaut si non initialisé
+        buttonElement.disabled = true; // Désactiver le bouton si le visualiseur n'est pas prêt
     }
 }
 
 // Fonction principale pour afficher une section et cacher/initialiser les autres
 function showSection(sectionId) {
-  console.log("DEBUG: Changement vers section:", sectionId);
+    console.log("DEBUG: Changement vers section:", sectionId);
 
-  // NE PAS nettoyer si on reste sur la même section
-  if (currentSection === sectionId) {
-    console.log("DEBUG: Même section, pas de nettoyage");
-    return;
-  }
+    // NE PAS nettoyer si on reste sur la même section
+    if (currentSection === sectionId) {
+        console.log("DEBUG: Même section, pas de nettoyage");
+        return;
+    }
 
-  currentSection = sectionId;
+    currentSection = sectionId;
 
     // 1. Sélectionne toutes les sections d'interface
     const mainInterfaceSection = document.getElementById('main-interface');
@@ -60,19 +59,18 @@ function showSection(sectionId) {
     const internalToolInterfaceSection = document.getElementById('internal-tool-interface');
     const torusSpringInterfaceSection = document.getElementById('torus-spring-interface');
     const centrifugeLaserInterfaceSection = document.getElementById('centrifuge-laser-interface');
-    const cryptoTokenRiverInterfaceSection = document.getElementById('crypto-token-river-interface'); // Ajout déclaration section
-    const centrifugeLaserV2InterfaceSection = document.getElementById('centrifuge-laser-v2-interface'); // 3. Déclaration section
-    const metaCubeOracleInterfaceSection = document.getElementById('metacube-oracle-interface'); // Section MetaCube Oracle
-
+    const cryptoTokenRiverInterfaceSection = document.getElementById('crypto-token-river-interface');
+    const centrifugeLaserV2InterfaceSection = document.getElementById('centrifuge-laser-v2-interface');
+    const metaCubeOracleInterfaceSection = document.getElementById('metacube-oracle-interface');
 
     // 2. Cache toutes les sections et arrête les animations des visualiseurs
     const allSections = [
-    mainInterfaceSection, icosahedronInterfaceSection, cubesInterfaceSection,
-    spiralSimpleInterfaceSection, spiralTorusInterfaceSection,
-    streamInterfaceSection, internalToolInterfaceSection, torusSpringInterfaceSection,
-    centrifugeLaserInterfaceSection, cryptoTokenRiverInterfaceSection,
-    centrifugeLaserV2InterfaceSection, metaCubeOracleInterfaceSection // Ajout à allSections
-];
+        mainInterfaceSection, icosahedronInterfaceSection, cubesInterfaceSection,
+        spiralSimpleInterfaceSection, spiralTorusInterfaceSection,
+        streamInterfaceSection, internalToolInterfaceSection, torusSpringInterfaceSection,
+        centrifugeLaserInterfaceSection, cryptoTokenRiverInterfaceSection,
+        centrifugeLaserV2InterfaceSection, metaCubeOracleInterfaceSection
+    ];
     allSections.forEach(section => {
         if (section) section.classList.add('hidden');
     });
@@ -84,25 +82,25 @@ function showSection(sectionId) {
     cleanupVisualizer(spiralTorusVisualizer);
     cleanupVisualizer(streamVisualizer);
     cleanupVisualizer(torusSpringVisualizer);
-    cleanupVisualizer(centrifugeLaserVisualizer); // Ajout nettoyage
+    cleanupVisualizer(centrifugeLaserVisualizer);
     cleanupVisualizer(cryptoTokenRiverVisualizer);
-    cleanupVisualizer(centrifugeLaserV2Visualizer); // Ajout nettoyage pour la version V2
-    cleanupVisualizer(metaCubeOracleVisualizer); // Nettoyage MetaCube Oracle
+    cleanupVisualizer(centrifugeLaserV2Visualizer);
+    cleanupVisualizer(metaCubeOracleVisualizer);
     icosahedronVisualizer = null;
     cubesVisualizer = null;
     spiralSimpleVisualizer = null;
     spiralTorusVisualizer = null;
     streamVisualizer = null;
     torusSpringVisualizer = null;
-    centrifugeLaserVisualizer = null; // Ajout reset
-    cryptoTokenRiverVisualizer = null; // Ajout reset
-    centrifugeLaserV2Visualizer = null; // 5. Ajout reset pour la version V2
-    metaCubeOracleVisualizer = null; // 6. Ajout reset pour MetaCube Oracle
+    centrifugeLaserVisualizer = null;
+    cryptoTokenRiverVisualizer = null;
+    centrifugeLaserV2Visualizer = null;
+    metaCubeOracleVisualizer = null;
 
     // 3. Gère la visibilité des conteneurs 3D
     const icosahedron3DContainer = document.getElementById('icosahedron-3d');
     const cubes3DContainer = document.getElementById('icosahedron-3d-cubes');
-    const spiralSimple3DContainer = document.getElementById('icosahedron-3d-spiral-simple');
+    const spiralSimple3DContainer = document.getElementById('spiral-simple-3d');
     const spiralTorus3DContainer = document.getElementById('icosahedron-3d-spiral-torus');
     const streamVisualizer3DContainer = document.getElementById('stream-visualizer-3d');
     const torusSpring3DContainer = document.getElementById('torus-spring-3d');
@@ -130,63 +128,61 @@ function showSection(sectionId) {
 
     // 5. Initialise ou réinitialise et démarre le visualiseur correspondant
     const initAndStartVisualizer = async (visualizerName, initFunc, containerId, toggleBtnId) => {
-      const containerElement = document.getElementById(containerId);
-      const toggleButtonElement = document.getElementById(toggleBtnId);
+        const containerElement = document.getElementById(containerId);
+        const toggleButtonElement = document.getElementById(toggleBtnId);
 
-      if (containerElement) containerElement.style.display = 'flex';
+        if (containerElement) containerElement.style.display = 'flex';
 
-      // OPTIMISATION: Utiliser requestAnimationFrame au lieu de setTimeout
-      const initWithRAF = () => {
-        return new Promise(resolve => {
-          requestAnimationFrame(() => {
-            if (containerElement && containerElement.clientWidth > 0 && containerElement.clientHeight > 0) {
-              let visualizerInstance = null;
-              
-              console.log(`DEBUG: Initialisation de ${visualizerName}`);
-              
-              // OPTIMISATION: Initialisation progressive
-              if (visualizerName === 'metaCubeOracleVisualizer') {
-                // Initialisation spéciale pour MetaCube Oracle
-                visualizerInstance = metaCubeOracleVisualizer = initFunc(containerId);
-                
-                // Démarrage différé pour éviter la surcharge
+        const initWithRAF = () => {
+            return new Promise(resolve => {
                 requestAnimationFrame(() => {
-                  if (visualizerInstance) {
-                    visualizerInstance.start();
-                  }
+                    if (containerElement && containerElement.clientWidth > 0 && containerElement.clientHeight > 0) {
+                        let visualizerInstance = null;
+
+                        console.log(`DEBUG: Initialisation de ${visualizerName}`);
+                        try {
+                            if (visualizerName === 'metaCubeOracleVisualizer') {
+                                visualizerInstance = metaCubeOracleVisualizer = initFunc(containerId);
+                                requestAnimationFrame(() => {
+                                    if (visualizerInstance && typeof visualizerInstance.start === 'function') {
+                                        visualizerInstance.start();
+                                    }
+                                });
+                            } else {
+                                if (visualizerName === 'icosahedronVisualizer') visualizerInstance = icosahedronVisualizer = initFunc(containerId);
+                                else if (visualizerName === 'cubesVisualizer') visualizerInstance = cubesVisualizer = initFunc(containerId);
+                                else if (visualizerName === 'spiralSimpleVisualizer') visualizerInstance = spiralSimpleVisualizer = initFunc(containerId);
+                                else if (visualizerName === 'spiralTorusVisualizer') visualizerInstance = spiralTorusVisualizer = initFunc(containerId);
+                                else if (visualizerName === 'streamVisualizer') visualizerInstance = streamVisualizer = initFunc(containerId);
+                                else if (visualizerName === 'torusSpringVisualizer') visualizerInstance = torusSpringVisualizer = initFunc(containerId);
+                                else if (visualizerName === 'centrifugeLaserVisualizer') visualizerInstance = centrifugeLaserVisualizer = initFunc(containerId);
+                                else if (visualizerName === 'cryptoTokenRiverVisualizer') visualizerInstance = cryptoTokenRiverVisualizer = initFunc(containerId);
+                                else if (visualizerName === 'centrifugeLaserV2Visualizer') visualizerInstance = centrifugeLaserV2Visualizer = initFunc(containerId);
+
+                                if (visualizerInstance && initFunc !== initStreamVisualizer && typeof visualizerInstance.start === 'function') {
+                                    visualizerInstance.start();
+                                }
+                            }
+
+                            updateToggleButtonText(toggleButtonElement, visualizerInstance);
+                            resolve(visualizerInstance);
+                        } catch (error) {
+                            console.error(`Erreur lors de l'initialisation de ${visualizerName}:`, error);
+                            if (toggleButtonElement) {
+                                toggleButtonElement.disabled = true;
+                                toggleButtonElement.textContent = "Erreur d'initialisation";
+                            }
+                            resolve(null);
+                        }
+                    } else {
+                        console.warn(`Initialisation différée pour ${containerId}: dimensions non prêtes. Réessai...`);
+                        setTimeout(() => initWithRAF().then(resolve), 50);
+                    }
                 });
-              } else {
-                // Autres visualiseurs
-                if (visualizerName === 'icosahedronVisualizer') visualizerInstance = icosahedronVisualizer = initFunc(containerId);
-                else if (visualizerName === 'cubesVisualizer') visualizerInstance = cubesVisualizer = initFunc(containerId);
-                else if (visualizerName === 'spiralSimpleVisualizer') visualizerInstance = spiralSimpleVisualizer = initFunc(containerId);
-                else if (visualizerName === 'spiralTorusVisualizer') visualizerInstance = spiralTorusVisualizer = initFunc(containerId);
-                else if (visualizerName === 'streamVisualizer') visualizerInstance = streamVisualizer = initFunc(containerId);
-                else if (visualizerName === 'torusSpringVisualizer') visualizerInstance = torusSpringVisualizer = initFunc(containerId);
-                else if (visualizerName === 'centrifugeLaserVisualizer') visualizerInstance = centrifugeLaserVisualizer = initFunc(containerId);
-                else if (visualizerName === 'cryptoTokenRiverVisualizer') visualizerInstance = cryptoTokenRiverVisualizer = initFunc(containerId);
-                else if (visualizerName === 'centrifugeLaserV2Visualizer') visualizerInstance = centrifugeLaserV2Visualizer = initFunc(containerId); // 6.
+            });
+        };
 
-                if (visualizerInstance && initFunc !== initStreamVisualizer) {
-                  visualizerInstance.start();
-                }
-              }
-              
-              updateToggleButtonText(toggleButtonElement, visualizerInstance);
-              resolve();
-            } else {
-              console.warn(`Initialisation différée pour ${containerId}: dimensions non prêtes. Réessai...`);
-              setTimeout(() => initWithRAF().then(resolve), 50); // Fallback avec timeout plus court
-            }
-          });
-        });
-      };
-
-      try {
-        await initWithRAF();
-      } catch (error) {
-        console.error(`Erreur initialisation ${visualizerName}:`, error);
-      }
+        return initWithRAF();
     };
 
     // Appels d'initialisation basés sur la section active
@@ -202,7 +198,7 @@ function showSection(sectionId) {
         initAndStartVisualizer('streamVisualizer', initStreamVisualizer, 'stream-visualizer-3d', 'start-stream-button');
     } else if (sectionId === 'torus-spring-interface') {
         initAndStartVisualizer('torusSpringVisualizer', initTorusSpringVisualizer, 'torus-spring-3d', 'toggle-torus-spring-animation');
-    } else if (sectionId === 'centrifuge-laser-interface') { // Ajout du cas centrifuge-laser
+    } else if (sectionId === 'centrifuge-laser-interface') {
         initAndStartVisualizer('centrifugeLaserVisualizer', initCentrifugeLaserVisualizer, 'centrifuge-laser-3d', 'toggle-centrifuge-laser-animation');
     } else if (sectionId === 'crypto-token-river-interface') {
         initAndStartVisualizer('cryptoTokenRiverVisualizer', initCryptoTokenRiverVisualizer, 'crypto-token-river-3d', 'toggle-crypto-token-river-animation');
@@ -210,24 +206,23 @@ function showSection(sectionId) {
         initAndStartVisualizer('centrifugeLaserV2Visualizer', initCentrifugeLaserV2Visualizer, 'centrifuge-laser-v2-3d', 'toggle-centrifuge-laser-v2-animation');
     } else if (sectionId === 'metacube-oracle-interface') {
         initAndStartVisualizer('metaCubeOracleVisualizer', initMetaCubeOraclePlaylist, 'metacube-oracle-3d', 'toggle-metacube-oracle-animation');
-    } // 8.
-
+    }
 
     // 6. Met à jour les classes 'active' des boutons de navigation
     const navButtons = [
-    document.getElementById('nav-main'),
-    document.getElementById('nav-icosahedron'),
-    document.getElementById('nav-cubes'),
-    document.getElementById('nav-spiral-simple'),
-    document.getElementById('nav-spiral-torus'),
-    document.getElementById('nav-stream'),
-    document.getElementById('nav-internal-tool'),
-    document.getElementById('nav-torus-spring'),
-    document.getElementById('nav-centrifuge-laser'),
-    document.getElementById('nav-crypto-token-river'),
-    document.getElementById('nav-centrifuge-laser-v2'),
-    document.getElementById('nav-metacube-oracle') // 9. NOUVEAU
-];
+        document.getElementById('nav-main'),
+        document.getElementById('nav-icosahedron'),
+        document.getElementById('nav-cubes'),
+        document.getElementById('nav-spiral-simple'),
+        document.getElementById('nav-spiral-torus'),
+        document.getElementById('nav-stream'),
+        document.getElementById('nav-internal-tool'),
+        document.getElementById('nav-torus-spring'),
+        document.getElementById('nav-centrifuge-laser'),
+        document.getElementById('nav-crypto-token-river'),
+        document.getElementById('nav-centrifuge-laser-v2'),
+        document.getElementById('nav-metacube-oracle')
+    ];
     navButtons.forEach(btn => {
         if (btn) btn.classList.remove('active');
     });
@@ -237,7 +232,7 @@ function showSection(sectionId) {
 
 // Fonction pour nettoyer complètement un visualiseur
 function cleanupVisualizer(visualizer) {
-    if (visualizer) {
+    if (visualizer && typeof visualizer.stop === 'function') {
         console.log("Nettoyage du visualiseur...");
         visualizer.stop();
         if (visualizer.cleanup) {
@@ -247,7 +242,7 @@ function cleanupVisualizer(visualizer) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Écouteurs d'événements pour les boutons de navigation (sélection des sections)
+    // 1. Écouteurs d'événements pour les boutons de navigation
     const setupNavButton = (buttonId, sectionId) => {
         const button = document.getElementById(buttonId);
         if (button) {
@@ -264,38 +259,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNavButton('nav-spiral-torus', 'spiral-torus-interface');
     setupNavButton('nav-stream', 'stream-interface');
     setupNavButton('nav-internal-tool', 'internal-tool-interface');
-
-    // 1. Ajouter après les autres boutons de navigation
-    const navTorusSpringButton = document.getElementById('nav-torus-spring');
-    if (navTorusSpringButton) {
-        navTorusSpringButton.addEventListener('click', () => showSection('torus-spring-interface'));
-    } else {
-        console.warn("Bouton de navigation 'nav-torus-spring' non trouvé.");
-    }
-
-    // Ajout event listener pour le bouton centrifuge laser
-    const navCentrifugeLaserButton = document.getElementById('nav-centrifuge-laser');
-    if (navCentrifugeLaserButton) {
-        navCentrifugeLaserButton.addEventListener('click', () => showSection('centrifuge-laser-interface'));
-    }
-
-    // Ajout event listener pour le bouton crypto token river
-    const navCryptoTokenRiverButton = document.getElementById('nav-crypto-token-river');
-    if (navCryptoTokenRiverButton) {
-        navCryptoTokenRiverButton.addEventListener('click', () => showSection('crypto-token-river-interface'));
-    }
-
-    // Ajout event listener pour le bouton centrifuge laser v2
-    const navCentrifugeLaserV2Button = document.getElementById('nav-centrifuge-laser-v2');
-    if (navCentrifugeLaserV2Button) {
-        navCentrifugeLaserV2Button.addEventListener('click', () => showSection('centrifuge-laser-v2-interface'));
-    }
-
-    // Ajout event listener pour le bouton MetaCube Oracle
-    const navMetaCubeOracleButton = document.getElementById('nav-metacube-oracle');
-    if (navMetaCubeOracleButton) {
-        navMetaCubeOracleButton.addEventListener('click', () => showSection('metacube-oracle-interface'));
-    }
+    setupNavButton('nav-torus-spring', 'torus-spring-interface');
+    setupNavButton('nav-centrifuge-laser', 'centrifuge-laser-interface');
+    setupNavButton('nav-crypto-token-river', 'crypto-token-river-interface');
+    setupNavButton('nav-centrifuge-laser-v2', 'centrifuge-laser-v2-interface');
+    setupNavButton('nav-metacube-oracle', 'metacube-oracle-interface');
 
     // Gestion bouton admin
     document.getElementById('nav-admin-interface').addEventListener('click', () => {
@@ -305,14 +273,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('admin-interface').classList.remove('hidden');
     });
 
-
-    // 2. Gérer les boutons Start/Stop Animation pour les visualiseurs 3D (définis dans showSection)
+    // 2. Gérer les boutons Start/Stop Animation pour les visualiseurs 3D
     const setupToggleButtonForVisualizer = (buttonId, visualizerGetter) => {
         const button = document.getElementById(buttonId);
         if (button) {
             button.addEventListener('click', () => {
                 const visualizer = visualizerGetter();
-                if (visualizer) {
+                if (visualizer && typeof visualizer.isRunning === 'function') {
                     if (visualizer.isRunning()) {
                         visualizer.stop();
                     } else {
@@ -320,27 +287,54 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     updateToggleButtonText(button, visualizer);
                 } else {
-                    console.warn(`Visualizer for ${buttonId} not initialized.`);
+                    console.warn(`Visualizer for ${buttonId} not initialized or isRunning not a function. Attempting reinitialization...`);
+                    // Réinitialiser si possible
+                    const containerId = buttonId.replace('toggle-', '').replace('-animation', '') + '-3d';
+                    const initFuncMap = {
+                        'toggle-icosahedron-animation': initIcosahedronVisualizer,
+                        'toggle-cubes-animation': initCubesVisualizer,
+                        'toggle-spiral-simple-animation': initSpiralSimpleVisualizer,
+                        'toggle-spiral-torus-animation': initSpiralTorusVisualizer,
+                        'toggle-torus-spring-animation': initTorusSpringVisualizer,
+                        'toggle-centrifuge-laser-animation': initCentrifugeLaserVisualizer,
+                        'toggle-crypto-token-river-animation': initCryptoTokenRiverVisualizer,
+                        'toggle-centrifuge-laser-v2-animation': initCentrifugeLaserV2Visualizer,
+                        'toggle-metacube-oracle-animation': initMetaCubeOraclePlaylist
+                    };
+                    const initFunc = initFuncMap[buttonId];
+                    if (initFunc && containerId) {
+                        const newVisualizer = initFunc(containerId);
+                        if (newVisualizer && typeof newVisualizer.isRunning === 'function') {
+                            if (buttonId === 'toggle-cubes-animation') cubesVisualizer = newVisualizer;
+                            else if (buttonId === 'toggle-icosahedron-animation') icosahedronVisualizer = newVisualizer;
+                            else if (buttonId === 'toggle-spiral-simple-animation') spiralSimpleVisualizer = newVisualizer;
+                            else if (buttonId === 'toggle-spiral-torus-animation') spiralTorusVisualizer = newVisualizer;
+                            else if (buttonId === 'toggle-torus-spring-animation') torusSpringVisualizer = newVisualizer;
+                            else if (buttonId === 'toggle-centrifuge-laser-animation') centrifugeLaserVisualizer = newVisualizer;
+                            else if (buttonId === 'toggle-crypto-token-river-animation') cryptoTokenRiverVisualizer = newVisualizer;
+                            else if (buttonId === 'toggle-centrifuge-laser-v2-animation') centrifugeLaserV2Visualizer = newVisualizer;
+                            else if (buttonId === 'toggle-metacube-oracle-animation') metaCubeOracleVisualizer = newVisualizer;
+                            newVisualizer.start();
+                            updateToggleButtonText(button, newVisualizer);
+                        } else {
+                            button.disabled = true;
+                            button.textContent = "Erreur d'initialisation";
+                        }
+                    }
                 }
             });
         }
     };
 
-    // Initialiser le visualiseur Icosahedron AVANT d'attacher le listener
-    // (optionnel si tu utilises showSection pour l'initialisation dynamique)
-    // icosahedronVisualizer = initIcosahedronVisualizer('container-icosahedron');
-
-    // Attacher le listener sur le bouton toggle
     setupToggleButtonForVisualizer('toggle-icosahedron-animation', () => icosahedronVisualizer);
-
     setupToggleButtonForVisualizer('toggle-cubes-animation', () => cubesVisualizer);
     setupToggleButtonForVisualizer('toggle-spiral-simple-animation', () => spiralSimpleVisualizer);
     setupToggleButtonForVisualizer('toggle-spiral-torus-animation', () => spiralTorusVisualizer);
     setupToggleButtonForVisualizer('toggle-torus-spring-animation', () => torusSpringVisualizer);
     setupToggleButtonForVisualizer('toggle-centrifuge-laser-animation', () => centrifugeLaserVisualizer);
     setupToggleButtonForVisualizer('toggle-crypto-token-river-animation', () => cryptoTokenRiverVisualizer);
-    setupToggleButtonForVisualizer('toggle-centrifuge-laser-v2-animation', () => centrifugeLaserV2Visualizer); // 9.
-    setupToggleButtonForVisualizer('toggle-metacube-oracle-animation', () => metaCubeOracleVisualizer); // 10.
+    setupToggleButtonForVisualizer('toggle-centrifuge-laser-v2-animation', () => centrifugeLaserV2Visualizer);
+    setupToggleButtonForVisualizer('toggle-metacube-oracle-animation', () => metaCubeOracleVisualizer);
 
     // Initialiser les vues non-3D
     initClassicGenerator();
