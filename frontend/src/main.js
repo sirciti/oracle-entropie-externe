@@ -31,9 +31,11 @@ let currentSection = null;
 function updateToggleButtonText(buttonElement, visualizerInstance) {
     if (buttonElement && visualizerInstance && typeof visualizerInstance.isRunning === 'function') {
         buttonElement.textContent = visualizerInstance.isRunning() ? "Stop Animation" : "Start Animation";
+        buttonElement.disabled = false;
     } else if (buttonElement) {
-        buttonElement.textContent = "Start Animation"; // Par défaut si non initialisé
-        buttonElement.disabled = true; // Désactiver le bouton si le visualiseur n'est pas prêt
+        buttonElement.textContent = "Start Animation";
+        buttonElement.disabled = true;
+        console.warn(`Visualizer instance invalid for ${buttonElement.id}`);
     }
 }
 
@@ -104,16 +106,20 @@ function showSection(sectionId) {
     const spiralTorus3DContainer = document.getElementById('icosahedron-3d-spiral-torus');
     const streamVisualizer3DContainer = document.getElementById('stream-visualizer-3d');
     const torusSpring3DContainer = document.getElementById('torus-spring-3d');
+    const centrifugeLaser3DContainer = document.getElementById('centrifuge-laser-3d');
+    const cryptoTokenRiver3DContainer = document.getElementById('crypto-token-river-3d');
+    const centrifugeLaserV23DContainer = document.getElementById('centrifuge-laser-v2-3d');
+    const metaCubeOracle3DContainer = document.getElementById('metacube-oracle-3d');
 
     const all3DContainers = [
         icosahedron3DContainer, cubes3DContainer,
         spiralSimple3DContainer, spiralTorus3DContainer, streamVisualizer3DContainer,
-        torusSpring3DContainer
+        torusSpring3DContainer, centrifugeLaser3DContainer, cryptoTokenRiver3DContainer,
+        centrifugeLaserV23DContainer, metaCubeOracle3DContainer
     ];
     all3DContainers.forEach(container => {
         if (container) {
             container.style.display = 'none';
-            // Vider complètement le conteneur
             while (container.firstChild) {
                 container.removeChild(container.firstChild);
             }
@@ -274,67 +280,50 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 2. Gérer les boutons Start/Stop Animation pour les visualiseurs 3D
-    const setupToggleButtonForVisualizer = (buttonId, visualizerGetter) => {
+    const setupToggleButtonForVisualizer = (buttonId, visualizerGetter, initFunc) => {
         const button = document.getElementById(buttonId);
         if (button) {
             button.addEventListener('click', () => {
-                const visualizer = visualizerGetter();
-                if (visualizer && typeof visualizer.isRunning === 'function') {
-                    if (visualizer.isRunning()) {
-                        visualizer.stop();
-                    } else {
-                        visualizer.start();
-                    }
-                    updateToggleButtonText(button, visualizer);
-                } else {
+                let visualizer = visualizerGetter();
+                if (!visualizer || typeof visualizer.isRunning !== 'function') {
                     console.warn(`Visualizer for ${buttonId} not initialized or isRunning not a function. Attempting reinitialization...`);
-                    // Réinitialiser si possible
                     const containerId = buttonId.replace('toggle-', '').replace('-animation', '') + '-3d';
-                    const initFuncMap = {
-                        'toggle-icosahedron-animation': initIcosahedronVisualizer,
-                        'toggle-cubes-animation': initCubesVisualizer,
-                        'toggle-spiral-simple-animation': initSpiralSimpleVisualizer,
-                        'toggle-spiral-torus-animation': initSpiralTorusVisualizer,
-                        'toggle-torus-spring-animation': initTorusSpringVisualizer,
-                        'toggle-centrifuge-laser-animation': initCentrifugeLaserVisualizer,
-                        'toggle-crypto-token-river-animation': initCryptoTokenRiverVisualizer,
-                        'toggle-centrifuge-laser-v2-animation': initCentrifugeLaserV2Visualizer,
-                        'toggle-metacube-oracle-animation': initMetaCubeOraclePlaylist
-                    };
-                    const initFunc = initFuncMap[buttonId];
-                    if (initFunc && containerId) {
-                        const newVisualizer = initFunc(containerId);
-                        if (newVisualizer && typeof newVisualizer.isRunning === 'function') {
-                            if (buttonId === 'toggle-cubes-animation') cubesVisualizer = newVisualizer;
-                            else if (buttonId === 'toggle-icosahedron-animation') icosahedronVisualizer = newVisualizer;
-                            else if (buttonId === 'toggle-spiral-simple-animation') spiralSimpleVisualizer = newVisualizer;
-                            else if (buttonId === 'toggle-spiral-torus-animation') spiralTorusVisualizer = newVisualizer;
-                            else if (buttonId === 'toggle-torus-spring-animation') torusSpringVisualizer = newVisualizer;
-                            else if (buttonId === 'toggle-centrifuge-laser-animation') centrifugeLaserVisualizer = newVisualizer;
-                            else if (buttonId === 'toggle-crypto-token-river-animation') cryptoTokenRiverVisualizer = newVisualizer;
-                            else if (buttonId === 'toggle-centrifuge-laser-v2-animation') centrifugeLaserV2Visualizer = newVisualizer;
-                            else if (buttonId === 'toggle-metacube-oracle-animation') metaCubeOracleVisualizer = newVisualizer;
-                            newVisualizer.start();
-                            updateToggleButtonText(button, newVisualizer);
-                        } else {
-                            button.disabled = true;
-                            button.textContent = "Erreur d'initialisation";
-                        }
+                    visualizer = initFunc(containerId);
+                    if (visualizer && typeof visualizer.isRunning === 'function') {
+                        if (buttonId === 'toggle-icosahedron-animation') icosahedronVisualizer = visualizer;
+                        else if (buttonId === 'toggle-cubes-animation') cubesVisualizer = visualizer;
+                        else if (buttonId === 'toggle-spiral-simple-animation') spiralSimpleVisualizer = visualizer;
+                        else if (buttonId === 'toggle-spiral-torus-animation') spiralTorusVisualizer = visualizer;
+                        else if (buttonId === 'toggle-torus-spring-animation') torusSpringVisualizer = visualizer;
+                        else if (buttonId === 'toggle-centrifuge-laser-animation') centrifugeLaserVisualizer = visualizer;
+                        else if (buttonId === 'toggle-crypto-token-river-animation') cryptoTokenRiverVisualizer = visualizer;
+                        else if (buttonId === 'toggle-centrifuge-laser-v2-animation') centrifugeLaserV2Visualizer = visualizer;
+                        else if (buttonId === 'toggle-metacube-oracle-animation') metaCubeOracleVisualizer = visualizer;
+                    } else {
+                        button.disabled = true;
+                        button.textContent = "Erreur d'initialisation";
+                        return;
                     }
                 }
+                if (visualizer.isRunning()) {
+                    visualizer.stop();
+                } else {
+                    visualizer.start();
+                }
+                updateToggleButtonText(button, visualizer);
             });
         }
     };
 
-    setupToggleButtonForVisualizer('toggle-icosahedron-animation', () => icosahedronVisualizer);
-    setupToggleButtonForVisualizer('toggle-cubes-animation', () => cubesVisualizer);
-    setupToggleButtonForVisualizer('toggle-spiral-simple-animation', () => spiralSimpleVisualizer);
-    setupToggleButtonForVisualizer('toggle-spiral-torus-animation', () => spiralTorusVisualizer);
-    setupToggleButtonForVisualizer('toggle-torus-spring-animation', () => torusSpringVisualizer);
-    setupToggleButtonForVisualizer('toggle-centrifuge-laser-animation', () => centrifugeLaserVisualizer);
-    setupToggleButtonForVisualizer('toggle-crypto-token-river-animation', () => cryptoTokenRiverVisualizer);
-    setupToggleButtonForVisualizer('toggle-centrifuge-laser-v2-animation', () => centrifugeLaserV2Visualizer);
-    setupToggleButtonForVisualizer('toggle-metacube-oracle-animation', () => metaCubeOracleVisualizer);
+    setupToggleButtonForVisualizer('toggle-icosahedron-animation', () => icosahedronVisualizer, initIcosahedronVisualizer);
+    setupToggleButtonForVisualizer('toggle-cubes-animation', () => cubesVisualizer, initCubesVisualizer);
+    setupToggleButtonForVisualizer('toggle-spiral-simple-animation', () => spiralSimpleVisualizer, initSpiralSimpleVisualizer);
+    setupToggleButtonForVisualizer('toggle-spiral-torus-animation', () => spiralTorusVisualizer, initSpiralTorusVisualizer);
+    setupToggleButtonForVisualizer('toggle-torus-spring-animation', () => torusSpringVisualizer, initTorusSpringVisualizer);
+    setupToggleButtonForVisualizer('toggle-centrifuge-laser-animation', () => centrifugeLaserVisualizer, initCentrifugeLaserVisualizer);
+    setupToggleButtonForVisualizer('toggle-crypto-token-river-animation', () => cryptoTokenRiverVisualizer, initCryptoTokenRiverVisualizer);
+    setupToggleButtonForVisualizer('toggle-centrifuge-laser-v2-animation', () => centrifugeLaserV2Visualizer, initCentrifugeLaserV2Visualizer);
+    setupToggleButtonForVisualizer('toggle-metacube-oracle-animation', () => metaCubeOracleVisualizer, initMetaCubeOraclePlaylist);
 
     // Initialiser les vues non-3D
     initClassicGenerator();
