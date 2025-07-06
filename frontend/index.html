@@ -169,7 +169,6 @@
                 </div>
                 <div id="feedback-message" role="alert" aria-live="polite"></div>
            </div>
-
         </div>
 
         <!-- Centrifugeuse Laser -->
@@ -182,7 +181,7 @@
             <div id="centrifuge-laser-3d"></div>
         </div>
 
-        <!-- Centrifugeuse Laser 2..stop -->
+        <!-- Centrifugeuse Laser 2.0 -->
         <div id="centrifuge-laser-v2-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">🚀 Centrifugeuse Laser 2.0 - Révolutionnaire</h2>
@@ -357,146 +356,13 @@
     <script type="module" src="/src/visualizers/spiral_simple_visualizer.js"></script>
     <script type="module" src="/src/visualizers/spiral_torus_visualizer.js"></script>
     <script type="module" src="/src/visualizers/stream_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/torus_spring_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/centrifuge_laser_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/crypto_token_river_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/centrifuge_laser_v2_visualizer.js"></script>
+    <script type="module" src="/src/visualizers/metacube_oracle_playlist.js"></script>
     <script type="module" src="/src/views/classic_generator.js"></script>
     <script type="module" src="/src/views/internal_tool.js"></script>
     <script type="module" src="/src/main.js"></script>
-    <script type="module" src="/src/visualizers/centrifuge_laser_v2_visualizer.js"></script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Liste des IDs de visualizers 3D
-            const visualizerIds = [
-                "icosahedron-3d",
-                "icosahedron-3d-cubes",
-                "spiral-simple-3d",
-                "icosahedron-3d-spiral-torus",
-                "torus-spring-3d",
-                "stream-visualizer-3d",
-                "centrifuge-laser-3d",
-                "centrifuge-laser-v2-3d",
-                "crypto-token-river-3d",
-                "metacube-oracle-3d"
-            ];
-
-            // Map d'initialisation pour chaque visualizer
-            const visualizerInitMap = {
-                "icosahedron-3d": window.initIcosahedron3D,
-                "icosahedron-3d-cubes": window.initCubes3D,
-                "spiral-simple-3d": window.initSpiralSimple3D,
-                "icosahedron-3d-spiral-torus": window.initSpiralTorus3D,
-                "torus-spring-3d": window.initTorusSpring3D,
-                "stream-visualizer-3d": window.initStreamVisualizer3D,
-                "centrifuge-laser-3d": window.initCentrifugeLaser3D,
-                "centrifuge-laser-v2-3d": window.initCentrifugeLaserV2_3D,
-                "crypto-token-river-3d": window.initCryptoTokenRiver3D,
-                "metacube-oracle-3d": window.initMetacubeOracle3D
-            };
-
-            // Fonction d'initialisation différée pour les visualizers
-            function initializeVisualizerWhenReady(elementId, initFn) {
-                const el = document.getElementById(elementId);
-                if (!el) return;
-
-                function tryInit() {
-                    if (el.offsetWidth > 0 && el.offsetHeight > 0) {
-                        if (typeof initFn === "function") initFn(el);
-                        return true;
-                    }
-                    return false;
-                }
-
-                if (!tryInit()) {
-                    const observer = new ResizeObserver(() => {
-                        if (tryInit()) observer.disconnect();
-                    });
-                    observer.observe(el);
-                }
-            }
-
-            // Navigation universelle
-            let navigationLocked = false;
-
-            document.querySelectorAll('.nav-button').forEach(button => {
-                button.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    if (navigationLocked) return;
-                    navigationLocked = true;
-
-                    // Nettoyage des animations globales
-                    if (window.streamTokenInterval) {
-                        clearInterval(window.streamTokenInterval);
-                        window.streamTokenInterval = null;
-                    }
-                    if (window.streamAnimationId) {
-                        cancelAnimationFrame(window.streamAnimationId);
-                        window.streamAnimationId = null;
-                    }
-                    if (window.currentAnimation) {
-                        cancelAnimationFrame(window.currentAnimation);
-                        window.currentAnimation = null;
-                    }
-
-                    // Reset admin interface styles
-                    if (document.getElementById('admin-interface').style.display === 'flex') {
-                        document.body.style.overflow = 'auto';
-                        document.body.style.position = 'static';
-                    }
-
-                    // Masquer toutes les sections
-                    document.querySelectorAll('.interface-section').forEach(section => {
-                        section.style.display = 'none';
-                        section.style.visibility = 'hidden';
-                        section.classList.remove('active');
-                    });
-
-                    // Déterminer la section cible
-                    let targetId = this.id.replace('nav-', '');
-                    if (targetId !== 'admin-interface') {
-                        targetId = targetId + '-interface';
-                    }
-
-                    // Afficher la section cible
-                    const targetSection = document.getElementById(targetId);
-                    if (targetSection) {
-                        targetSection.style.display = 'flex';
-                        targetSection.style.visibility = 'visible';
-                        targetSection.classList.add('active');
-
-                        // Initialiser le visualizer 3D si la section en contient un
-                        visualizerIds.forEach(vid => {
-                            if (targetSection.querySelector(`#${vid}`)) {
-                                initializeVisualizerWhenReady(vid, visualizerInitMap[vid]);
-                            }
-                        });
-
-                        // Forcer un resize global pour Three.js
-                        setTimeout(() => {
-                            window.dispatchEvent(new Event('resize'));
-                        }, 150);
-                    }
-
-                    // Mettre à jour les boutons actifs
-                    document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // Débloquer la navigation après un délai
-                    setTimeout(() => {
-                        navigationLocked = false;
-                    }, 100);
-                });
-            });
-
-            // Afficher la première section au chargement
-            const mainInterface = document.getElementById('main-interface');
-            if (mainInterface) {
-                mainInterface.style.display = 'flex';
-                mainInterface.style.visibility = 'visible';
-                mainInterface.classList.add('active');
-            }
-            document.getElementById('nav-main').classList.add('active');
-        });
-    </script>
 </body>
 </html>
