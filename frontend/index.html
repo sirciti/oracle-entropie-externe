@@ -26,7 +26,7 @@
             <button id="nav-crypto-token-river" class="nav-button">CryptoTokenRiver</button>
             <button id="nav-stream" class="nav-button">Flux de Tokens</button>
             <button id="nav-internal-tool" class="nav-button">Outil Interne de Sécurité</button>
-            <button id="nav-metacube-oracle" class="nav-button">MetaCube Oracle</button> <!-- AJOUT -->
+            <button id="nav-metacube-oracle" class="nav-button">MetaCube Oracle</button>
             <button id="nav-admin-interface" class="nav-button">🎛️ Interface Admin</button>
         </nav>
 
@@ -97,7 +97,7 @@
             <div id="icosahedron-3d-spiral-torus"></div>
         </div>
 
-         <!-- Tore-Ressorts -->
+        <!-- Tore-Ressorts -->
         <div id="torus-spring-interface" class="interface-section hidden">
             <div class="content-card">
                 <h2 class="title">Système Tore-Ressorts-Sphères</h2>
@@ -126,8 +126,6 @@
                     <input type="number" id="stream-capacity" value="1024" min="1" max="102400" />
                 </div>
                 <button id="start-stream-button" class="generate-button">Démarrer Flux</button>
-                
-                <!-- AJOUT ICI : Bloc de sortie du flux -->
                 <div class="stream-output-container">
                     <label for="generated-stream-output">Flux de Tokens :</label>
                     <textarea id="generated-stream-output" readonly rows="10" cols="80" 
@@ -139,14 +137,14 @@
         </div>
 
         <!-- CryptoTokenRiver -->
-         <div id="crypto-token-river-interface" class="interface-section hidden">
-    <div class="content-card">
-        <h2 class="title">CryptoTokenRiver</h2>
-        <p>Générateur continu de tokens cryptographiques robustes avec visualisation en rivière temps réel</p>
-        <button id="toggle-crypto-token-river-animation" class="generate-button">Stop Animation</button>
-    </div>
-    <div id="crypto-token-river-3d"></div>
-</div>
+        <div id="crypto-token-river-interface" class="interface-section hidden">
+            <div class="content-card">
+                <h2 class="title">CryptoTokenRiver</h2>
+                <p>Générateur continu de tokens cryptographiques robustes avec visualisation en rivière temps réel</p>
+                <button id="toggle-crypto-token-river-animation" class="generate-button">Stop Animation</button>
+            </div>
+            <div id="crypto-token-river-3d"></div>
+        </div>
 
         <!-- Outil Interne de Sécurité Avancé -->
         <div id="internal-tool-interface" class="interface-section hidden">
@@ -170,7 +168,8 @@
                     <button id="copy-token-button" class="generate-button copy-button" disabled>Copier</button>
                 </div>
                 <div id="feedback-message" role="alert" aria-live="polite"></div>
-            </div>
+           </div>
+
         </div>
 
         <!-- Centrifugeuse Laser -->
@@ -183,195 +182,174 @@
             <div id="centrifuge-laser-3d"></div>
         </div>
 
-        <!-- Centrifugeuse Laser 2.0 -->
+        <!-- Centrifugeuse Laser 2..stop -->
         <div id="centrifuge-laser-v2-interface" class="interface-section hidden">
-    <div class="content-card">
-        <h2 class="title">🚀 Centrifugeuse Laser 2.0 - Révolutionnaire</h2>
-        <p>Système révolutionnaire avec collisions physiques, explosions atomiques et entropie rotationnelle maximale</p>
-        <button id="toggle-centrifuge-laser-v2-animation" class="generate-button">Stop Animation</button>
-    </div>
-    <div id="centrifuge-laser-v2-3d"></div>
-</div>
+            <div class="content-card">
+                <h2 class="title">🚀 Centrifugeuse Laser 2.0 - Révolutionnaire</h2>
+                <p>Système révolutionnaire avec collisions physiques, explosions atomiques et entropie rotationnelle maximale</p>
+                <button id="toggle-centrifuge-laser-v2-animation" class="generate-button">Stop Animation</button>
+            </div>
+            <div id="centrifuge-laser-v2-3d"></div>
+        </div>
 
         <!-- MetaCube Oracle Kaléidoscopique -->
         <div id="metacube-oracle-interface" class="interface-section hidden">
-    <div class="content-card">
-        <h2 class="title">🎵 MetaCube Oracle Playlist Kaléidoscopique</h2>
-        <p>Playlist automatique des 4 versions MetaCube Oracle avec contrôles avancés</p>
-        
-        <!-- Contrôles de playlist -->
-        <div class="slideshow-controls">
-            <button id="start-slideshow" class="generate-button">🎵 Démarrer Playlist</button>
-            <button id="stop-slideshow" class="generate-button">⏹️ Arrêter Playlist</button>
-            <button id="next-version" class="generate-button">⏭️ Version Suivante</button>
-            <div class="version-indicator">
-                <span id="current-version-display">⏸️ MetaCube Oracle V1 (1/4)</span>
+            <div class="content-card">
+                <h2 class="title">🎵 MetaCube Oracle Playlist Kaléidoscopique</h2>
+                <p>Playlist automatique des 4 versions MetaCube Oracle avec contrôles avancés</p>
+                <div class="slideshow-controls">
+                    <button id="start-slideshow" class="generate-button">🎵 Démarrer Playlist</button>
+                    <button id="stop-slideshow" class="generate-button">⏹️ Arrêter Playlist</button>
+                    <button id="next-version" class="generate-button">⏭️ Version Suivante</button>
+                    <div class="version-indicator">
+                        <span id="current-version-display">⏸️ MetaCube Oracle V1 (1/4)</span>
+                    </div>
+                </div>
+                <div class="entropy-metrics">
+                    <div>Entropie Shannon: <span id="shannon-entropy-display">0.0000</span></div>
+                    <div>Accumulateur: <span id="entropy-accumulator-display">0.00</span></div>
+                </div>
+                <button id="toggle-metacube-oracle-animation" class="generate-button">Stop Animation</button>
             </div>
+            <div id="metacube-oracle-3d"></div>
         </div>
-        
-        <div class="entropy-metrics">
-            <div>Entropie Shannon: <span id="shannon-entropy-display">0.0000</span></div>
-            <div>Accumulateur: <span id="entropy-accumulator-display">0.00</span></div>
-        </div>
-        <button id="toggle-metacube-oracle-animation" class="generate-button">Stop Animation</button>
-    </div>
-    <div id="metacube-oracle-3d"></div>
-</div>
-        
-        
-     <!-- Interface Admin -->
+
+        <!-- Interface Admin -->
         <div id="admin-interface" class="interface-section hidden">
             <div class="admin-container">
-        <!-- Header Admin -->
-        <div class="admin-header">
-            <h2 class="admin-title">🎛️ Interface Admin Oracle d'Entropie</h2>
-            <div class="admin-status">
-                <span class="status-indicator active"></span>
-                <span>Système Opérationnel</span>
-            </div>
-        </div>
-
-        <!-- Dashboard Principal -->
-        <div class="admin-dashboard">
-            <!-- Métriques Temps Réel -->
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <h3>Entropie Shannon</h3>
-                    <div class="metric-value" id="admin-shannon">5.0000</div>
-                    <div class="metric-trend up">+0.12%</div>
-                </div>
-                <div class="metric-card">
-                    <h3>Qualité Cryptographique</h3>
-                    <div class="metric-value" id="admin-quality">98.7%</div>
-                    <div class="metric-trend up">+0.05%</div>
-                </div>
-                <div class="metric-card">
-                    <h3>Sources Actives</h3>
-                    <div class="metric-value" id="admin-sources">12/12</div>
-                    <div class="metric-trend stable">Stable</div>
-                </div>
-                <div class="metric-card">
-                    <h3>Débit Entropie</h3>
-                    <div class="metric-value" id="admin-throughput">47.3 Mbps</div>
-                    <div class="metric-trend up">+2.1%</div>
-                </div>
-            </div>
-
-            <!-- Graphique Performance -->
-            <div class="performance-chart">
-                <h3>Performance Temps Réel</h3>
-                <canvas id="admin-chart" width="800" height="300"></canvas>
-            </div>
-        </div>
-
-        <!-- Configuration Sources -->
-        <div class="admin-config">
-            <h3>Configuration Sources d'Entropie</h3>
-            <div class="config-grid">
-                <!-- Sources Météo -->
-                <div class="config-section">
-                    <h4>🌤️ Sources Météorologiques</h4>
-                    <div class="config-controls">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="weather-enabled" checked>
-                            <span class="slider"></span>
-                            <span class="label">Données Météo Actives</span>
-                        </label>
-                        <div class="config-detail">
-                            <label>Stations: <span id="weather-stations">5</span></label>
-                            <input type="range" id="weather-stations-slider" min="1" max="10" value="5">
-                        </div>
-                        <div class="config-detail">
-                            <label>Fréquence: <span id="weather-freq">30s</span></label>
-                            <input type="range" id="weather-freq-slider" min="10" max="300" value="30">
-                        </div>
+                <div class="admin-header">
+                    <h2 class="admin-title">🎛️ Interface Admin Oracle d'Entropie</h2>
+                    <div class="admin-status">
+                        <span class="status-indicator active"></span>
+                        <span>Système Opérationnel</span>
                     </div>
                 </div>
-
-                <!-- Sources Quantiques -->
-                <div class="config-section">
-                    <h4>⚛️ Simulation Quantique</h4>
-                    <div class="config-controls">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="quantum-enabled" checked>
-                            <span class="slider"></span>
-                            <span class="label">Nœuds Quantiques Actifs</span>
-                        </label>
-                        <div class="config-detail">
-                            <label>Nœuds: <span id="quantum-nodes">8</span></label>
-                            <input type="range" id="quantum-nodes-slider" min="1" max="16" value="8">
+                <div class="admin-dashboard">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <h3>Entropie Shannon</h3>
+                            <div class="metric-value" id="admin-shannon">5.0000</div>
+                            <div class="metric-trend up">+0.12%</div>
                         </div>
-                        <div class="config-detail">
-                            <label>Décohérence: <span id="quantum-decoherence">0.85</span></label>
-                            <input type="range" id="quantum-decoherence-slider" min="0.1" max="1" step="0.05" value="0.85">
+                        <div class="metric-card">
+                            <h3>Qualité Cryptographique</h3>
+                            <div class="metric-value" id="admin-quality">98.7%</div>
+                            <div class="metric-trend up">+0.05%</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Sources Actives</h3>
+                            <div class="metric-value" id="admin-sources">12/12</div>
+                            <div class="metric-trend stable">Stable</div>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Débit Entropie</h3>
+                            <div class="metric-value" id="admin-throughput">47.3 Mbps</div>
+                            <div class="metric-trend up">+2.1%</div>
                         </div>
                     </div>
+                    <div class="performance-chart">
+                        <h3>Performance Temps Réel</h3>
+                        <canvas id="admin-chart" width="800" height="300"></canvas>
+                    </div>
                 </div>
-
-                <!-- Sources Géométriques -->
-                <div class="config-section">
-                    <h4>🔷 Géométries Dynamiques</h4>
-                    <div class="config-controls">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="geometry-enabled" checked>
-                            <span class="slider"></span>
-                            <span class="label">Visualiseurs 3D Actifs</span>
-                        </label>
-                        <div class="config-detail">
-                            <label>Résolution: <span id="geometry-resolution">512x512</span></label>
-                            <select id="geometry-resolution-select">
-                                <option value="256">256x256</option>
-                                <option value="512" selected>512x512</option>
-                                <option value="1024">1024x1024</option>
-                            </select>
+                <div class="admin-config">
+                    <h3>Configuration Sources d'Entropie</h3>
+                    <div class="config-grid">
+                        <div class="config-section">
+                            <h4>🌤️ Sources Météorologiques</h4>
+                            <div class="config-controls">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="weather-enabled" checked>
+                                    <span class="slider"></span>
+                                    <span class="label">Données Météo Actives</span>
+                                </label>
+                                <div class="config-detail">
+                                    <label>Stations: <span id="weather-stations">5</span></label>
+                                    <input type="range" id="weather-stations-slider" min="1" max="10" value="5">
+                                </div>
+                                <div class="config-detail">
+                                    <label>Fréquence: <span id="weather-freq">30s</span></label>
+                                    <input type="range" id="weather-freq-slider" min="10" max="300" value="30">
+                                </div>
+                            </div>
                         </div>
-                        <div class="config-detail">
-                            <label>FPS Target: <span id="geometry-fps">30</span></label>
-                            <input type="range" id="geometry-fps-slider" min="15" max="60" value="30">
+                        <div class="config-section">
+                            <h4>⚛️ Simulation Quantique</h4>
+                            <div class="config-controls">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="quantum-enabled" checked>
+                                    <span class="slider"></span>
+                                    <span class="label">Nœuds Quantiques Actifs</span>
+                                </label>
+                                <div class="config-detail">
+                                    <label>Nœuds: <span id="quantum-nodes">8</span></label>
+                                    <input type="range" id="quantum-nodes-slider" min="1" max="16" value="8">
+                                </div>
+                                <div class="config-detail">
+                                    <label>Décohérence: <span id="quantum-decoherence">0.85</span></label>
+                                    <input type="range" id="quantum-decoherence-slider" min="0.1" max="1" step="0.05" value="0.85">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-section">
+                            <h4>🔷 Géométries Dynamiques</h4>
+                            <div class="config-controls">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="geometry-enabled" checked>
+                                    <span class="slider"></span>
+                                    <span class="label">Visualiseurs 3D Actifs</span>
+                                </label>
+                                <div class="config-detail">
+                                    <label>Résolution: <span id="geometry-resolution">512x512</span></label>
+                                    <select id="geometry-resolution-select">
+                                        <option value="256">256x256</option>
+                                        <option value="512" selected>512x512</option>
+                                        <option value="1024">1024x1024</option>
+                                    </select>
+                                </div>
+                                <div class="config-detail">
+                                    <label>FPS Target: <span id="geometry-fps">30</span></label>
+                                    <input type="range" id="geometry-fps-slider" min="15" max="60" value="30">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Monitoring Système -->
-        <div class="admin-monitoring">
-            <h3>Monitoring Système</h3>
-            <div class="monitoring-grid">
-                <div class="monitor-card">
-                    <h4>Performance GPU</h4>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 67%"></div>
+                <div class="admin-monitoring">
+                    <h3>Monitoring Système</h3>
+                    <div class="monitoring-grid">
+                        <div class="monitor-card">
+                            <h4>Performance GPU</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 67%"></div>
+                            </div>
+                            <span>67% Utilisation</span>
+                        </div>
+                        <div class="monitor-card">
+                            <h4>Mémoire Système</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 43%"></div>
+                            </div>
+                            <span>43% Utilisée</span>
+                        </div>
+                        <div class="monitor-card">
+                            <h4>Réseau Backend</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 23%"></div>
+                            </div>
+                            <span>23% Charge</span>
+                        </div>
                     </div>
-                    <span>67% Utilisation</span>
                 </div>
-                <div class="monitor-card">
-                    <h4>Mémoire Système</h4>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 43%"></div>
-                    </div>
-                    <span>43% Utilisée</span>
-                </div>
-                <div class="monitor-card">
-                    <h4>Réseau Backend</h4>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 23%"></div>
-                    </div>
-                    <span>23% Charge</span>
+                <div class="admin-actions">
+                    <button class="admin-button primary" id="save-config">💾 Sauvegarder Configuration</button>
+                    <button class="admin-button secondary" id="reset-config">🔄 Réinitialiser</button>
+                    <button class="admin-button warning" id="export-logs">📊 Exporter Logs</button>
+                    <button class="admin-button danger" id="emergency-stop">🚨 Arrêt d'Urgence</button>
                 </div>
             </div>
-        </div>
-
-        <!-- Actions Admin -->
-        <div class="admin-actions">
-            <button class="admin-button primary" id="save-config">💾 Sauvegarder Configuration</button>
-            <button class="admin-button secondary" id="reset-config">🔄 Réinitialiser</button>
-            <button class="admin-button warning" id="export-logs">📊 Exporter Logs</button>
-            <button class="admin-button danger" id="emergency-stop">🚨 Arrêt d'Urgence</button>
         </div>
     </div>
-</div>
-
 
     <script type="module" src="/src/utils/three_utils.js"></script>
     <script type="module" src="/src/visualizers/icosahedron_visualizer.js"></script>
@@ -383,358 +361,142 @@
     <script type="module" src="/src/views/internal_tool.js"></script>
     <script type="module" src="/src/main.js"></script>
     <script type="module" src="/src/visualizers/centrifuge_laser_v2_visualizer.js"></script>
+
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Liste des IDs de visualizers 3D
-    const visualizerIds = [
-        "icosahedron-3d",
-        "icosahedron-3d-cubes",
-        "spiral-simple-3d",
-        "icosahedron-3d-spiral-torus",
-        "torus-spring-3d",
-        "stream-visualizer-3d",
-        "centrifuge-laser-3d",
-        "centrifuge-laser-v2-3d",
-        "crypto-token-river-3d",
-        "metacube-oracle-3d"
-    ];
+        document.addEventListener('DOMContentLoaded', function() {
+            // Liste des IDs de visualizers 3D
+            const visualizerIds = [
+                "icosahedron-3d",
+                "icosahedron-3d-cubes",
+                "spiral-simple-3d",
+                "icosahedron-3d-spiral-torus",
+                "torus-spring-3d",
+                "stream-visualizer-3d",
+                "centrifuge-laser-3d",
+                "centrifuge-laser-v2-3d",
+                "crypto-token-river-3d",
+                "metacube-oracle-3d"
+            ];
 
-    // Fonction d'initialisation différée pour chaque visualizer
-    function initializeVisualizerWhenReady(elementId, initFn) {
-        const el = document.getElementById(elementId);
-        if (!el) return;
-        function tryInit() {
-            if (el.offsetWidth > 0 && el.offsetHeight > 0) {
-                if (typeof initFn === "function") initFn(el);
-                return true;
-            }
-            return false;
-        }
-        if (!tryInit()) {
-            const observer = new ResizeObserver(() => {
-                if (tryInit()) observer.disconnect();
-            });
-            observer.observe(el);
-        }
-    }
+            // Map d'initialisation pour chaque visualizer
+            const visualizerInitMap = {
+                "icosahedron-3d": window.initIcosahedron3D,
+                "icosahedron-3d-cubes": window.initCubes3D,
+                "spiral-simple-3d": window.initSpiralSimple3D,
+                "icosahedron-3d-spiral-torus": window.initSpiralTorus3D,
+                "torus-spring-3d": window.initTorusSpring3D,
+                "stream-visualizer-3d": window.initStreamVisualizer3D,
+                "centrifuge-laser-3d": window.initCentrifugeLaser3D,
+                "centrifuge-laser-v2-3d": window.initCentrifugeLaserV2_3D,
+                "crypto-token-river-3d": window.initCryptoTokenRiver3D,
+                "metacube-oracle-3d": window.initMetacubeOracle3D
+            };
 
-    // Map d'initialisation pour chaque visualizer (à adapter selon ton projet)
-    const visualizerInitMap = {
-        "icosahedron-3d": window.initIcosahedron3D,
-        "icosahedron-3d-cubes": window.initCubes3D,
-        "spiral-simple-3d": window.initSpiralSimple3D,
-        "icosahedron-3d-spiral-torus": window.initSpiralTorus3D,
-        "torus-spring-3d": window.initTorusSpring3D,
-        "stream-visualizer-3d": window.initStreamVisualizer3D,
-        "centrifuge-laser-3d": window.initCentrifugeLaser3D,
-        "centrifuge-laser-v2-3d": window.initCentrifugeLaserV2_3D,
-        "crypto-token-river-3d": window.initCryptoTokenRiver3D,
-        "metacube-oracle-3d": window.initMetacubeOracle3D
-    };
+            // Fonction d'initialisation différée pour les visualizers
+            function initializeVisualizerWhenReady(elementId, initFn) {
+                const el = document.getElementById(elementId);
+                if (!el) return;
 
-    // Navigation universelle
-    document.querySelectorAll('.nav-button').forEach(button => {
-        button.addEventListener('click', function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-
-            // Nettoyage des animations globales
-            if (window.streamTokenInterval) {
-                clearInterval(window.streamTokenInterval);
-                window.streamTokenInterval = null;
-            }
-            if (window.streamAnimationId) {
-                cancelAnimationFrame(window.streamAnimationId);
-                window.streamAnimationId = null;
-            }
-            if (window.currentAnimation) {
-                cancelAnimationFrame(window.currentAnimation);
-                window.currentAnimation = null;
-            }
-
-            // Reset admin
-            if (document.getElementById('admin-interface').style.display === 'flex') {
-                document.body.style.overflow = 'auto';
-                document.body.style.position = 'static';
-            }
-
-            // Masquer toutes les sections
-            document.querySelectorAll('.interface-section').forEach(section => {
-                section.style.display = 'none';
-                section.style.visibility = 'hidden';
-                section.classList.remove('active');
-            });
-
-            // Déterminer la section cible
-            let targetId = this.id.replace('nav-', '');
-            if (targetId !== 'admin-interface') {
-                targetId = targetId + '-interface';
-            }
-
-            // Afficher la section cible
-            const targetSection = document.getElementById(targetId);
-            if (targetSection) {
-                targetSection.style.display = 'flex';
-                targetSection.style.visibility = 'visible';
-                targetSection.classList.add('active');
-
-                // Initialiser le visualizer 3D si la section en contient un
-                visualizerIds.forEach(vid => {
-                    if (targetSection.querySelector(`#${vid}`)) {
-                        initializeVisualizerWhenReady(vid, visualizerInitMap[vid]);
+                function tryInit() {
+                    if (el.offsetWidth > 0 && el.offsetHeight > 0) {
+                        if (typeof initFn === "function") initFn(el);
+                        return true;
                     }
+                    return false;
+                }
+
+                if (!tryInit()) {
+                    const observer = new ResizeObserver(() => {
+                        if (tryInit()) observer.disconnect();
+                    });
+                    observer.observe(el);
+                }
+            }
+
+            // Navigation universelle
+            let navigationLocked = false;
+
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (navigationLocked) return;
+                    navigationLocked = true;
+
+                    // Nettoyage des animations globales
+                    if (window.streamTokenInterval) {
+                        clearInterval(window.streamTokenInterval);
+                        window.streamTokenInterval = null;
+                    }
+                    if (window.streamAnimationId) {
+                        cancelAnimationFrame(window.streamAnimationId);
+                        window.streamAnimationId = null;
+                    }
+                    if (window.currentAnimation) {
+                        cancelAnimationFrame(window.currentAnimation);
+                        window.currentAnimation = null;
+                    }
+
+                    // Reset admin interface styles
+                    if (document.getElementById('admin-interface').style.display === 'flex') {
+                        document.body.style.overflow = 'auto';
+                        document.body.style.position = 'static';
+                    }
+
+                    // Masquer toutes les sections
+                    document.querySelectorAll('.interface-section').forEach(section => {
+                        section.style.display = 'none';
+                        section.style.visibility = 'hidden';
+                        section.classList.remove('active');
+                    });
+
+                    // Déterminer la section cible
+                    let targetId = this.id.replace('nav-', '');
+                    if (targetId !== 'admin-interface') {
+                        targetId = targetId + '-interface';
+                    }
+
+                    // Afficher la section cible
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        targetSection.style.display = 'flex';
+                        targetSection.style.visibility = 'visible';
+                        targetSection.classList.add('active');
+
+                        // Initialiser le visualizer 3D si la section en contient un
+                        visualizerIds.forEach(vid => {
+                            if (targetSection.querySelector(`#${vid}`)) {
+                                initializeVisualizerWhenReady(vid, visualizerInitMap[vid]);
+                            }
+                        });
+
+                        // Forcer un resize global pour Three.js
+                        setTimeout(() => {
+                            window.dispatchEvent(new Event('resize'));
+                        }, 150);
+                    }
+
+                    // Mettre à jour les boutons actifs
+                    document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Débloquer la navigation après un délai
+                    setTimeout(() => {
+                        navigationLocked = false;
+                    }, 100);
                 });
-
-                // Forcer un resize global (utile pour Three.js)
-                setTimeout(() => {
-                    window.dispatchEvent(new Event('resize'));
-                }, 150);
-            }
-
-            // Mettre à jour les boutons actifs
-            document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-
-    // Afficher la première section au chargement
-    document.getElementById('main-interface').style.display = 'flex';
-    document.getElementById('nav-main').classList.add('active');
-});
-</script>
-<script>
-// NAVIGATION UNIVERSELLE UNIQUE - Solution définitive
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser la première section
-    document.getElementById('main-interface').style.display = 'flex';
-    document.getElementById('nav-main').classList.add('active');
-    
-    // Navigation universelle pour TOUS les boutons
-    document.querySelectorAll('.nav-button').forEach(button => {
-        button.addEventListener('click', function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            // Déclarer targetId correctement
-            let targetId = this.id.replace('nav-', '');
-            
-            // Nettoyage complet avant changement
-            if (window.streamTokenInterval) {
-                clearInterval(window.streamTokenInterval);
-                window.streamTokenInterval = null;
-            }
-            if (window.streamAnimationId) {
-                cancelAnimationFrame(window.streamAnimationId);
-                window.streamAnimationId = null;
-            }
-            if (window.currentAnimation) {
-                cancelAnimationFrame(window.currentAnimation);
-                window.currentAnimation = null;
-            }
-            
-            // Reset admin
-            if (document.getElementById('admin-interface').style.display === 'flex') {
-                document.body.style.overflow = 'auto';
-                document.body.style.position = 'static';
-            }
-            
-            // Masquer TOUTES les sections
-            document.querySelectorAll('.interface-section').forEach(section => {
-                section.style.display = 'none';
-                section.style.visibility = 'hidden';
-                section.classList.remove('active');
             });
-            
-            // Correspondance ID correcte
-            if (targetId !== 'admin-interface') {
-                targetId = targetId + '-interface';
+
+            // Afficher la première section au chargement
+            const mainInterface = document.getElementById('main-interface');
+            if (mainInterface) {
+                mainInterface.style.display = 'flex';
+                mainInterface.style.visibility = 'visible';
+                mainInterface.classList.add('active');
             }
-            
-            // Afficher la section cible
-            const targetSection = document.getElementById(targetId);
-            if (targetSection) {
-                targetSection.style.display = 'flex';
-                targetSection.style.visibility = 'visible';
-                targetSection.classList.add('active');
-                
-                // Force refresh pour visualiseurs 3D
-                setTimeout(() => {
-                    window.dispatchEvent(new Event('resize'));
-                }, 150);
-            }
-            
-            // Mettre à jour boutons actifs
-            document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            console.log('DEBUG: Changement vers section:', targetId);
+            document.getElementById('nav-main').classList.add('active');
         });
-    });
-});
-</script>
-<script>
-//  Navigation avec gestion performance
-let navigationLocked = false;
-
-document.querySelectorAll('.nav-button').forEach(button => {
-    button.addEventListener('click', () => {
-        // Éviter les clics multiples rapides
-        if (navigationLocked) return;
-        navigationLocked = true;
-        
-        // Arrêter toutes les animations avant changement
-        if (window.currentAnimation) {
-            cancelAnimationFrame(window.currentAnimation);
-        }
-        
-        // Navigation normale
-        document.querySelectorAll('.interface-section').forEach(section => {
-            section.classList.remove('active');
-        });
-        
-        let targetId = button.id.replace('nav-', '');
-        if (targetId !== 'admin-interface') {
-            targetId = targetId + '-interface';
-        }
-        
-        const targetSection = document.getElementById(targetId);
-        if (targetSection) {
-            targetSection.classList.add('active');
-        }
-        
-        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        
-        // Débloquer après un délai
-        setTimeout(() => {
-            navigationLocked = false;
-        }, 100);
-    });
-});
-</script>
-<script>
-//  - Gestion des dimensions Three.js
-function initializeVisualizerWhenReady(sectionId) {
-    const section = document.getElementById(sectionId);
-    if (!section) return;
-    
-    // Attendre que la section soit visible
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && 
-                mutation.attributeName === 'class' &&
-                section.classList.contains('active')) {
-                
-                // Section maintenant visible - forcer resize des visualiseurs
-                setTimeout(() => {
-                    const canvas3d = section.querySelector('[id$="-3d"]');
-                    if (canvas3d) {
-                        // Déclencher resize selon [4]
-                        window.dispatchEvent(new Event('resize'));
-                    }
-                }, 100);
-                
-                observer.disconnect();
-            }
-        });
-    });
-    
-    observer.observe(section, { attributes: true });
-}
-
-// Navigation universelle avec gestion 3D
-document.querySelectorAll('.nav-button').forEach(button => {
-    button.addEventListener('click', () => {
-        // Masquer toutes les sections
-        document.querySelectorAll('.interface-section').forEach(section => {
-            section.classList.remove('active');
-        });
-        
-        // Afficher la section cible
-        let targetId = button.id.replace('nav-', '');
-        if (targetId !== 'admin-interface') {
-            targetId = targetId + '-interface';
-        }
-        
-        const targetSection = document.getElementById(targetId);
-        if (targetSection) {
-            targetSection.classList.add('active');
-            
-            // Initialiser le visualiseur 3D si nécessaire
-            initializeVisualizerWhenReady(targetId);
-        }
-        
-        // Boutons actifs
-        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-    });
-});
-</script>
-<script>
-// Solution selon  - DOMContentLoaded + Event delegation
-document.addEventListener('DOMContentLoaded', function() {
-    // Navigation universelle selon 
-    document.querySelectorAll('.nav-button').forEach(button => {
-        button.addEventListener('click', function(event) {
-            event.stopPropagation(); // Éviter bubbling 
-            
-            // Masquer toutes les sections
-            document.querySelectorAll('.interface-section').forEach(section => {
-                section.style.display = 'none'; // Force hide 
-            });
-            
-            // Afficher la section cible
-            let targetId = this.id.replace('nav-', '');
-            if (targetId !== 'admin-interface') {
-                targetId = targetId + '-interface';
-            }
-            
-            const targetSection = document.getElementById(targetId);
-            if (targetSection) {
-                targetSection.style.display = 'flex'; // Force show 
-                targetSection.style.visibility = 'visible'; // Ensure visible 
-            }
-            
-            // Boutons actifs
-            document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-});
-</script>
-<script>
-// CORRIGÉ : Navigation universelle avec gestion correcte de targetId et reset admin
-document.querySelectorAll('.nav-button').forEach(button => {
-    button.addEventListener('click', function(event) {
-        event.stopPropagation();
-
-        let targetId = this.id.replace('nav-', ''); // DÉCLARER targetId ici
-
-        // Reset admin
-        if (document.getElementById('admin-interface').style.display === 'flex') {
-            document.body.style.overflow = 'auto';
-        }
-
-        // Masquer toutes les sections
-        document.querySelectorAll('.interface-section').forEach(section => {
-            section.style.display = 'none';
-        });
-
-        // Afficher la section cible
-        if (targetId !== 'admin-interface') {
-            targetId = targetId + '-interface';
-        }
-
-        const targetSection = document.getElementById(targetId);
-        if (targetSection) {
-            targetSection.style.display = 'flex';
-        }
-
-        // Boutons actifs
-        document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-        this.classList.add('active');
-    });
-});
-</script>
+    </script>
 </body>
 </html>
