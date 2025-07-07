@@ -90,8 +90,8 @@ export function initTorusSpringVisualizer(containerId) {
       animateTorusSpring();
     })
     .catch(error => {
-      console.error('FETCH TORUS_SPRING ERROR:', error);
-      container.innerHTML = '<p style="color: red; text-align: center;">Erreur de chargement du système tore-ressorts.</p>';
+      console.error("FETCH TORUS_SPRING ERROR:", error);
+      container.innerHTML = "<p style=\"color: red; text-align: center;\">Erreur de chargement du système tore-ressorts.</p>";
     });
 
   function updateTorusSpringGeometry(data) {
