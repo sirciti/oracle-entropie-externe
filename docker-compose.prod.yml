@@ -6,8 +6,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    networks:
-      - oracle-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_data:/data
@@ -30,6 +28,8 @@ services:
       - "--certificatesresolvers.myresolver.acme.email=lmaumau22@gmail.com"
       - "--certificatesresolvers.myresolver.acme.storage=/data/acme.json"
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+    networks:
+      - oracle-network
 
   backend:
     build: ./backend
@@ -127,6 +127,7 @@ services:
       timeout: 10s
       retries: 3
 
+
 volumes:
   db_data:
     name: oracle-db-data
@@ -134,3 +135,7 @@ volumes:
     name: minio-storage-data
   traefik_data:
     name: traefik-data
+
+networks:
+  oracle-network:
+    driver: bridge
