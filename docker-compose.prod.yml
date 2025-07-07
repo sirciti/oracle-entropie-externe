@@ -10,7 +10,7 @@ services:
       - oracle-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ~/traefik-data:/data
+      - traefik_data:/data
     command:
       - "--log.level=DEBUG"
       - "--accessLog=true"
@@ -134,3 +134,5 @@ volumes:
     name: oracle-db-data
   minio_data:
     name: minio-storage-data
+  traefik_data:
+    name: traefik-data

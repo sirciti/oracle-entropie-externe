@@ -1,0 +1,8 @@
+CREATE TABLE visites (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    page VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    time_spent INT DEFAULT 0,
+    view_id VARCHAR(100)
+);
