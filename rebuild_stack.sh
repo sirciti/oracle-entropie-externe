@@ -5,7 +5,7 @@
 # Auteur : sirciti
 # Date : 2025-07-01
 # Description : Déploiement stable, gestion réseau, Traefik, nettoyage.
-# Version : 3.0 (Mise à jour 2025-07-05 pour intégration centralisée de Traefik et vérification réseau/DNS)
+# Version : 3.1 (Mise à jour 2025-07-07 pour robustesse accrue et gestion des erreurs)
 # =================================================================
 
 set -e # Arrête le script immédiatement si une commande échoue
@@ -60,6 +60,15 @@ fi
 echo -e "${BLUE}### ÉTAPE 0: PRÉPARATION DU nginx.conf (prod) POUR LE FRONTEND ###${NC}"
 cp frontend/nginx.prod.conf frontend/nginx.conf
 
+echo -e "${BLUE}### ÉTAPE 0B: SAUVEGARDE AUTOMATIQUE DE LA BASE DE DONNÉES ###${NC}"
+BACKUP_FILE="backup_pre_deployment_$(date +%Y%m%d_%H%M%S).sql"
+if docker exec oracle-db pg_dump -U oracle_user oracle_visits > $BACKUP_FILE; then
+    echo -e "${GREEN}✅ Sauvegarde réussie : $BACKUP_FILE${NC}"
+else
+    echo -e "${RED}⚠️ Échec de la sauvegarde. Arrêt du script pour sécurité.${NC}"
+    exit 1
+fi
+
 echo -e "${BLUE}### ÉTAPE 1: ARRÊT COMPLET DE LA STACK APPLICATIVE ###${NC}"
 docker-compose -f $COMPOSE_FILE down --remove-orphans --volumes || true
 
@@ -88,17 +97,51 @@ echo -e "${BLUE}### ÉTAPE 5: CRÉATION DE L'INFRASTRUCTURE RÉSEAU ###${NC}"
 echo -e "${YELLOW}Création du réseau applicatif unique: ${APP_NETWORK}...${NC}"
 docker network create $APP_NETWORK 2>/dev/null || echo "Le réseau ${APP_NETWORK} existe déjà."
 
+echo -e "${BLUE}### ÉTAPE 5B: VÉRIFICATION DES VOLUMES DOCKER ###${NC}"
+for VOLUME in oracle-db-data minio-storage-data traefik-data; do
+    if ! docker volume inspect $VOLUME > /dev/null 2>&1; then
+        echo -e "${YELLOW}Création du volume $VOLUME...${NC}"
+        docker volume create $VOLUME
+    else
+        echo -e "${GREEN}✅ Volume $VOLUME déjà existant${NC}"
+    fi
+done
+
 echo -e "${BLUE}### ÉTAPE 6: TRAEFIK INTÉGRÉ DANS DOCKER-COMPOSE.PROD.YML ###${NC}"
 echo -e "${YELLOW}Traefik sera lancé avec les autres services via docker-compose.prod.yml...${NC}"
 
 echo -e "${BLUE}### ÉTAPE 7: DÉPLOIEMENT DE L'APPLICATION ###${NC}"
 echo -e "${YELLOW}Reconstruction des images et démarrage des services...${NC}"
-docker-compose -f $COMPOSE_FILE build frontend
-docker-compose -f $COMPOSE_FILE up --build -d
+if ! docker-compose -f $COMPOSE_FILE up --build -d; then
+    echo -e "${RED}⚠️ Échec du déploiement. Tentative de rollback...${NC}"
+    docker-compose -f $COMPOSE_FILE down --remove-orphans
+    echo -e "${YELLOW}Retentative de déploiement...${NC}"
+    docker-compose -f $COMPOSE_FILE up --build -d || { echo -e "${RED}⚠️ Échec définitif. Arrêt du script.${NC}"; exit 1; }
+fi
 
 echo -e "${BLUE}### ÉTAPE 8: VÉRIFICATIONS POST-DÉPLOIEMENT ###${NC}"
-echo -e "${YELLOW}Attente du démarrage des services (15 secondes)...${NC}"
-sleep 15
+echo -e "${YELLOW}Attente du démarrage des services...${NC}"
+MAX_WAIT=60
+WAIT_TIME=0
+until docker ps | grep -q "oracle-frontend" || [ $WAIT_TIME -ge $MAX_WAIT ]; do
+    sleep 5
+    WAIT_TIME=$((WAIT_TIME + 5))
+    echo -e "${YELLOW}Attente... ($WAIT_TIME secondes écoulées)${NC}"
+done
+if [ $WAIT_TIME -ge $MAX_WAIT ]; then
+    echo -e "${RED}⚠️ Timeout atteint. Les services ne sont pas tous démarrés.${NC}"
+else
+    echo -e "${GREEN}✅ Services démarrés après $WAIT_TIME secondes.${NC}"
+fi
+
+echo -e "${BLUE}### ÉTAPE 8B: VÉRIFICATION DE LA TABLE VISITES ###${NC}"
+if docker exec oracle-db psql -U oracle_user -d oracle_visits -c "\dt" | grep -q "visites"; then
+    echo -e "${GREEN}✅ Table 'visites' existe dans la base de données.${NC}"
+else
+    echo -e "${YELLOW}Création de la table 'visites'...${NC}"
+    docker exec oracle-db psql -U oracle_user -d oracle_visits -c "CREATE TABLE IF NOT EXISTS visites (id SERIAL PRIMARY KEY, date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, page VARCHAR(255) NOT NULL, ip_address VARCHAR(45) NOT NULL, time_spent INTEGER DEFAULT 0, view_id VARCHAR(100));"
+    echo -e "${GREEN}✅ Table 'visites' créée avec succès.${NC}"
+fi
 
 echo -e "${YELLOW}--- État final des conteneurs ---${NC}"
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"

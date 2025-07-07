@@ -10,6 +10,7 @@ import time
 from datetime import datetime
 from api.geometry_api import geometry_api
 from core.utils import load_config, generate_quantum_geometric_entropy, get_area_weather_data, combine_weather_data, get_quantum_entropy, TokenStreamGenerator
+from prometheus_flask_exporter import PrometheusMetrics
 
 # Configuration du logger
 logger = logging.getLogger(__name__)
@@ -36,6 +37,9 @@ logger.info("Sentry initialized with DSN: %s", os.environ.get("SENTRY_DSN"))
 # Initialisation de l'application Flask
 app = Flask(__name__)
 CORS(app)
+
+# Initialisation des métriques Prometheus
+metrics = PrometheusMetrics(app)
 
 # Enregistrement du blueprint geometry_api
 app.register_blueprint(geometry_api, url_prefix="/api/geometry")
@@ -104,6 +108,7 @@ def log_visit_end(response):
             start_time = visit_start_times.pop(request.visit_key)
             time_spent = int(end_time - start_time)
             
+            # Mettre à jour l'entrée de la visite avec le temps passé
             conn = psycopg2.connect(
                 database=os.getenv("DB_NAME", "oracle_visits"),
                 user=os.getenv("DB_USER", "oracle_user"),
