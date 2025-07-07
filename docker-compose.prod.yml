@@ -33,6 +33,7 @@ services:
 
   backend:
     build: ./backend
+    container_name: oracle-backend
     environment:
       - FLASK_ENV=production
       - PYTHONPATH=/app
@@ -63,6 +64,7 @@ services:
 
   frontend:
     build: ./frontend
+    container_name: oracle-frontend
     ports:
       - "8080:80"
     depends_on:
@@ -89,11 +91,12 @@ services:
     container_name: oracle-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: oracle_user
-      POSTGRES_PASSWORD: oracle_pass
-      POSTGRES_DB: oracle_visits
+      - POSTGRES_USER=oracle_user
+      - POSTGRES_PASSWORD=oracle_pass
+      - POSTGRES_DB=oracle_visits
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     ports:
       - "5432:5432"
     networks:
@@ -103,6 +106,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
 
   minio:
     image: minio/minio:latest
