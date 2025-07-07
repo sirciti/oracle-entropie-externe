@@ -6,6 +6,8 @@ MINIO_BUCKET="backups"
 MINIO_ENDPOINT="localhost:9000"
 MINIO_USER="minio_user"
 MINIO_PASS="minio_pass"
+DB_NAME="oraclevisits"
+
 
 # Vérifier si c'est vendredi entre 11h30 et 11h45
 DAY=$(date +%a)
