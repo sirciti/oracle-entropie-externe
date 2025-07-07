@@ -5,8 +5,12 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from sentry_sdk.integrations.flask import FlaskIntegration
 import sentry_sdk
+import psycopg2
+import time
+from datetime import datetime
 from api.geometry_api import geometry_api
 from core.utils import load_config, generate_quantum_geometric_entropy, get_area_weather_data, combine_weather_data, get_quantum_entropy, TokenStreamGenerator
+
 # Configuration du logger
 logger = logging.getLogger(__name__)
 LOG_FILENAME = "app.log"
@@ -48,6 +52,76 @@ def log_info(message: str) -> None:
 
 # Charge la configuration
 config = load_config()
+
+# Dictionnaire pour stocker les temps de début des visites par IP et page
+visit_start_times = {}
+
+# Middleware pour enregistrer les visites et le temps passé
+@app.before_request
+def log_visit_start():
+    try:
+        client_ip = request.remote_addr
+        page_path = request.path
+        start_time = time.time()
+        visit_key = f"{client_ip}:{page_path}"
+        visit_start_times[visit_key] = start_time
+        
+        # Récupérer un identifiant de vue si disponible (par exemple, via un paramètre URL ou un en-tête)
+        view_id = request.args.get('view_id', request.headers.get('X-View-ID', 'default'))
+        
+        # Enregistrer la visite initiale dans la base de données
+        conn = psycopg2.connect(
+            database=os.getenv("DB_NAME", "oracle_visits"),
+            user=os.getenv("DB_USER", "oracle_user"),
+            password=os.getenv("DB_PASSWORD", "oracle_pass"),
+            host=os.getenv("DB_HOST", "db"),
+            port=os.getenv("DB_PORT", "5432")
+        )
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO visites (page, ip_address, view_id) VALUES (%s, %s, %s) RETURNING id",
+            (page_path, client_ip, view_id)
+        )
+        visit_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        # Stocker l'ID de la visite pour mise à jour ultérieure
+        request.visit_id = visit_id
+        request.visit_key = visit_key
+    except Exception as e:
+        logger.error(f"Erreur lors de l'enregistrement de la visite : {e}")
+
+@app.after_request
+def log_visit_end(response):
+    try:
+        if hasattr(request, 'visit_key') and request.visit_key in visit_start_times:
+            logger.info(f"Calcul du temps passé pour {request.visit_key}")
+            client_ip = request.remote_addr
+            page_path = request.path
+            end_time = time.time()
+            start_time = visit_start_times.pop(request.visit_key)
+            time_spent = int(end_time - start_time)
+            
+            conn = psycopg2.connect(
+                database=os.getenv("DB_NAME", "oracle_visits"),
+                user=os.getenv("DB_USER", "oracle_user"),
+                password=os.getenv("DB_PASSWORD", "oracle_pass"),
+                host=os.getenv("DB_HOST", "db"),
+                port=os.getenv("DB_PORT", "5432")
+            )
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE visites SET time_spent = %s WHERE id = %s",
+                (time_spent, request.visit_id)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+    except Exception as e:
+        logger.error(f"Erreur lors de la mise à jour du temps passé : {e}")
+    return response
 
 # Routes principales de l'API
 @app.route('/generate_random', methods=['GET'])

@@ -1,5 +1,3 @@
-
-
 services:
   traefik:
     image: traefik:latest
@@ -39,6 +37,13 @@ services:
       - FLASK_ENV=production
       - PYTHONPATH=/app
       - GUNICORN_CMD_ARGS=--timeout 120 --workers 3
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=oracle_user
+      - DB_PASSWORD=oracle_pass
+      - DB_NAME=oracle_visits
+    depends_on:
+      - db
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/geometry/icosahedron/initial"]
       interval: 30s
@@ -79,6 +84,53 @@ services:
       - oracle-network
     restart: unless-stopped
 
+  db:
+    image: postgres:13
+    container_name: oracle-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: oracle_user
+      POSTGRES_PASSWORD: oracle_pass
+      POSTGRES_DB: oracle_visits
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - oracle-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "oracle_user", "-d", "oracle_visits"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio-storage
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minio_user
+      MINIO_ROOT_PASSWORD: minio_pass
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    networks:
+      - oracle-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 networks:
   oracle-network:
     external: true
+
+volumes:
+  db_data:
+    name: oracle-db-data
+  minio_data:
+    name: minio-storage-data
