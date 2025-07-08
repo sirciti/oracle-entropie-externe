@@ -2,15 +2,35 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-  - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['node-exporter:9100']
-  - job_name: 'backend'
+
+  - job_name: 'oracle-backend'
     static_configs:
       - targets: ['oracle-backend:5000']
-        labels:
-          app: 'oracle-backend'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'minio'
+    static_configs:
+      - targets: ['minio-storage:9000']
+    metrics_path: '/minio/v2/metrics/cluster'
+    scrape_interval: 30s
+
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['traefik-oracle:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'oracle-db'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
