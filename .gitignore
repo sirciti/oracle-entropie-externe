@@ -193,3 +193,9 @@ terraform.tfstate.*
 *.tfplan
 .terraform.lock.hcl
 .terraform.tfstate.lock.info
+
+
+
+
+
+backup_pre_deployment_*.sql
