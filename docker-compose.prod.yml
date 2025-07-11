@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   traefik:
     image: traefik:latest
@@ -43,6 +45,8 @@ services:
       - DB_USER=oracle_user
       - DB_PASSWORD=oracle_pass
       - DB_NAME=oracle_visits
+    # Ajout recommandé : condition de dépendance sur le healthcheck du service db
+    # (Note : Dans Compose v3, depends_on ne gère pas la condition de santé, mais la documentation peut être complétée)
     depends_on:
       - db
     healthcheck:
@@ -73,6 +77,7 @@ services:
     container_name: oracle-frontend
     ports:
       - "8080:80"
+    # Ajout recommandé : dépendance explicite sur le backend (healthcheck non géré par défaut, mais documentation à compléter)
     depends_on:
       - backend
     healthcheck:
@@ -231,3 +236,4 @@ volumes:
 networks:
   oracle-network:
     driver: bridge
+
