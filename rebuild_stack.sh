@@ -62,15 +62,55 @@ cp frontend/nginx.prod.conf frontend/nginx.conf
 
 echo -e "${BLUE}### ÉTAPE 0B: SAUVEGARDE AUTOMATIQUE DE LA BASE DE DONNÉES ###${NC}"
 
-# Vérification et démarrage du conteneur oracle-db
-if ! docker ps --format "{{.Names}}" | grep -q "^oracle-db$"; then
-    echo -e "${YELLOW}Le conteneur oracle-db n'est pas démarré. Démarrage en cours...${NC}"
+# Vérification et création/démarrage du conteneur oracle-db
+if ! docker ps -a --format "{{.Names}}" | grep -q "^oracle-db$"; then
+    echo -e "${YELLOW}Le conteneur oracle-db n'existe pas. Création en cours...${NC}"
+    docker-compose -f $COMPOSE_FILE up -d db
+    echo -e "${YELLOW}Attente de 30 secondes pour que le conteneur soit opérationnel...${NC}"
+    sleep 30
+    
+    # Vérification que le conteneur est bien créé et en cours d'exécution
+    if docker ps --format "{{.Names}}" | grep -q "^oracle-db$"; then
+        echo -e "${GREEN}✅ Conteneur oracle-db créé et démarré avec succès${NC}"
+    else
+        echo -e "${RED}⚠️ Échec de la création du conteneur oracle-db. Arrêt du script.${NC}"
+        exit 1
+    fi
+elif ! docker ps --format "{{.Names}}" | grep -q "^oracle-db$"; then
+    echo -e "${YELLOW}Le conteneur oracle-db existe mais n'est pas démarré. Démarrage en cours...${NC}"
     docker start oracle-db
-    # Attente que le conteneur soit prêt (optionnel, mais recommandé)
-    echo -e "${YELLOW}Attente de 10 secondes pour que le conteneur soit opérationnel...${NC}"
-    sleep 10
+    echo -e "${YELLOW}Attente de 15 secondes pour que le conteneur soit opérationnel...${NC}"
+    sleep 15
+    
+    # Vérification que le conteneur est bien démarré
+    if docker ps --format "{{.Names}}" | grep -q "^oracle-db$"; then
+        echo -e "${GREEN}✅ Conteneur oracle-db démarré avec succès${NC}"
+    else
+        echo -e "${RED}⚠️ Échec du démarrage du conteneur oracle-db. Arrêt du script.${NC}"
+        exit 1
+    fi
+else
+    echo -e "${GREEN}✅ Le conteneur oracle-db est déjà en cours d'exécution${NC}"
 fi
 
+# Attente supplémentaire pour s'assurer que PostgreSQL est prêt à accepter les connexions
+echo -e "${YELLOW}Vérification de la disponibilité de PostgreSQL...${NC}"
+MAX_ATTEMPTS=12
+ATTEMPT=0
+until docker exec oracle-db pg_isready -U oracle_user -d oracle_visits > /dev/null 2>&1 || [ $ATTEMPT -eq $MAX_ATTEMPTS ]; do
+    ATTEMPT=$((ATTEMPT + 1))
+    echo -e "${YELLOW}Tentative $ATTEMPT/$MAX_ATTEMPTS - PostgreSQL n'est pas encore prêt, attente de 5 secondes...${NC}"
+    sleep 5
+done
+
+if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+    echo -e "${RED}⚠️ PostgreSQL n'est pas disponible après $((MAX_ATTEMPTS * 5)) secondes. Arrêt du script.${NC}"
+    exit 1
+else
+    echo -e "${GREEN}✅ PostgreSQL est opérationnel${NC}"
+fi
+
+# Création de la sauvegarde
 BACKUP_FILE="backup_pre_deployment_$(date +%Y%m%d_%H%M%S).sql"
 if docker exec oracle-db pg_dump -U oracle_user oracle_visits > $BACKUP_FILE; then
     echo -e "${GREEN}✅ Sauvegarde réussie : $BACKUP_FILE${NC}"
