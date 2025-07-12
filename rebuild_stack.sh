@@ -61,6 +61,16 @@ echo -e "${BLUE}### ÉTAPE 0: PRÉPARATION DU nginx.conf (prod) POUR LE FRONTEND
 cp frontend/nginx.prod.conf frontend/nginx.conf
 
 echo -e "${BLUE}### ÉTAPE 0B: SAUVEGARDE AUTOMATIQUE DE LA BASE DE DONNÉES ###${NC}"
+
+# Vérification et démarrage du conteneur oracle-db
+if ! docker ps --format "{{.Names}}" | grep -q "^oracle-db$"; then
+    echo -e "${YELLOW}Le conteneur oracle-db n'est pas démarré. Démarrage en cours...${NC}"
+    docker start oracle-db
+    # Attente que le conteneur soit prêt (optionnel, mais recommandé)
+    echo -e "${YELLOW}Attente de 10 secondes pour que le conteneur soit opérationnel...${NC}"
+    sleep 10
+fi
+
 BACKUP_FILE="backup_pre_deployment_$(date +%Y%m%d_%H%M%S).sql"
 if docker exec oracle-db pg_dump -U oracle_user oracle_visits > $BACKUP_FILE; then
     echo -e "${GREEN}✅ Sauvegarde réussie : $BACKUP_FILE${NC}"
